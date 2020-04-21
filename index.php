@@ -12,6 +12,7 @@
             
             body
             {
+                background-color: black;
                 overflow: hidden;
                 margin: 0;
                 padding: 0;
