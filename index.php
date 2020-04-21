@@ -29,24 +29,94 @@
         </style>
         
         <script>
+        
+            class Filmable
+            {
+                camera;
+
+                constructor(camera)
+                {
+                    this.camera = camera;
+                }
+
+                setCameraOn()
+                {
+                    this.camera.FilmedObject = this;
+                    this.updateCameraPosition();
+                }
+            }
+
+            class Point extends Filmable
+            {
+                x;
+                y;
+
+                constructor(x, y, camera)
+                {
+                    super(camera);
+                    this.x = x;
+                    this.y = y;
+                }
+
+                updateCameraPosition()
+                {
+                    if (this.camera.FilmedObject == this)
+                    {
+                        this.camera.x = this.x - canvas.width / 2;
+                        this.camera.y = this.y - canvas.height / 2;
+                    }
+                }
+            }
+
+            class World extends Filmable
+            {
+                x;
+                y;
+                worldRadius = 1000;
+                gridSize = 100;
+                wormBotCount = 10;
+                energyCount = 100;
+
+                constructor(camera, x = 0, y = 0)
+                {
+                    super(camera);
+                    this.x = x;
+                    this.y = y;
+
+
+                }
+
+                updateCameraPosition()
+                {
+                    if (this.camera.FilmedObject == this)
+                    {
+                        this.camera.x = this.x - canvas.width / 2;
+                        this.camera.y = this.y - canvas.height / 2;
+                    }
+                }
+            }
             
-            class Worm
+            class Worm extends Filmable
             {
                 controllable;
                 nodes = [];
-                color = "hsl(" + Math.round(Math.random() * 360) + ", 100%, 50%)";
-                camera = new Camera();
-                
-                constructor(type, count)
+                turn;
+                color;
+
+                constructor(type, count, camera)
                 {
+                    super(camera);
+                    
                     if(type === "Human")
                     {
                         this.controllable = true;
+                        this.color = "#00ff00";
                     }
                     
                     if(type === "Bot")
                     {
                         this.controllable = false;
+                        this.color = "hsl(" + Math.round(Math.random() * 90 + 270) + ", 100%, 50%)";
                     }
                     
                     this.addNode(count);
@@ -59,34 +129,34 @@
                         count = 1;
                     }
                     
-                    var temp_length = this.nodes.length;
+                    var tempLength = this.nodes.length;
                     
                     for(var n = 0; n < count; n++)
                     {
-                        if(temp_length === 0)
+                        if(tempLength === 0)
                         {
-                            var temp_rotation = 2 * Math.PI * Math.random();
-                            var temp_radius = world_radius * Math.sqrt(Math.random());
+                            var tempRotation = 2 * Math.PI * Math.random();
+                            var tempRadius = worldRadius * Math.sqrt(Math.random());
                             this.nodes.push(
                             {
-                                x: temp_radius * Math.cos(temp_rotation),
-                                y: temp_radius * Math.sin(temp_rotation),
+                                x: tempRadius * Math.cos(tempRotation),
+                                y: tempRadius * Math.sin(tempRotation),
                                 r: 2 * Math.PI * Math.random()
                             });
                         }
                         
                         else
                         {
-                            var temp_last_node = this.nodes[temp_length - 1];
+                            var tempLastNode = this.nodes[tempLength - 1];
                             this.nodes.push(
                             {
-                                x: temp_last_node.x - 5 * Math.cos(temp_last_node.r),
-                                y: temp_last_node.y + 5 * Math.sin(temp_last_node.r),
-                                r: temp_last_node.r
+                                x: tempLastNode.x - 5 * Math.cos(tempLastNode.r),
+                                y: tempLastNode.y + 5 * Math.sin(tempLastNode.r),
+                                r: tempLastNode.r
                             });
                         }
                         
-                        temp_length++;
+                        tempLength++;
                     }
                 }
                 
@@ -102,37 +172,89 @@
                 
                 move()
                 {
+                    if(this.turn === -1)
+                    {
+                        this.nodes[0].r += Math.PI / 60;
+
+                        if(this.nodes[0].r >= 2 * Math.PI)
+                        {
+                            this.nodes[0].r -= 2 * Math.PI;
+                        }
+                    }
+
+                    if(this.turn === 1)
+                    {
+                        this.nodes[0].r -= Math.PI / 60;
+
+                        if(this.nodes[0].r < 0)
+                        {
+                            this.nodes[0].r += 2 * Math.PI;
+                        }
+                    }
+
+                    if(this.turn === 1)
+                    {
+
+                    }
+
                     if(this.nodes.length > 0)
                     {
-                        var temp_first_node = this.nodes[0];
-                        temp_first_node.x += 3 * Math.cos(temp_first_node.r);
-                        temp_first_node.y -= 3 * Math.sin(temp_first_node.r);
+                        var tempFirstNode = this.nodes[0];
+                        tempFirstNode.x += 3 * Math.cos(tempFirstNode.r);
+                        tempFirstNode.y -= 3 * Math.sin(tempFirstNode.r);
                         
                         for(var n = 1; n < this.nodes.length; n++)
                         {
-                            var temp_current_node = this.nodes[n];
-                            var temp_next_node = this.nodes[n - 1];
-                            temp_current_node.r = Math.PI - Math.atan2(temp_current_node.y - temp_next_node.y, temp_current_node.x - temp_next_node.x);
-                            temp_current_node.x = temp_next_node.x - 5 * Math.cos(temp_current_node.r);
-                            temp_current_node.y = temp_next_node.y + 5 * Math.sin(temp_current_node.r);
+                            var tempCurrentNode = this.nodes[n];
+                            var tempNextNode = this.nodes[n - 1];
+                            tempCurrentNode.r = Math.PI - Math.atan2(tempCurrentNode.y - tempNextNode.y, tempCurrentNode.x - tempNextNode.x);
+                            tempCurrentNode.x = tempNextNode.x - 5 * Math.cos(tempCurrentNode.r);
+                            tempCurrentNode.y = tempNextNode.y + 5 * Math.sin(tempCurrentNode.r);
                         }
                         
-                        this.camera.x = temp_first_node.x;
-                        this.camera.y = temp_first_node.y;
+                        this.updateCameraPosition();
+                    }
+                }
+
+                updateCameraPosition()
+                {
+                    if (this.camera.FilmedObject == this)
+                    {
+                        this.camera.x = this.nodes[0].x - canvas.width / 2;
+                        this.camera.y = this.nodes[0].y - canvas.height / 2;
                     }
                 }
             }
             
-            class Energy
+            class Energy extends Filmable
             {
-                constructor()
+                constructor(camera)
                 {
+                    super(camera);
+
                     this.type = Math.round(Math.random());
-                    var temp_rotation = 2 * Math.PI * Math.random();
-                    var temp_radius = world_radius * Math.sqrt(Math.random());
-                    this.x = temp_radius * Math.cos(temp_rotation);
-                    this.y = temp_radius * Math.sin(temp_rotation);
+                    var tempRotation = 2 * Math.PI * Math.random();
+                    var tempRadius = worldRadius * Math.sqrt(Math.random());
+                    this.x = tempRadius * Math.cos(tempRotation);
+                    this.y = tempRadius * Math.sin(tempRotation);
                     this.r = 2 * Math.PI * Math.random();
+                }
+                
+                move()
+                {
+                    for(var n = 0; n < worms.length; n++)
+                    {
+
+                    }
+                }
+
+                updateCameraPosition()
+                {
+                    if (this.camera.FilmedObject == this)
+                    {
+                        this.camera.x = this.x - canvas.width / 2;
+                        this.camera.y = this.y - canvas.height / 2;
+                    }
                 }
             }
             
@@ -142,6 +264,7 @@
                 {
                     this.x = null;
                     this.y = null;
+                    this.FilmedObject = null;
                 }
             }
             
@@ -159,7 +282,38 @@
                     canvas.style.height = window.innerWidth / window.innerHeight * canvas.height / canvas.width * 100 + "%";
                 }
             }
-            
+
+            function mousedown(event)
+            {
+                console.log("test");
+
+                if(!event)
+                {
+                    event = window.event;
+                }
+
+                if(event.button == 0)
+                {
+                    activeWorm--;
+                }
+
+                if(event.button == 2)
+                {
+                    activeWorm++;
+                }
+
+                if(activeWorm < 0)
+                {
+                    activeWorm = 0;
+                }
+                if(activeWorm > worms.length - 1)
+                {
+                    activeWorm = worms.length - 1;
+                }
+
+                worms[activeWorm].setCameraOn();
+            }
+
             function keydown(event)
             {
                 if(!event)
@@ -183,33 +337,38 @@
                 keys.splice(keys.indexOf(event.keyCode), 1);
             }
             
+            document.addEventListener("contextmenu", event => event.preventDefault());
+            document.onmousedown = mousedown;
             document.onkeydown = keydown;
             document.onkeyup = keyup;
             
             var keys = [];
-            var world_radius = 1000;
-            var grid_size = 100;
-            var worm_bot_count = 10;
-            var energy_count = 100;
             var camera = new Camera();
-            var worms = [new Worm("Human", Math.round(Math.random() * 50 + 20))];
+            var world = new World(camera);
+            var worldRadius = world.worldRadius;
+            var gridSize = world.gridSize;
+            var wormBotCount = world.wormBotCount;
+            var energyCount = world.energyCount;
+            var worms = [new Worm("Human", Math.round(Math.random() * 50 + 20), camera)];
             var energies = [];
             
-            for(var n = 0; n < worm_bot_count; n++)
+            for(var n = 0; n < wormBotCount; n++)
             {
-                worms.push(new Worm("Bot", Math.round(Math.random() * 50 + 20)));
+                worms.push(new Worm("Bot", Math.round(Math.random() * 50 + 20), camera));
             }
             
-            for(var n = 0; n < energy_count; n++)
+            for(var n = 0; n < energyCount; n++)
             {
-                energies.push(new Energy());
+                energies.push(new Energy(camera));
             }
             
+            var activeWorm = 0;
             var canvas = document.getElementById("canvas");
             var ctx = canvas.getContext("2d");
             var fps = null;
-            var previous_time = new Date();
-            
+            var previousTime = new Date();
+            worms[0].setCameraOn();
+
             function render()
             {
                 for(var n = 0; n < worms.length; n++)
@@ -220,38 +379,44 @@
                     {
                         if(worm.nodes.length > 0)
                         {
+                            worm.turn = 0;
+
                             if(keys.includes(65) || keys.includes(37))
                             {
-                                worm.nodes[n].r += Math.PI / 60;
-                                
-                                if(worm.nodes[n].r >= 2 * Math.PI)
-                                {
-                                    worm.nodes[n].r -= 2 * Math.PI;
-                                }
+                                worm.turn -= 1;
                             }
                             
                             if(keys.includes(68) || keys.includes(39))
                             {
-                                worm.nodes[n].r -= Math.PI / 60;
-                                
-                                if(worm.nodes[n].r < 0)
-                                {
-                                    worm.nodes[n].r += 2 * Math.PI;
-                                }
+                                worm.turn += 1;
                             }
+
+                            console.log(worm.turn);
                         }
                     }
                     
                     else
                     {
                         //AI code
+
+
                     }
                     
+
                     worm.move();
+                    
+                    if(d({x: 0, y: 0}, worm.nodes[0]) > worldRadius)
+                    {
+                        worms.splice(n, 1);
+                        n--;
+                    }
                 }
                 
-                camera.x = worms[0].camera.x - canvas.width / 2;
-                camera.y = worms[0].camera.y - canvas.height / 2;
+                for(var n = 0; n < energies.length; n++)
+                {
+                    var energy = energies[n];
+                    energy.move();
+                }
                 
                 ctx.fillStyle = "#000000";
                 ctx.shadowBlur = 0;
@@ -259,35 +424,35 @@
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 ctx.strokeStyle = "#141414";
                 ctx.lineWidth = 1;
-                for(var n = 1; n < 2 * world_radius / grid_size; n++)
+                for(var n = 1; n < 2 * worldRadius / gridSize; n++)
                 {
                     ctx.beginPath();
-                    ctx.moveTo(n * grid_size - world_radius - camera.x, 0 - world_radius - camera.y);
-                    ctx.lineTo(n * grid_size - world_radius - camera.x, 2 * world_radius - world_radius - camera.y);
+                    ctx.moveTo(n * gridSize - worldRadius - camera.x, 0 - worldRadius - camera.y);
+                    ctx.lineTo(n * gridSize - worldRadius - camera.x, 2 * worldRadius - worldRadius - camera.y);
                     ctx.stroke();
                     ctx.closePath();
                     ctx.beginPath();
-                    ctx.moveTo(0 - world_radius - camera.x, n * grid_size - world_radius - camera.y);
-                    ctx.lineTo(2 * world_radius - world_radius - camera.x, n * grid_size - world_radius - camera.y);
+                    ctx.moveTo(0 - worldRadius - camera.x, n * gridSize - worldRadius - camera.y);
+                    ctx.lineTo(2 * worldRadius - worldRadius - camera.x, n * gridSize - worldRadius - camera.y);
                     ctx.stroke();
                     ctx.closePath();
                 }
                 ctx.beginPath();
-                ctx.arc(0 - camera.x, 0 - camera.y, world_radius, Math.PI, 0);
-                ctx.lineTo(world_radius - camera.x, -world_radius - camera.y);
-                ctx.lineTo(-world_radius - camera.x, -world_radius - camera.y);
+                ctx.arc(0 - camera.x, 0 - camera.y, worldRadius, Math.PI, 0);
+                ctx.lineTo(worldRadius - camera.x, -worldRadius - camera.y);
+                ctx.lineTo(-worldRadius - camera.x, -worldRadius - camera.y);
                 ctx.closePath();
                 ctx.fill();
                 ctx.beginPath();
-                ctx.arc(0 - camera.x, 0 - camera.y, world_radius, 0, -Math.PI);
-                ctx.lineTo(-world_radius - camera.x, world_radius - camera.y);
-                ctx.lineTo(world_radius - camera.x, world_radius - camera.y);
+                ctx.arc(0 - camera.x, 0 - camera.y, worldRadius, 0, -Math.PI);
+                ctx.lineTo(-worldRadius - camera.x, worldRadius - camera.y);
+                ctx.lineTo(worldRadius - camera.x, worldRadius - camera.y);
                 ctx.closePath();
                 ctx.fill();
                 ctx.strokeStyle = "#141414";
                 ctx.lineWidth = 3;
                 ctx.beginPath();
-                ctx.arc(0 - camera.x, 0 - camera.y, world_radius, 0, 2 * Math.PI);
+                ctx.arc(0 - camera.x, 0 - camera.y, worldRadius, 0, 2 * Math.PI);
                 ctx.stroke();
                 ctx.closePath();
                 ctx.lineWidth = 3;
@@ -325,6 +490,7 @@
                     if(worm.nodes.length > 0)
                     {
                         ctx.strokeStyle = worm.color;
+                        ctx.fillStyle = worm.color;
                         ctx.shadowColor = ctx.strokeStyle;
                         ctx.beginPath();
                         ctx.arc(worm.nodes[0].x - camera.x, worm.nodes[0].y - camera.y, 25, -(worm.nodes[0].r + Math.PI / 2), -(worm.nodes[0].r - Math.PI / 2));
@@ -339,8 +505,31 @@
                         }
                         ctx.closePath();
                         ctx.stroke();
+
+                        for(var n = 1; n < worm.nodes.length - 1; n++)
+                        {
+                            ctx.beginPath();
+                            ctx.lineTo(worm.nodes[n].x + 25 * Math.cos(worm.nodes[n].r - Math.PI / 2) - camera.x, worm.nodes[n].y - 25 * Math.sin(worm.nodes[n].r - Math.PI / 2) - camera.y);
+                            ctx.lineTo(worm.nodes[n].x + 25 * Math.cos(worm.nodes[n].r + Math.PI / 2) - camera.x, worm.nodes[n].y - 25 * Math.sin(worm.nodes[n].r + Math.PI / 2) - camera.y);
+                            ctx.stroke();
+                            ctx.closePath();
+                        }
+
+                        for(var n = -1; n <= 1; n+=2)
+                        {
+                            ctx.beginPath();
+                            ctx.moveTo(worm.nodes[0].x + 25 * Math.cos(worm.nodes[0].r + n * Math.PI / 4) - camera.x, worm.nodes[0].y - 25 * Math.sin(worm.nodes[0].r + n * Math.PI / 4) - camera.y);
+                            ctx.lineTo(worm.nodes[0].x + 50 * Math.cos(worm.nodes[0].r + n * Math.PI / 4) - camera.x, worm.nodes[0].y - 50 * Math.sin(worm.nodes[0].r + n * Math.PI / 4) - camera.y);
+                            ctx.stroke();
+                            ctx.closePath();
+                            ctx.beginPath();
+                            ctx.arc(worm.nodes[0].x + 50 * Math.cos(worm.nodes[0].r + n * Math.PI / 4) - camera.x, worm.nodes[0].y - 50 * Math.sin(worm.nodes[0].r + n * Math.PI / 4) - camera.y, 5, 0, 2 * Math.PI);
+                            ctx.fill();
+                            ctx.closePath();
+                        }
                     }
                 }
+                ctx.fillStyle = "#000000";
                 ctx.shadowBlur = 0;
                 ctx.globalAlpha = 0.25;
                 for(var n = 1; n < canvas.height / 4; n++)
@@ -348,9 +537,9 @@
                     ctx.fillRect(0, n * 4 - 1, canvas.width, 2);
                 }
                 
-                var current_time = new Date();
-                fps = 1000 / (current_time - previous_time);
-                previous_time = current_time;
+                var currentTime = new Date();
+                fps = 1000 / (currentTime - previousTime);
+                previousTime = currentTime;
                 window.requestAnimationFrame(render);
             }
             
