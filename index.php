@@ -285,19 +285,22 @@
 
             function mousedown(event)
             {
-                console.log("test");
-
                 if(!event)
                 {
                     event = window.event;
                 }
 
-                if(event.button == 0)
+                if(event.button === 0)
                 {
                     activeWorm--;
                 }
+                
+                if(event.button === 1)
+                {
+                    new Point(0, 0, camera).setCameraOn();
+                }
 
-                if(event.button == 2)
+                if(event.button === 2)
                 {
                     activeWorm++;
                 }
@@ -306,12 +309,16 @@
                 {
                     activeWorm = 0;
                 }
+                
                 if(activeWorm > worms.length - 1)
                 {
                     activeWorm = worms.length - 1;
                 }
-
-                worms[activeWorm].setCameraOn();
+                
+                if(event.button !== 1)
+                {
+                    worms[activeWorm].setCameraOn();
+                }
             }
 
             function keydown(event)
@@ -390,8 +397,6 @@
                             {
                                 worm.turn += 1;
                             }
-
-                            console.log(worm.turn);
                         }
                     }
                     
@@ -506,14 +511,14 @@
                         ctx.closePath();
                         ctx.stroke();
 
-                        for(var n = 1; n < worm.nodes.length - 1; n++)
+                        /*for(var n = 1; n < worm.nodes.length - 1; n++)
                         {
                             ctx.beginPath();
                             ctx.lineTo(worm.nodes[n].x + 25 * Math.cos(worm.nodes[n].r - Math.PI / 2) - camera.x, worm.nodes[n].y - 25 * Math.sin(worm.nodes[n].r - Math.PI / 2) - camera.y);
                             ctx.lineTo(worm.nodes[n].x + 25 * Math.cos(worm.nodes[n].r + Math.PI / 2) - camera.x, worm.nodes[n].y - 25 * Math.sin(worm.nodes[n].r + Math.PI / 2) - camera.y);
                             ctx.stroke();
                             ctx.closePath();
-                        }
+                        }*/
 
                         for(var n = -1; n <= 1; n+=2)
                         {
