@@ -32,8 +32,6 @@
         
             class Filmable
             {
-                camera;
-
                 constructor(camera)
                 {
                     this.camera = camera;
@@ -48,9 +46,6 @@
 
             class Point extends Filmable
             {
-                x;
-                y;
-
                 constructor(x, y, camera)
                 {
                     super(camera);
@@ -62,47 +57,37 @@
                 {
                     if (this.camera.FilmedObject == this)
                     {
-                        this.camera.x = this.x - canvas.width / 2;
-                        this.camera.y = this.y - canvas.height / 2;
+                        this.camera.x = this.x;
+                        this.camera.y = this.y;
                     }
                 }
             }
 
             class World extends Filmable
             {
-                x;
-                y;
-                worldRadius = 1000;
-                gridSize = 100;
-                wormBotCount = 10;
-                energyCount = 100;
-
                 constructor(camera, x = 0, y = 0)
                 {
                     super(camera);
                     this.x = x;
                     this.y = y;
-
-
+                    this.worldRadius = 10000;
+                    this.gridSize = 100;
+                    this.wormBotCount = 100;
+                    this.energyCount = 1000;
                 }
 
                 updateCameraPosition()
                 {
                     if (this.camera.FilmedObject == this)
                     {
-                        this.camera.x = this.x - canvas.width / 2;
-                        this.camera.y = this.y - canvas.height / 2;
+                        this.camera.x = this.x;
+                        this.camera.y = this.y;
                     }
                 }
             }
             
             class Worm extends Filmable
             {
-                controllable;
-                nodes = [];
-                turn;
-                color;
-
                 constructor(type, count, camera)
                 {
                     super(camera);
@@ -119,6 +104,8 @@
                         this.color = "hsl(" + Math.round(Math.random() * 90 + 270) + ", 100%, 50%)";
                     }
                     
+                    this.nodes = [];
+                    this.turn = 0;
                     this.addNode(count);
                 }
                 
@@ -192,11 +179,6 @@
                         }
                     }
 
-                    if(this.turn === 1)
-                    {
-
-                    }
-
                     if(this.nodes.length > 0)
                     {
                         var tempFirstNode = this.nodes[0];
@@ -220,8 +202,8 @@
                 {
                     if (this.camera.FilmedObject == this)
                     {
-                        this.camera.x = this.nodes[0].x - canvas.width / 2;
-                        this.camera.y = this.nodes[0].y - canvas.height / 2;
+                        this.camera.x = this.nodes[0].x;
+                        this.camera.y = this.nodes[0].y;
                     }
                 }
             }
@@ -231,7 +213,6 @@
                 constructor(camera)
                 {
                     super(camera);
-
                     this.type = Math.round(Math.random());
                     var tempRotation = 2 * Math.PI * Math.random();
                     var tempRadius = worldRadius * Math.sqrt(Math.random());
@@ -242,18 +223,15 @@
                 
                 move()
                 {
-                    for(var n = 0; n < worms.length; n++)
-                    {
 
-                    }
                 }
 
                 updateCameraPosition()
                 {
                     if (this.camera.FilmedObject == this)
                     {
-                        this.camera.x = this.x - canvas.width / 2;
-                        this.camera.y = this.y - canvas.height / 2;
+                        this.camera.x = this.x;
+                        this.camera.y = this.y;
                     }
                 }
             }
@@ -369,9 +347,15 @@
                 energies.push(new Energy(camera));
             }
             
+            var radar =
+            {
+                width: 250,
+                height: 200
+            };
+            
             var activeWorm = 0;
             var canvas = document.getElementById("canvas");
-            var ctx = canvas.getContext("2d");
+            var ctx = canvas.getContext("2d", {alpha: false});
             var fps = null;
             var previousTime = new Date();
             worms[0].setCameraOn();
@@ -421,9 +405,31 @@
                 {
                     var energy = energies[n];
                     energy.move();
+                    
+                    var tempClosestWorm;
+                    var tempMinimumDistance = false;
+                    
+                    for(var m = 0; m < worms.length; m++)
+                    {
+                        var tempDistance = d(energies[n], worms[m].nodes[0]);
+                        
+                        if(tempDistance < tempMinimumDistance || tempMinimumDistance === false)
+                        {
+                            tempMinimumDistance = tempDistance;
+                            tempClosestWorm = m;
+                        }
+                    }
+                    
+                    if(tempMinimumDistance < 50)
+                    {
+                        energies.splice(n, 1);
+                        worms[tempClosestWorm].addNode(5);
+                        n--;
+                    }
                 }
                 
                 ctx.fillStyle = "#000000";
+                ctx.lineCap = "butt";
                 ctx.shadowBlur = 0;
                 ctx.globalAlpha = 1;
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -432,32 +438,32 @@
                 for(var n = 1; n < 2 * worldRadius / gridSize; n++)
                 {
                     ctx.beginPath();
-                    ctx.moveTo(n * gridSize - worldRadius - camera.x, 0 - worldRadius - camera.y);
-                    ctx.lineTo(n * gridSize - worldRadius - camera.x, 2 * worldRadius - worldRadius - camera.y);
+                    ctx.moveTo(n * gridSize - worldRadius - camera.x + canvas.width / 2, 0 - worldRadius - camera.y + canvas.height / 2);
+                    ctx.lineTo(n * gridSize - worldRadius - camera.x + canvas.width / 2, 2 * worldRadius - worldRadius - camera.y + canvas.height / 2);
                     ctx.stroke();
                     ctx.closePath();
                     ctx.beginPath();
-                    ctx.moveTo(0 - worldRadius - camera.x, n * gridSize - worldRadius - camera.y);
-                    ctx.lineTo(2 * worldRadius - worldRadius - camera.x, n * gridSize - worldRadius - camera.y);
+                    ctx.moveTo(0 - worldRadius - camera.x + canvas.width / 2, n * gridSize - worldRadius - camera.y + canvas.height / 2);
+                    ctx.lineTo(2 * worldRadius - worldRadius - camera.x + canvas.width / 2, n * gridSize - worldRadius - camera.y + canvas.height / 2);
                     ctx.stroke();
                     ctx.closePath();
                 }
                 ctx.beginPath();
-                ctx.arc(0 - camera.x, 0 - camera.y, worldRadius, Math.PI, 0);
-                ctx.lineTo(worldRadius - camera.x, -worldRadius - camera.y);
-                ctx.lineTo(-worldRadius - camera.x, -worldRadius - camera.y);
+                ctx.arc(0 - camera.x + canvas.width / 2, 0 - camera.y + canvas.height / 2, worldRadius, Math.PI, 0);
+                ctx.lineTo(worldRadius - camera.x + canvas.width / 2, -worldRadius - camera.y + canvas.height / 2);
+                ctx.lineTo(-worldRadius - camera.x + canvas.width / 2, -worldRadius - camera.y + canvas.height / 2);
                 ctx.closePath();
                 ctx.fill();
                 ctx.beginPath();
-                ctx.arc(0 - camera.x, 0 - camera.y, worldRadius, 0, -Math.PI);
-                ctx.lineTo(-worldRadius - camera.x, worldRadius - camera.y);
-                ctx.lineTo(worldRadius - camera.x, worldRadius - camera.y);
+                ctx.arc(0 - camera.x + canvas.width / 2, 0 - camera.y + canvas.height / 2, worldRadius, 0, -Math.PI);
+                ctx.lineTo(-worldRadius - camera.x + canvas.width / 2, worldRadius - camera.y + canvas.height / 2);
+                ctx.lineTo(worldRadius - camera.x + canvas.width / 2, worldRadius - camera.y + canvas.height / 2);
                 ctx.closePath();
                 ctx.fill();
                 ctx.strokeStyle = "#141414";
                 ctx.lineWidth = 3;
                 ctx.beginPath();
-                ctx.arc(0 - camera.x, 0 - camera.y, worldRadius, 0, 2 * Math.PI);
+                ctx.arc(0 - camera.x + canvas.width / 2, 0 - camera.y + canvas.height / 2, worldRadius, 0, 2 * Math.PI);
                 ctx.stroke();
                 ctx.closePath();
                 ctx.lineWidth = 3;
@@ -470,19 +476,19 @@
                     {
                         ctx.strokeStyle = "#ff0000";
                         ctx.shadowColor = ctx.strokeStyle;
-                        ctx.moveTo(energy.x + 25 * Math.cos(energy.r) - camera.x, energy.y + 25 * Math.sin(energy.r) - camera.y);
-                        ctx.lineTo(energy.x + 25 * Math.cos(energy.r + 2 * Math.PI / 3) - camera.x, energy.y + 25 * Math.sin(energy.r + 2 * Math.PI / 3) - camera.y);
-                        ctx.lineTo(energy.x + 25 * Math.cos(energy.r + 4 * Math.PI / 3) - camera.x, energy.y + 25 * Math.sin(energy.r + 4 * Math.PI / 3) - camera.y);
+                        ctx.moveTo(energy.x + 25 * Math.cos(energy.r) - camera.x + canvas.width / 2, energy.y + 25 * Math.sin(energy.r) - camera.y + canvas.height / 2);
+                        ctx.lineTo(energy.x + 25 * Math.cos(energy.r + 2 * Math.PI / 3) - camera.x + canvas.width / 2, energy.y + 25 * Math.sin(energy.r + 2 * Math.PI / 3) - camera.y + canvas.height / 2);
+                        ctx.lineTo(energy.x + 25 * Math.cos(energy.r + 4 * Math.PI / 3) - camera.x + canvas.width / 2, energy.y + 25 * Math.sin(energy.r + 4 * Math.PI / 3) - camera.y + canvas.height / 2);
                     }
                     
                     if(energy.type === 1)
                     {
                         ctx.strokeStyle = "#00e5ff";
                         ctx.shadowColor = ctx.strokeStyle;
-                        ctx.moveTo(energy.x + 25 * Math.cos(energy.r) - camera.x, energy.y + 25 * Math.sin(energy.r) - camera.y);
-                        ctx.lineTo(energy.x + 25 * Math.cos(energy.r + Math.PI / 2) - camera.x, energy.y + 25 * Math.sin(energy.r + Math.PI / 2) - camera.y);
-                        ctx.lineTo(energy.x + 25 * Math.cos(energy.r + Math.PI) - camera.x, energy.y + 25 * Math.sin(energy.r + Math.PI) - camera.y);
-                        ctx.lineTo(energy.x + 25 * Math.cos(energy.r + 3 * Math.PI / 2) - camera.x, energy.y + 25 * Math.sin(energy.r + 3 * Math.PI / 2) - camera.y);
+                        ctx.moveTo(energy.x + 25 * Math.cos(energy.r) - camera.x + canvas.width / 2, energy.y + 25 * Math.sin(energy.r) - camera.y + canvas.height / 2);
+                        ctx.lineTo(energy.x + 25 * Math.cos(energy.r + Math.PI / 2) - camera.x + canvas.width / 2, energy.y + 25 * Math.sin(energy.r + Math.PI / 2) - camera.y + canvas.height / 2);
+                        ctx.lineTo(energy.x + 25 * Math.cos(energy.r + Math.PI) - camera.x + canvas.width / 2, energy.y + 25 * Math.sin(energy.r + Math.PI) - camera.y + canvas.height / 2);
+                        ctx.lineTo(energy.x + 25 * Math.cos(energy.r + 3 * Math.PI / 2) - camera.x + canvas.width / 2, energy.y + 25 * Math.sin(energy.r + 3 * Math.PI / 2) - camera.y + canvas.height / 2);
                     }
                     
                     ctx.closePath();
@@ -496,55 +502,94 @@
                     {
                         ctx.strokeStyle = worm.color;
                         ctx.fillStyle = worm.color;
-                        ctx.shadowColor = ctx.strokeStyle;
+                        ctx.shadowColor = worm.color;
                         ctx.beginPath();
-                        ctx.arc(worm.nodes[0].x - camera.x, worm.nodes[0].y - camera.y, 25, -(worm.nodes[0].r + Math.PI / 2), -(worm.nodes[0].r - Math.PI / 2));
+                        ctx.arc(worm.nodes[0].x - camera.x + canvas.width / 2, worm.nodes[0].y - camera.y + canvas.height / 2, 25, -(worm.nodes[0].r + Math.PI / 2), -(worm.nodes[0].r - Math.PI / 2));
                         for(var n = 1; n < worm.nodes.length - 1; n++)
                         {
-                            ctx.lineTo(worm.nodes[n].x + 25 * Math.cos(worm.nodes[n].r - Math.PI / 2) - camera.x, worm.nodes[n].y - 25 * Math.sin(worm.nodes[n].r - Math.PI / 2) - camera.y);
+                            ctx.lineTo(worm.nodes[n].x + 25 * Math.cos(worm.nodes[n].r - Math.PI / 2) - camera.x + canvas.width / 2, worm.nodes[n].y - 25 * Math.sin(worm.nodes[n].r - Math.PI / 2) - camera.y + canvas.height / 2);
                         }
-                        ctx.arc(worm.nodes[worm.nodes.length - 1].x - camera.x, worm.nodes[worm.nodes.length - 1].y - camera.y, 25, -(worm.nodes[worm.nodes.length - 1].r - Math.PI / 2), -(worm.nodes[worm.nodes.length - 1].r + Math.PI / 2));
+                        ctx.arc(worm.nodes[worm.nodes.length - 1].x - camera.x + canvas.width / 2, worm.nodes[worm.nodes.length - 1].y - camera.y + canvas.height / 2, 25, -(worm.nodes[worm.nodes.length - 1].r - Math.PI / 2), -(worm.nodes[worm.nodes.length - 1].r + Math.PI / 2));
                         for(var n = worm.nodes.length - 2; n > 0; n--)
                         {
-                            ctx.lineTo(worm.nodes[n].x + 25 * Math.cos(worm.nodes[n].r + Math.PI / 2) - camera.x, worm.nodes[n].y - 25 * Math.sin(worm.nodes[n].r + Math.PI / 2) - camera.y);
+                            ctx.lineTo(worm.nodes[n].x + 25 * Math.cos(worm.nodes[n].r + Math.PI / 2) - camera.x + canvas.width / 2, worm.nodes[n].y - 25 * Math.sin(worm.nodes[n].r + Math.PI / 2) - camera.y + canvas.height / 2);
                         }
                         ctx.closePath();
                         ctx.stroke();
-
-                        /*for(var n = 1; n < worm.nodes.length - 1; n++)
-                        {
-                            ctx.beginPath();
-                            ctx.lineTo(worm.nodes[n].x + 25 * Math.cos(worm.nodes[n].r - Math.PI / 2) - camera.x, worm.nodes[n].y - 25 * Math.sin(worm.nodes[n].r - Math.PI / 2) - camera.y);
-                            ctx.lineTo(worm.nodes[n].x + 25 * Math.cos(worm.nodes[n].r + Math.PI / 2) - camera.x, worm.nodes[n].y - 25 * Math.sin(worm.nodes[n].r + Math.PI / 2) - camera.y);
-                            ctx.stroke();
-                            ctx.closePath();
-                        }*/
-
-                        for(var n = -1; n <= 1; n+=2)
-                        {
-                            ctx.beginPath();
-                            ctx.moveTo(worm.nodes[0].x + 25 * Math.cos(worm.nodes[0].r + n * Math.PI / 4) - camera.x, worm.nodes[0].y - 25 * Math.sin(worm.nodes[0].r + n * Math.PI / 4) - camera.y);
-                            ctx.lineTo(worm.nodes[0].x + 50 * Math.cos(worm.nodes[0].r + n * Math.PI / 4) - camera.x, worm.nodes[0].y - 50 * Math.sin(worm.nodes[0].r + n * Math.PI / 4) - camera.y);
-                            ctx.stroke();
-                            ctx.closePath();
-                            ctx.beginPath();
-                            ctx.arc(worm.nodes[0].x + 50 * Math.cos(worm.nodes[0].r + n * Math.PI / 4) - camera.x, worm.nodes[0].y - 50 * Math.sin(worm.nodes[0].r + n * Math.PI / 4) - camera.y, 5, 0, 2 * Math.PI);
-                            ctx.fill();
-                            ctx.closePath();
-                        }
                     }
                 }
+                
+                ctx.save();
+                var region = new Path2D();
+                region.rect(canvas.width - radar.width - 10, canvas.height - radar.height - 10, radar.width, radar.height);
+                ctx.clip(region, "nonzero");
+                ctx.fillStyle = "#050505";
+                ctx.shadowBlur = 0;
+                ctx.globalAlpha = 0.5;
+                ctx.fillRect(canvas.width - radar.width - 10, canvas.height - radar.height - 10, radar.width, radar.height);
+                
+                ctx.strokeStyle = "#171717";
+                ctx.beginPath();
+                ctx.arc(canvas.width - radar.width / 2 - 10 + 0.1 * (0 - camera.x), canvas.height - radar.height / 2 - 10 + 0.1 * (0 - camera.y), 0.1 * worldRadius, 0, 2 * Math.PI);
+                ctx.stroke();
+                ctx.closePath();
+                
+                for(var n = 0; n < energies.length; n++)
+                {
+                    if(energies[n].type === 0)
+                    {
+                        ctx.fillStyle = "#ff0000";
+                        ctx.shadowColor = "#ff0000";
+                    }
+                    
+                    if(energies[n].type === 1)
+                    {
+                        ctx.fillStyle = "#00e5ff";
+                        ctx.shadowColor = "#00e5ff";
+                    }
+                    
+                    ctx.beginPath();
+                    ctx.arc(canvas.width - radar.width / 2 - 10 + 0.1 * (energies[n].x - camera.x), canvas.height - radar.height / 2 - 10 + 0.1 * (energies[n].y - camera.y), 2, 0, 2 * Math.PI);
+                    ctx.fill();
+                    ctx.closePath();
+                }
+                
+                ctx.lineWidth = 4;
+                ctx.lineCap = "round";
+                
+                for(var n = 0; n < worms.length; n++)
+                {
+                    ctx.strokeStyle = worms[n].color;
+                    ctx.shadowColor = worms[n].color;
+                    ctx.beginPath();
+                    ctx.moveTo(canvas.width - radar.width / 2 - 10 + 0.1 * (worms[n].nodes[0].x - camera.x), canvas.height - radar.height / 2 - 10 + 0.1 * (worms[n].nodes[0].y - camera.y));
+                    
+                    for(var m = 1; m < worms[n].nodes.length; m++)
+                    {
+                        ctx.lineTo(canvas.width - radar.width / 2 - 10 + 0.1 * (worms[n].nodes[m].x - camera.x), canvas.height - radar.height / 2 - 10 + 0.1 * (worms[n].nodes[m].y - camera.y));
+                    }
+                    ctx.stroke();
+                    ctx.closePath();
+                }
+                
+                ctx.restore();
                 ctx.fillStyle = "#000000";
                 ctx.shadowBlur = 0;
                 ctx.globalAlpha = 0.25;
                 for(var n = 1; n < canvas.height / 4; n++)
                 {
-                    ctx.fillRect(0, n * 4 - 1, canvas.width, 2);
+                    ctx.fillRect(0, 4 * n - 1, canvas.width, 2);
                 }
                 
                 var currentTime = new Date();
                 fps = 1000 / (currentTime - previousTime);
                 previousTime = currentTime;
+                
+                ctx.globalAlpha = 1;
+                ctx.fillStyle = "#00ff00";
+                ctx.font = "30px Verdana";
+                ctx.fillText(Math.round(fps), 10, 30);
+                
                 window.requestAnimationFrame(render);
             }
             
