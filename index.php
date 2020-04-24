@@ -126,6 +126,7 @@
                             var tempRadius = worldRadius * Math.sqrt(Math.random());
                             this.nodes.push(
                             {
+                                active: true,
                                 x: tempRadius * Math.cos(tempRotation),
                                 y: tempRadius * Math.sin(tempRotation),
                                 r: 2 * Math.PI * Math.random()
@@ -137,8 +138,49 @@
                             var tempLastNode = this.nodes[tempLength - 1];
                             this.nodes.push(
                             {
+                                active: true,
                                 x: tempLastNode.x - 5 * Math.cos(tempLastNode.r),
                                 y: tempLastNode.y + 5 * Math.sin(tempLastNode.r),
+                                r: tempLastNode.r
+                            });
+                        }
+                        
+                        tempLength++;
+                    }
+                }
+                
+                addSmoothNode(count)
+                {
+                    if(count === undefined)
+                    {
+                        count = 1;
+                    }
+                    
+                    var tempLength = this.nodes.length;
+                    
+                    for(var n = 0; n < count; n++)
+                    {
+                        if(tempLength === 0)
+                        {
+                            var tempRotation = 2 * Math.PI * Math.random();
+                            var tempRadius = worldRadius * Math.sqrt(Math.random());
+                            this.nodes.push(
+                            {
+                                active: true,
+                                x: tempRadius * Math.cos(tempRotation),
+                                y: tempRadius * Math.sin(tempRotation),
+                                r: 2 * Math.PI * Math.random()
+                            });
+                        }
+                        
+                        else
+                        {
+                            var tempLastNode = this.nodes[tempLength - 1];
+                            this.nodes.push(
+                            {
+                                active: false,
+                                x: tempLastNode.x,
+                                y: tempLastNode.y,
                                 r: tempLastNode.r
                             });
                         }
@@ -161,7 +203,7 @@
                 {
                     if(this.turn === -1)
                     {
-                        this.nodes[0].r += Math.PI / 60;
+                        this.nodes[0].r += Math.PI / 60 * 60 / clampMin(fps, 20);
 
                         if(this.nodes[0].r >= 2 * Math.PI)
                         {
@@ -171,7 +213,7 @@
 
                     if(this.turn === 1)
                     {
-                        this.nodes[0].r -= Math.PI / 60;
+                        this.nodes[0].r -= Math.PI / 60 * 60 / clampMin(fps, 20);
 
                         if(this.nodes[0].r < 0)
                         {
@@ -182,16 +224,31 @@
                     if(this.nodes.length > 0)
                     {
                         var tempFirstNode = this.nodes[0];
-                        tempFirstNode.x += 3 * Math.cos(tempFirstNode.r);
-                        tempFirstNode.y -= 3 * Math.sin(tempFirstNode.r);
+                        tempFirstNode.x += 3 * Math.cos(tempFirstNode.r) * 60 / clampMin(fps, 20);
+                        tempFirstNode.y -= 3 * Math.sin(tempFirstNode.r) * 60 / clampMin(fps, 20);
                         
                         for(var n = 1; n < this.nodes.length; n++)
                         {
                             var tempCurrentNode = this.nodes[n];
                             var tempNextNode = this.nodes[n - 1];
-                            tempCurrentNode.r = Math.PI - Math.atan2(tempCurrentNode.y - tempNextNode.y, tempCurrentNode.x - tempNextNode.x);
-                            tempCurrentNode.x = tempNextNode.x - 5 * Math.cos(tempCurrentNode.r);
-                            tempCurrentNode.y = tempNextNode.y + 5 * Math.sin(tempCurrentNode.r);
+                            
+                            if(tempCurrentNode.active === false)
+                            {
+                                var tempDistance = d(tempCurrentNode, tempNextNode);
+                                
+                                if(tempDistance > 5)
+                                {
+                                    tempCurrentNode.active = true;
+                                }
+                            }
+                            
+                            if(tempCurrentNode.active === true)
+                            {
+                                tempCurrentNode.r = Math.PI - Math.atan2(tempCurrentNode.y - tempNextNode.y, tempCurrentNode.x - tempNextNode.x);
+                                
+                                tempCurrentNode.x = tempNextNode.x - 5 * Math.cos(tempCurrentNode.r);
+                                tempCurrentNode.y = tempNextNode.y + 5 * Math.sin(tempCurrentNode.r);
+                            }
                         }
                         
                         this.updateCameraPosition();
@@ -213,7 +270,7 @@
                 constructor(camera)
                 {
                     super(camera);
-                    this.type = Math.round(Math.random());
+                    this.type = Math.round(2 * Math.random());
                     var tempRotation = 2 * Math.PI * Math.random();
                     var tempRadius = worldRadius * Math.sqrt(Math.random());
                     this.x = tempRadius * Math.cos(tempRotation);
@@ -306,9 +363,24 @@
                     event = window.event;
                 }
                 
-                if(keys.includes(event.keyCode) === false)
+                if(keys.includes(event.key) === false)
                 {
-                    keys.push(event.keyCode);
+                    keys.push(event.key);
+                    
+                    if(keys.includes("m") && !minimap.fired)
+                    {
+                        minimap.fired = true;
+                        
+                        if(minimap.expanded === false)
+                        {
+                            minimap.expanded = true;
+                        }
+                        
+                        else
+                        {
+                            minimap.expanded = false;
+                        }
+                    }
                 }
             }
             
@@ -319,7 +391,12 @@
                     event = window.event;
                 }
                 
-                keys.splice(keys.indexOf(event.keyCode), 1);
+                keys.splice(keys.indexOf(event.key), 1);
+                
+                if(event.key === "m")
+                {
+                    minimap.fired = false;
+                }
             }
             
             document.addEventListener("contextmenu", event => event.preventDefault());
@@ -347,17 +424,21 @@
                 energies.push(new Energy(camera));
             }
             
-            var radar =
+            var minimap =
             {
                 width: 250,
-                height: 200
+                height: 200,
+                zoom: 0.1,
+                fired: false,
+                expanded: false
             };
             
             var activeWorm = 0;
             var canvas = document.getElementById("canvas");
             var ctx = canvas.getContext("2d", {alpha: false});
-            var fps = null;
-            var previousTime = new Date();
+            var fps = 60;
+            var previousTime;
+            var currentTime = new Date();
             worms[0].setCameraOn();
 
             function render()
@@ -372,14 +453,14 @@
                         {
                             worm.turn = 0;
 
-                            if(keys.includes(65) || keys.includes(37))
+                            if(keys.includes("ArrowLeft") || keys.includes("a"))
                             {
-                                worm.turn -= 1;
+                                worm.turn = -1;
                             }
                             
-                            if(keys.includes(68) || keys.includes(39))
+                            if(keys.includes("ArrowRight") || keys.includes("d"))
                             {
-                                worm.turn += 1;
+                                worm.turn = 1;
                             }
                         }
                     }
@@ -405,7 +486,6 @@
                 {
                     var energy = energies[n];
                     energy.move();
-                    
                     var tempClosestWorm;
                     var tempMinimumDistance = false;
                     
@@ -420,10 +500,10 @@
                         }
                     }
                     
-                    if(tempMinimumDistance < 50)
+                    if(tempMinimumDistance < 50 && tempMinimumDistance !== false)
                     {
                         energies.splice(n, 1);
-                        worms[tempClosestWorm].addNode(5);
+                        worms[tempClosestWorm].addSmoothNode(5);
                         n--;
                     }
                 }
@@ -435,64 +515,81 @@
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 ctx.strokeStyle = "#141414";
                 ctx.lineWidth = 1;
+                
+                ctx.translate(canvas.width / 2 - camera.x, canvas.height / 2 - camera.y);
+                
                 for(var n = 1; n < 2 * worldRadius / gridSize; n++)
                 {
                     ctx.beginPath();
-                    ctx.moveTo(n * gridSize - worldRadius - camera.x + canvas.width / 2, 0 - worldRadius - camera.y + canvas.height / 2);
-                    ctx.lineTo(n * gridSize - worldRadius - camera.x + canvas.width / 2, 2 * worldRadius - worldRadius - camera.y + canvas.height / 2);
+                    ctx.moveTo(n * gridSize - worldRadius, 0 - worldRadius);
+                    ctx.lineTo(n * gridSize - worldRadius, 2 * worldRadius - worldRadius);
                     ctx.stroke();
-                    ctx.closePath();
                     ctx.beginPath();
-                    ctx.moveTo(0 - worldRadius - camera.x + canvas.width / 2, n * gridSize - worldRadius - camera.y + canvas.height / 2);
-                    ctx.lineTo(2 * worldRadius - worldRadius - camera.x + canvas.width / 2, n * gridSize - worldRadius - camera.y + canvas.height / 2);
+                    ctx.moveTo(0 - worldRadius, n * gridSize - worldRadius);
+                    ctx.lineTo(2 * worldRadius - worldRadius, n * gridSize - worldRadius);
                     ctx.stroke();
-                    ctx.closePath();
                 }
                 ctx.beginPath();
-                ctx.arc(0 - camera.x + canvas.width / 2, 0 - camera.y + canvas.height / 2, worldRadius, Math.PI, 0);
-                ctx.lineTo(worldRadius - camera.x + canvas.width / 2, -worldRadius - camera.y + canvas.height / 2);
-                ctx.lineTo(-worldRadius - camera.x + canvas.width / 2, -worldRadius - camera.y + canvas.height / 2);
+                ctx.arc(0, 0, worldRadius, Math.PI, 0);
+                ctx.lineTo(worldRadius, -worldRadius);
+                ctx.lineTo(-worldRadius, -worldRadius);
                 ctx.closePath();
                 ctx.fill();
                 ctx.beginPath();
-                ctx.arc(0 - camera.x + canvas.width / 2, 0 - camera.y + canvas.height / 2, worldRadius, 0, -Math.PI);
-                ctx.lineTo(-worldRadius - camera.x + canvas.width / 2, worldRadius - camera.y + canvas.height / 2);
-                ctx.lineTo(worldRadius - camera.x + canvas.width / 2, worldRadius - camera.y + canvas.height / 2);
+                ctx.arc(0, 0, worldRadius, 0, -Math.PI);
+                ctx.lineTo(-worldRadius, worldRadius);
+                ctx.lineTo(worldRadius, worldRadius);
                 ctx.closePath();
                 ctx.fill();
                 ctx.strokeStyle = "#141414";
                 ctx.lineWidth = 3;
                 ctx.beginPath();
-                ctx.arc(0 - camera.x + canvas.width / 2, 0 - camera.y + canvas.height / 2, worldRadius, 0, 2 * Math.PI);
+                ctx.arc(0, 0, worldRadius, 0, 2 * Math.PI);
                 ctx.stroke();
-                ctx.closePath();
                 ctx.lineWidth = 3;
                 ctx.shadowBlur = 20;
                 for(var n = 0; n < energies.length; n++)
                 {
                     var energy = energies[n];
-                    ctx.beginPath();
+                    ctx.translate(energy.x, energy.y);
+                    
                     if(energy.type === 0)
                     {
                         ctx.strokeStyle = "#ff0000";
+                        ctx.beginPath();
                         ctx.shadowColor = ctx.strokeStyle;
-                        ctx.moveTo(energy.x + 25 * Math.cos(energy.r) - camera.x + canvas.width / 2, energy.y + 25 * Math.sin(energy.r) - camera.y + canvas.height / 2);
-                        ctx.lineTo(energy.x + 25 * Math.cos(energy.r + 2 * Math.PI / 3) - camera.x + canvas.width / 2, energy.y + 25 * Math.sin(energy.r + 2 * Math.PI / 3) - camera.y + canvas.height / 2);
-                        ctx.lineTo(energy.x + 25 * Math.cos(energy.r + 4 * Math.PI / 3) - camera.x + canvas.width / 2, energy.y + 25 * Math.sin(energy.r + 4 * Math.PI / 3) - camera.y + canvas.height / 2);
+                        ctx.moveTo(25 * Math.cos(energy.r), 0 - 25 * Math.sin(energy.r));
+                        ctx.lineTo(25 * Math.cos(energy.r + 2 * Math.PI / 3), 0 - 25 * Math.sin(energy.r + 2 * Math.PI / 3));
+                        ctx.lineTo(25 * Math.cos(energy.r + 4 * Math.PI / 3), 0 - 25 * Math.sin(energy.r + 4 * Math.PI / 3));
+                        ctx.closePath();
+                        ctx.stroke();
                     }
                     
                     if(energy.type === 1)
                     {
                         ctx.strokeStyle = "#00e5ff";
+                        ctx.beginPath();
                         ctx.shadowColor = ctx.strokeStyle;
-                        ctx.moveTo(energy.x + 25 * Math.cos(energy.r) - camera.x + canvas.width / 2, energy.y + 25 * Math.sin(energy.r) - camera.y + canvas.height / 2);
-                        ctx.lineTo(energy.x + 25 * Math.cos(energy.r + Math.PI / 2) - camera.x + canvas.width / 2, energy.y + 25 * Math.sin(energy.r + Math.PI / 2) - camera.y + canvas.height / 2);
-                        ctx.lineTo(energy.x + 25 * Math.cos(energy.r + Math.PI) - camera.x + canvas.width / 2, energy.y + 25 * Math.sin(energy.r + Math.PI) - camera.y + canvas.height / 2);
-                        ctx.lineTo(energy.x + 25 * Math.cos(energy.r + 3 * Math.PI / 2) - camera.x + canvas.width / 2, energy.y + 25 * Math.sin(energy.r + 3 * Math.PI / 2) - camera.y + canvas.height / 2);
+                        ctx.moveTo(25 * Math.cos(energy.r), 0 - 25 * Math.sin(energy.r));
+                        ctx.lineTo(25 * Math.cos(energy.r + Math.PI / 2), 0 - 25 * Math.sin(energy.r + Math.PI / 2));
+                        ctx.lineTo(25 * Math.cos(energy.r + Math.PI), 0 - 25 * Math.sin(energy.r + Math.PI));
+                        ctx.lineTo(25 * Math.cos(energy.r + 3 * Math.PI / 2), 0 - 25 * Math.sin(energy.r + 3 * Math.PI / 2));
+                        ctx.closePath();
+                        ctx.stroke();
                     }
                     
-                    ctx.closePath();
-                    ctx.stroke();
+                    if(energy.type === 2)
+                    {
+                        ctx.strokeStyle = "#ff9100";
+                        ctx.shadowColor = ctx.strokeStyle;
+                        
+                        ctx.beginPath();
+                        ctx.arc(0, 0, 25, energy.r - Math.PI / 2, energy.r + Math.PI / 2);
+                        ctx.closePath();
+                        ctx.stroke();
+                    }
+                    
+                    ctx.translate(-energy.x, -energy.y);
                 }
                 
                 for(var m = 0; m < worms.length; m++)
@@ -504,75 +601,136 @@
                         ctx.fillStyle = worm.color;
                         ctx.shadowColor = worm.color;
                         ctx.beginPath();
-                        ctx.arc(worm.nodes[0].x - camera.x + canvas.width / 2, worm.nodes[0].y - camera.y + canvas.height / 2, 25, -(worm.nodes[0].r + Math.PI / 2), -(worm.nodes[0].r - Math.PI / 2));
+                        ctx.arc(worm.nodes[0].x, worm.nodes[0].y, 25, -(worm.nodes[0].r + Math.PI / 2), -(worm.nodes[0].r - Math.PI / 2));
                         for(var n = 1; n < worm.nodes.length - 1; n++)
                         {
-                            ctx.lineTo(worm.nodes[n].x + 25 * Math.cos(worm.nodes[n].r - Math.PI / 2) - camera.x + canvas.width / 2, worm.nodes[n].y - 25 * Math.sin(worm.nodes[n].r - Math.PI / 2) - camera.y + canvas.height / 2);
+                            ctx.lineTo(worm.nodes[n].x + 25 * Math.cos(worm.nodes[n].r - Math.PI / 2), worm.nodes[n].y - 25 * Math.sin(worm.nodes[n].r - Math.PI / 2));
                         }
-                        ctx.arc(worm.nodes[worm.nodes.length - 1].x - camera.x + canvas.width / 2, worm.nodes[worm.nodes.length - 1].y - camera.y + canvas.height / 2, 25, -(worm.nodes[worm.nodes.length - 1].r - Math.PI / 2), -(worm.nodes[worm.nodes.length - 1].r + Math.PI / 2));
+                        ctx.arc(worm.nodes[worm.nodes.length - 1].x, worm.nodes[worm.nodes.length - 1].y, 25, -(worm.nodes[worm.nodes.length - 1].r - Math.PI / 2), -(worm.nodes[worm.nodes.length - 1].r + Math.PI / 2));
                         for(var n = worm.nodes.length - 2; n > 0; n--)
                         {
-                            ctx.lineTo(worm.nodes[n].x + 25 * Math.cos(worm.nodes[n].r + Math.PI / 2) - camera.x + canvas.width / 2, worm.nodes[n].y - 25 * Math.sin(worm.nodes[n].r + Math.PI / 2) - camera.y + canvas.height / 2);
+                            ctx.lineTo(worm.nodes[n].x + 25 * Math.cos(worm.nodes[n].r + Math.PI / 2), worm.nodes[n].y - 25 * Math.sin(worm.nodes[n].r + Math.PI / 2));
                         }
                         ctx.closePath();
                         ctx.stroke();
                     }
                 }
                 
-                ctx.save();
-                var region = new Path2D();
-                region.rect(canvas.width - radar.width - 10, canvas.height - radar.height - 10, radar.width, radar.height);
-                ctx.clip(region, "nonzero");
-                ctx.fillStyle = "#050505";
+                ctx.translate(camera.x - canvas.width / 2, camera.y - canvas.height / 2);
+                
                 ctx.shadowBlur = 0;
                 ctx.globalAlpha = 0.5;
-                ctx.fillRect(canvas.width - radar.width - 10, canvas.height - radar.height - 10, radar.width, radar.height);
                 
-                ctx.strokeStyle = "#171717";
-                ctx.beginPath();
-                ctx.arc(canvas.width - radar.width / 2 - 10 + 0.1 * (0 - camera.x), canvas.height - radar.height / 2 - 10 + 0.1 * (0 - camera.y), 0.1 * worldRadius, 0, 2 * Math.PI);
-                ctx.stroke();
-                ctx.closePath();
-                
-                for(var n = 0; n < energies.length; n++)
+                if(minimap.expanded === false)
                 {
-                    if(energies[n].type === 0)
-                    {
-                        ctx.fillStyle = "#ff0000";
-                        ctx.shadowColor = "#ff0000";
-                    }
-                    
-                    if(energies[n].type === 1)
-                    {
-                        ctx.fillStyle = "#00e5ff";
-                        ctx.shadowColor = "#00e5ff";
-                    }
-                    
+                    var region = new Path2D();
+                    region.rect(canvas.width - minimap.width - 10, canvas.height - minimap.height - 10, minimap.width, minimap.height);
+                    ctx.save();
+                    ctx.clip(region, "nonzero");
+                    ctx.fillStyle = "#050505";
+                    ctx.shadowColor = "#050505";
+                    ctx.fillRect(canvas.width - minimap.width - 10, canvas.height - minimap.height - 10, minimap.width, minimap.height);
+                    ctx.strokeStyle = "#171717";
+                    ctx.shadowBlur = 0;
+                    ctx.shadowColor = "#171717";
                     ctx.beginPath();
-                    ctx.arc(canvas.width - radar.width / 2 - 10 + 0.1 * (energies[n].x - camera.x), canvas.height - radar.height / 2 - 10 + 0.1 * (energies[n].y - camera.y), 2, 0, 2 * Math.PI);
-                    ctx.fill();
-                    ctx.closePath();
-                }
-                
-                ctx.lineWidth = 4;
-                ctx.lineCap = "round";
-                
-                for(var n = 0; n < worms.length; n++)
-                {
-                    ctx.strokeStyle = worms[n].color;
-                    ctx.shadowColor = worms[n].color;
-                    ctx.beginPath();
-                    ctx.moveTo(canvas.width - radar.width / 2 - 10 + 0.1 * (worms[n].nodes[0].x - camera.x), canvas.height - radar.height / 2 - 10 + 0.1 * (worms[n].nodes[0].y - camera.y));
-                    
-                    for(var m = 1; m < worms[n].nodes.length; m++)
-                    {
-                        ctx.lineTo(canvas.width - radar.width / 2 - 10 + 0.1 * (worms[n].nodes[m].x - camera.x), canvas.height - radar.height / 2 - 10 + 0.1 * (worms[n].nodes[m].y - camera.y));
-                    }
+                    ctx.arc(canvas.width - 10 - minimap.width / 2 + minimap.zoom * (0 - camera.x), canvas.height - 10 - minimap.height / 2 + minimap.zoom * (0 - camera.y), minimap.zoom * worldRadius, 0, 2 * Math.PI);
                     ctx.stroke();
-                    ctx.closePath();
+                    
+                    for(var n = 0; n < energies.length; n++)
+                    {
+                        if(energies[n].type === 0)
+                        {
+                            ctx.fillStyle = "#ff0000";
+                            ctx.shadowColor = "#ff0000";
+                        }
+                        
+                        if(energies[n].type === 1)
+                        {
+                            ctx.fillStyle = "#00e5ff";
+                            ctx.shadowColor = "#00e5ff";
+                        }
+                        
+                        ctx.beginPath();
+                        ctx.arc(canvas.width - 10 - minimap.width / 2 + minimap.zoom * (energies[n].x - camera.x), canvas.height - 10 - minimap.height / 2 + minimap.zoom * (energies[n].y - camera.y), 2, 0, 2 * Math.PI);
+                        ctx.fill();
+                    }
+                    
+                    ctx.lineWidth = 4;
+                    ctx.lineCap = "round";
+                    
+                    for(var n = 0; n < worms.length; n++)
+                    {
+                        ctx.strokeStyle = worms[n].color;
+                        ctx.shadowColor = worms[n].color;
+                        ctx.beginPath();
+                        ctx.moveTo(canvas.width - 10 - minimap.width / 2 + minimap.zoom * (worms[n].nodes[0].x - camera.x), canvas.height - 10 - minimap.height / 2 + minimap.zoom * (worms[n].nodes[0].y - camera.y));
+                        
+                        for(var m = 1; m < worms[n].nodes.length; m++)
+                        {
+                            ctx.lineTo(canvas.width - 10 - minimap.width / 2 + minimap.zoom * (worms[n].nodes[m].x - camera.x), canvas.height - 10 - minimap.height / 2 + minimap.zoom * (worms[n].nodes[m].y - camera.y));
+                        }
+                        ctx.stroke();
+                    }
+                    
+                    ctx.restore();
                 }
                 
-                ctx.restore();
+                if(minimap.expanded === true)
+                {
+                    var offset =
+                    {
+                        x: canvas.width / 2,
+                        y: canvas.height / 2
+                    };
+                    ctx.fillStyle = "#000000";
+                    ctx.shadowColor = "#000000";
+                    ctx.globalAlpha = 0.8;
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.strokeStyle = "#171717";
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = "#171717";
+                    ctx.beginPath();
+                    ctx.arc(canvas.width / 2 + minimap.zoom * (0 - camera.x), canvas.height / 2 + minimap.zoom * (0 - camera.y), minimap.zoom * worldRadius, 0, 2 * Math.PI);
+                    ctx.stroke();
+                    
+                    for(var n = 0; n < energies.length; n++)
+                    {
+                        if(energies[n].type === 0)
+                        {
+                            ctx.fillStyle = "#ff0000";
+                            ctx.shadowColor = "#ff0000";
+                        }
+                        
+                        if(energies[n].type === 1)
+                        {
+                            ctx.fillStyle = "#00e5ff";
+                            ctx.shadowColor = "#00e5ff";
+                        }
+                        
+                        ctx.beginPath();
+                        ctx.arc(canvas.width / 2 + minimap.zoom * (energies[n].x - camera.x), canvas.height / 2 + minimap.zoom * (energies[n].y - camera.y), 2, 0, 2 * Math.PI);
+                        ctx.fill();
+                    }
+                    
+                    ctx.lineWidth = 4;
+                    ctx.lineCap = "round";
+                    
+                    for(var n = 0; n < worms.length; n++)
+                    {
+                        ctx.strokeStyle = worms[n].color;
+                        ctx.shadowColor = worms[n].color;
+                        ctx.beginPath();
+                        ctx.moveTo(canvas.width / 2 + minimap.zoom * (worms[n].nodes[0].x - camera.x), canvas.height / 2 + minimap.zoom * (worms[n].nodes[0].y - camera.y));
+                        
+                        for(var m = 1; m < worms[n].nodes.length; m++)
+                        {
+                            ctx.lineTo(canvas.width / 2 + minimap.zoom * (worms[n].nodes[m].x - camera.x), canvas.height / 2 + minimap.zoom * (worms[n].nodes[m].y - camera.y));
+                        }
+                        ctx.stroke();
+                    }
+                }
+                
                 ctx.fillStyle = "#000000";
                 ctx.shadowBlur = 0;
                 ctx.globalAlpha = 0.25;
@@ -581,9 +739,10 @@
                     ctx.fillRect(0, 4 * n - 1, canvas.width, 2);
                 }
                 
-                var currentTime = new Date();
-                fps = 1000 / (currentTime - previousTime);
                 previousTime = currentTime;
+                currentTime = new Date();
+                fps = 1000 / (currentTime - previousTime);
+                console.log(fps);
                 
                 ctx.globalAlpha = 1;
                 ctx.fillStyle = "#00ff00";
@@ -600,6 +759,21 @@
             function d(p1, p2)
             {
                 return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+            }
+            
+            function clampMin(num, min)
+            {
+                return num < min ? min : num;
+            }
+            
+            function clampMax(num, max)
+            {
+                return num > max ? max : num;
+            }
+            
+            function clamp(num, min, max)
+            {
+                return num < min ? min : num > max ? max : num;
             }
             
         </script>
