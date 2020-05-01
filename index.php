@@ -5,7 +5,7 @@
         <link rel="shortcut icon" type="image/png" href="/favicon.ico"/>
     </head>
     
-    <body onresize="resize();">
+    <body>
         <canvas id="canvas" width="1920" height="1080"></canvas>
         
         <style>
@@ -52,7 +52,7 @@
 
             class Point extends Filmable
             {
-                constructor(x, y, camera)
+                constructor(x, y, camera = null)
                 {
                     super(camera);
                     this.x = x;
@@ -84,29 +84,6 @@
                 {
                     this.center = center;
                     this.radius = radius;
-                }
-            }
-
-            class World extends Filmable
-            {
-                constructor(camera, x = 0, y = 0)
-                {
-                    super(camera);
-                    this.x = x;
-                    this.y = y;
-                    this.worldRadius = 10000;
-                    this.gridSize = 100;
-                    this.wormBotCount = 100;
-                    this.energyCount = 10;
-                }
-
-                updateCameraPosition()
-                {
-                    if (this.camera.FilmedObject == this)
-                    {
-                        this.camera.x = this.x;
-                        this.camera.y = this.y;
-                    }
                 }
             }
             
@@ -265,7 +242,6 @@
                         if(tempCurrentNode.active === true)
                         {
                             tempCurrentNode.r = Math.PI - Math.atan2(tempCurrentNode.y - tempNextNode.y, tempCurrentNode.x - tempNextNode.x);
-                            
                             tempCurrentNode.x = tempNextNode.x - 5 * Math.cos(tempCurrentNode.r);
                             tempCurrentNode.y = tempNextNode.y + 5 * Math.sin(tempCurrentNode.r);
                         }
@@ -437,19 +413,19 @@
                 }
             }
             
-            window.addEventListener("contextmenu", event => event.preventDefault());
+            window.onresize = resize;
             window.onmousedown = mousedown;
             window.onkeydown = keydown;
             window.onkeyup = keyup;
             window.onload = render;
+            window.addEventListener("contextmenu", event => event.preventDefault());
             
             var keys = [];
             var camera = new Camera();
-            var world = new World(camera);
-            var worldRadius = world.worldRadius;
-            var gridSize = world.gridSize;
-            var wormBotCount = world.wormBotCount;
-            var energyCount = world.energyCount;
+            var worldRadius = 10000;
+            var gridSize = 100;
+            var wormBotCount = 100;
+            var energyCount = 1000;
             var worms = [new Worm("Human", Math.round(Math.random() * 50 + 20), camera)];
             var deadWorms = [];
             var energies = [];
@@ -503,8 +479,6 @@
                     
                     else
                     {
-                        //AI code
-                        
                         if(d(worms[0].nodes[0], worm.nodes[0]) < 500)
                         {
                             var dx = worms[0].nodes[0].x - worm.nodes[0].x;
@@ -726,22 +700,26 @@
                         
                         ctx.beginPath();
                         ctx.arc(worm.nodes[0].x, worm.nodes[0].y, 25, -(worm.nodes[0].r + Math.PI / 2), -(worm.nodes[0].r - Math.PI / 2));
-                        for(var m = 1; m < worm.nodes.length - 1; m++)
+                        for(var m = 1; m < worm.nodes.length - 1; m += 4)
                         {
                             ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
                             ctx.rotate(-worm.nodes[m].r);
                             ctx.lineTo(0, 25);
-                            ctx.lineTo(-2, 30);
+                            ctx.lineTo(-2.5, 20);
+                            ctx.lineTo(-5, 20);
+                            ctx.lineTo(-7.5, 25);
                             ctx.rotate(worm.nodes[m].r);
                             ctx.translate(-worm.nodes[m].x, -worm.nodes[m].y);
                         }
                         ctx.arc(worm.nodes[worm.nodes.length - 1].x, worm.nodes[worm.nodes.length - 1].y, 25, -(worm.nodes[worm.nodes.length - 1].r - Math.PI / 2), -(worm.nodes[worm.nodes.length - 1].r + Math.PI / 2));
-                        for(var m = worm.nodes.length - 2; m > 0; m--)
+                        for(var m = worm.nodes.length - 2; m > 0; m -= 4)
                         {
                             ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
                             ctx.rotate(-worm.nodes[m].r);
                             ctx.lineTo(0, -25);
-                            ctx.lineTo(2, -30);
+                            ctx.lineTo(2.5, -20);
+                            ctx.lineTo(5, -20);
+                            ctx.lineTo(7.5, -25);
                             ctx.rotate(worm.nodes[m].r);
                             ctx.translate(-worm.nodes[m].x, -worm.nodes[m].y);
                         }
@@ -773,7 +751,6 @@
                 }
                 
                 ctx.translate(camera.x - canvas.width / 2, camera.y - canvas.height / 2);
-                
                 ctx.shadowBlur = 0;
                 ctx.globalAlpha = 0.5;
                 
@@ -870,9 +847,10 @@
                 currentTime = new Date();
                 fps = 1000 / (currentTime - previousTime);
                 
-                ctx.globalAlpha = 1;
-                ctx.fillStyle = "#00ff00";
                 ctx.font = "30px Verdana";
+                ctx.fillStyle = "#00ff00";
+                ctx.shadowBlur = 0;
+                ctx.globalAlpha = 1;
                 ctx.fillText(Math.round(fps), 10, 30);
                 
                 window.requestAnimationFrame(render);
