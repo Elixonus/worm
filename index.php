@@ -37,13 +37,13 @@
                     this.camera = camera;
                 }
 
-                setCameraOn()
+                follow()
                 {
                     this.camera.FilmedObject = this;
                     this.updateCameraPosition();
                 }
                 
-                removeCameraFrom()
+                unfollow()
                 {
                     this.camera.FilmedObject = null;
                     this.updateCameraPosition();
@@ -97,7 +97,7 @@
                     this.worldRadius = 10000;
                     this.gridSize = 100;
                     this.wormBotCount = 100;
-                    this.energyCount = 1000;
+                    this.energyCount = 10;
                 }
 
                 updateCameraPosition()
@@ -370,7 +370,7 @@
                 
                 if(event.button === 1)
                 {
-                    worms[activeWorm].removeCameraFrom();
+                    worms[activeWorm].unfollow();
                 }
 
                 if(event.button === 2)
@@ -390,7 +390,7 @@
                 
                 if(event.button !== 1)
                 {
-                    worms[activeWorm].setCameraOn();
+                    worms[activeWorm].follow();
                 }
             }
 
@@ -479,18 +479,17 @@
             var fps = 60;
             var previousTime;
             var currentTime = new Date();
-            worms[0].setCameraOn();
+            worms[0].follow();
 
             function render()
             {
                 for(var n = 0; n < worms.length; n++)
                 {
                     var worm = worms[n];
+                    worm.turn = 0;
                     
                     if(worm.controllable)
                     {
-                        worm.turn = 0;
-
                         if(keys.includes(37) || keys.includes(65))
                         {
                             worm.turn -= 1;
@@ -505,8 +504,23 @@
                     else
                     {
                         //AI code
-
-
+                        
+                        if(d(worms[0].nodes[0], worm.nodes[0]) < 500)
+                        {
+                            var dx = worms[0].nodes[0].x - worm.nodes[0].x;
+                            var dy = worms[0].nodes[0].y - worm.nodes[0].y;
+                            var dotProduct = dx * Math.sin(worm.nodes[0].r) + dy * Math.cos(worm.nodes[0].r);
+                            
+                            if(dotProduct < 0)
+                            {
+                                worm.turn = 1;
+                            }
+                            
+                            if(dotProduct > 0)
+                            {
+                                worm.turn = -1;
+                            }
+                        }
                     }
                     
                     var oldX = worm.nodes[0].x;
@@ -518,7 +532,7 @@
                     {
                         var newX = worm.nodes[0].x;
                         var newY = worm.nodes[0].y;
-                        var intersection = interceptCircleLineSegment(new Circle(new Point(0, 0), worldRadius), new Line(new Point(oldX, oldY), new Point(newX, newY)));
+                        var intersection = intersectCircleLineSegment(new Circle(new Point(0, 0), worldRadius), new Line(new Point(oldX, oldY), new Point(newX, newY)));
                         worm.moveTo(intersection[0]);
                         killWorm(n);
                         n--;
@@ -714,12 +728,22 @@
                         ctx.arc(worm.nodes[0].x, worm.nodes[0].y, 25, -(worm.nodes[0].r + Math.PI / 2), -(worm.nodes[0].r - Math.PI / 2));
                         for(var m = 1; m < worm.nodes.length - 1; m++)
                         {
-                            ctx.lineTo(worm.nodes[m].x + 25 * Math.cos(worm.nodes[m].r - Math.PI / 2), worm.nodes[m].y - 25 * Math.sin(worm.nodes[m].r - Math.PI / 2));
+                            ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
+                            ctx.rotate(-worm.nodes[m].r);
+                            ctx.lineTo(0, 25);
+                            ctx.lineTo(-2, 30);
+                            ctx.rotate(worm.nodes[m].r);
+                            ctx.translate(-worm.nodes[m].x, -worm.nodes[m].y);
                         }
                         ctx.arc(worm.nodes[worm.nodes.length - 1].x, worm.nodes[worm.nodes.length - 1].y, 25, -(worm.nodes[worm.nodes.length - 1].r - Math.PI / 2), -(worm.nodes[worm.nodes.length - 1].r + Math.PI / 2));
                         for(var m = worm.nodes.length - 2; m > 0; m--)
                         {
-                            ctx.lineTo(worm.nodes[m].x + 25 * Math.cos(worm.nodes[m].r + Math.PI / 2), worm.nodes[m].y - 25 * Math.sin(worm.nodes[m].r + Math.PI / 2));
+                            ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
+                            ctx.rotate(-worm.nodes[m].r);
+                            ctx.lineTo(0, -25);
+                            ctx.lineTo(2, -30);
+                            ctx.rotate(worm.nodes[m].r);
+                            ctx.translate(-worm.nodes[m].x, -worm.nodes[m].y);
                         }
                         ctx.closePath();
                         ctx.stroke();
@@ -743,6 +767,9 @@
                         ctx.rotate(worm.nodes[0].r);
                         ctx.translate(-worm.nodes[0].x, -worm.nodes[0].y);
                     }
+                    
+                    ctx.strokeStyle = "#ffffff";
+                    ctx.shadowColor = ctx.strokeStyle;
                 }
                 
                 ctx.translate(camera.x - canvas.width / 2, camera.y - canvas.height / 2);
@@ -756,8 +783,7 @@
                     region.rect(canvas.width - minimap.width - 10, canvas.height - minimap.height - 10, minimap.width, minimap.height);
                     ctx.save();
                     ctx.clip(region, "nonzero");
-                    ctx.fillStyle = "#050505";
-                    ctx.shadowColor = "#050505";
+                    ctx.fillStyle = "#020202";
                     ctx.fillRect(canvas.width - minimap.width - 10, canvas.height - minimap.height - 10, minimap.width, minimap.height);
                     
                     ctx.translate(canvas.width - 10 - minimap.width / 2, canvas.height - 10 - minimap.height / 2);
@@ -774,8 +800,9 @@
                 }
                 
                 ctx.strokeStyle = "#171717";
+                ctx.lineWidth = 20 * minimap.zoom;
                 ctx.beginPath();
-                ctx.arc(minimap.zoom * (0 - camera.x), minimap.zoom * (0 - camera.y), minimap.zoom * worldRadius, 0, 2 * Math.PI);
+                ctx.arc(minimap.zoom * (0 - camera.x), minimap.zoom * (0 - camera.y), worldRadius * minimap.zoom, 0, 2 * Math.PI);
                 ctx.stroke();
                 
                 ctx.shadowBlur = 20;
@@ -803,12 +830,12 @@
                         }
                         
                         ctx.beginPath();
-                        ctx.arc(minimap.zoom * (energies[n].x - camera.x), minimap.zoom * (energies[n].y - camera.y), 2, 0, 2 * Math.PI);
+                        ctx.arc(minimap.zoom * (energies[n].x - camera.x), minimap.zoom * (energies[n].y - camera.y), 20 * minimap.zoom, 0, 2 * Math.PI);
                         ctx.fill();
                     }
                 }
                 
-                ctx.lineWidth = 4;
+                ctx.lineWidth = 40 * minimap.zoom;
                 ctx.lineCap = "round";
                 
                 for(var n = 0; n < worms.length; n++)
@@ -866,7 +893,7 @@
                 return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
             }
             
-            function interceptCircleLineSegment(circle, line)
+            function intersectCircleLineSegment(circle, line)
             {
                 var a, b, c, d, u1, u2, ret, retP1, retP2, v1, v2;
                 v1 = {};
@@ -879,7 +906,7 @@
                 c = 2 * (v1.x * v1.x + v1.y * v1.y);
                 b *= -2;
                 d = Math.sqrt(b * b - 2 * c * (v2.x * v2.x + v2.y * v2.y - circle.radius * circle.radius));
-                if(isNaN(d)){ // no intercept
+                if(isNaN(d)){ // no intersect
                     return [];
                 }
                 u1 = (b - d) / c;  // these represent the unit distance of point one and two on the line
