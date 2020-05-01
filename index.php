@@ -866,14 +866,6 @@
                     ctx.translate(-canvas.width / 2, -canvas.height / 2);
                 }
                 
-                ctx.fillStyle = "#000000";
-                ctx.shadowBlur = 0;
-                ctx.globalAlpha = 0.25;
-                for(var n = 1; n < canvas.height / 4; n++)
-                {
-                    ctx.fillRect(0, 4 * n - 1, canvas.width, 2);
-                }
-                
                 previousTime = currentTime;
                 currentTime = new Date();
                 fps = 1000 / (currentTime - previousTime);
@@ -906,20 +898,23 @@
                 c = 2 * (v1.x * v1.x + v1.y * v1.y);
                 b *= -2;
                 d = Math.sqrt(b * b - 2 * c * (v2.x * v2.x + v2.y * v2.y - circle.radius * circle.radius));
-                if(isNaN(d)){ // no intersect
+                if(isNaN(d))
+                {
                     return [];
                 }
-                u1 = (b - d) / c;  // these represent the unit distance of point one and two on the line
+                u1 = (b - d) / c;
                 u2 = (b + d) / c;    
-                retP1 = {};   // return points
+                retP1 = {};
                 retP2 = {}  
-                ret = []; // return array
-                if(u1 <= 1 && u1 >= 0){  // add point if on the line segment
+                ret = [];
+                if(u1 <= 1 && u1 >= 0)
+                {
                     retP1.x = line.p1.x + v1.x * u1;
                     retP1.y = line.p1.y + v1.y * u1;
                     ret[0] = retP1;
                 }
-                if(u2 <= 1 && u2 >= 0){  // second add point if on the line segment
+                if(u2 <= 1 && u2 >= 0)
+                {
                     retP2.x = line.p1.x + v1.x * u2;
                     retP2.y = line.p1.y + v1.y * u2;
                     ret[ret.length] = retP2;
