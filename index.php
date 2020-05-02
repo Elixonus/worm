@@ -139,8 +139,8 @@
                             this.nodes.push(
                             {
                                 active: true,
-                                x: tempLastNode.x - 5 * Math.cos(tempLastNode.r),
-                                y: tempLastNode.y + 5 * Math.sin(tempLastNode.r),
+                                x: tempLastNode.x - 20 * Math.cos(tempLastNode.r),
+                                y: tempLastNode.y + 20 * Math.sin(tempLastNode.r),
                                 r: tempLastNode.r
                             });
                         }
@@ -201,39 +201,39 @@
                 
                 move()
                 {
+                    var tempFirstNode = this.nodes[0];
+                    
                     if(this.turn === -1)
                     {
-                        this.nodes[0].r += Math.PI / 60 * 60 / clampMin(fps, 20);
+                        tempFirstNode.r += Math.PI / 90 * 60 / clampMin(fps, 20) * timeScale;
 
-                        if(this.nodes[0].r >= 2 * Math.PI)
+                        if(tempFirstNode.r >= 2 * Math.PI)
                         {
-                            this.nodes[0].r -= 2 * Math.PI;
+                            tempFirstNode.r -= 2 * Math.PI;
                         }
                     }
 
                     if(this.turn === 1)
                     {
-                        this.nodes[0].r -= Math.PI / 60 * 60 / clampMin(fps, 20);
+                        tempFirstNode.r -= Math.PI / 90 * 60 / clampMin(fps, 20) * timeScale;
 
-                        if(this.nodes[0].r < 0)
+                        if(tempFirstNode.r < 0)
                         {
-                            this.nodes[0].r += 2 * Math.PI;
+                            tempFirstNode.r += 2 * Math.PI;
                         }
                     }
                     
-                    this.nodes[0].x += 3 * Math.cos(this.nodes[0].r) * 60 / clampMin(fps, 20);
-                    this.nodes[0].y -= 3 * Math.sin(this.nodes[0].r) * 60 / clampMin(fps, 20);
+                    tempFirstNode.x += 3 * Math.cos(tempFirstNode.r) * 60 / clampMin(fps, 20) * timeScale;
+                    tempFirstNode.y -= 3 * Math.sin(tempFirstNode.r) * 60 / clampMin(fps, 20) * timeScale;
                     
                     for(var n = 1; n < this.nodes.length; n++)
                     {
                         var tempCurrentNode = this.nodes[n];
-                        var tempNextNode = this.nodes[n - 1];
+                        var tempPreviousNode = this.nodes[n - 1];
                         
                         if(tempCurrentNode.active === false)
                         {
-                            var tempDistance = d(tempCurrentNode, tempNextNode);
-                            
-                            if(tempDistance > 5)
+                            if(d(tempCurrentNode, tempPreviousNode) > 5)
                             {
                                 tempCurrentNode.active = true;
                             }
@@ -241,9 +241,35 @@
                         
                         if(tempCurrentNode.active === true)
                         {
-                            tempCurrentNode.r = Math.PI - Math.atan2(tempCurrentNode.y - tempNextNode.y, tempCurrentNode.x - tempNextNode.x);
-                            tempCurrentNode.x = tempNextNode.x - 5 * Math.cos(tempCurrentNode.r);
-                            tempCurrentNode.y = tempNextNode.y + 5 * Math.sin(tempCurrentNode.r);
+                            tempCurrentNode.r = Math.PI - Math.atan2(tempCurrentNode.y - tempPreviousNode.y, tempCurrentNode.x - tempPreviousNode.x);
+                            tempCurrentNode.x = tempPreviousNode.x - 5 * Math.cos(tempCurrentNode.r);
+                            tempCurrentNode.y = tempPreviousNode.y + 5 * Math.sin(tempCurrentNode.r);
+                            
+                            if(n > 1)
+                            {
+                                var tempPreviousPreviousNode = this.nodes[n - 2];
+                                var nodeDistance = d(tempCurrentNode, tempPreviousPreviousNode);
+                                
+                                if(nodeDistance < 9.993)
+                                {
+                                    var circle1 = new Circle(tempPreviousNode, 5);
+                                    var circle2 = new Circle(tempPreviousPreviousNode, 9.993);
+                                    var intersections = intersectCircleCircle(circle1, circle2);
+                                    
+                                    if(d(tempCurrentNode, intersections[0]) < d(tempCurrentNode, intersections[1]))
+                                    {
+                                        tempCurrentNode.x = intersections[0].x;
+                                        tempCurrentNode.y = intersections[0].y;
+                                    }
+                                    else
+                                    {
+                                        tempCurrentNode.x = intersections[1].x;
+                                        tempCurrentNode.y = intersections[1].y;
+                                    }
+                                    
+                                    tempCurrentNode.r = Math.PI - Math.atan2(tempCurrentNode.y - tempPreviousNode.y, tempCurrentNode.x - tempPreviousNode.x);
+                                }
+                            }
                         }
                     }
                     
@@ -423,17 +449,18 @@
             
             var keys = [];
             var camera = new Camera();
+            var timeScale = 1;
             var worldRadius = 10000;
             var gridSize = 100;
-            var wormBotCount = 0;
+            var wormBotCount = 100;
             var energyCount = 1000;
-            var worms = [new Worm("Human", Math.round(Math.random() * 50 + 20), camera)];
+            var worms = [new Worm("Human", Math.round(Math.random() * 50 + 5), camera)];
             var deadWorms = [];
             var energies = [];
             
             for(var n = 0; n < wormBotCount; n++)
             {
-                worms.push(new Worm("Bot", Math.round(Math.random() * 50 + 20), camera));
+                worms.push(new Worm("Bot", Math.round(Math.random() * 50 + 5), camera));
             }
             
             for(var n = 0; n < energyCount; n++)
@@ -475,6 +502,21 @@
                         if(keys.includes(39) || keys.includes(68))
                         {
                             worm.turn += 1;
+                        }
+                        
+                        if(keys.includes(109) || keys.includes(188))
+                        {
+                            timeScale -= 0.01;
+                            
+                            if(timeScale < 0)
+                            {
+                                timeScale = 0;
+                            }
+                        }
+                        
+                        if(keys.includes(107) || keys.includes(190))
+                        {
+                            timeScale += 0.01;
                         }
                     }
                     
@@ -532,22 +574,23 @@
                         }
                     }
                     
-                    if(tempMinimumDistance < 50 && tempMinimumDistance !== false)
-                    {
-                        //energies.splice(n, 1);
-                        energy.opacity -= 0.05;
-                        //n--;
-                    }
-                    
                     if(energy.opacity < 1)
                     {
-                        energy.opacity -= 0.05;
+                        energy.opacity -= 0.1 * 60 / clampMin(fps, 20) * timeScale;
                         
                         if(energy.opacity <= 0)
                         {
                             energies.splice(n, 1);
                             worms[tempClosestWorm].addSmoothNode(5);
                             n--;
+                        }
+                    }
+                    
+                    if(tempMinimumDistance < 50 && tempMinimumDistance !== false)
+                    {
+                        if(energy.opacity === 1)
+                        {
+                            energy.opacity -= 0.1 * 60 / clampMin(fps, 20) * timeScale;
                         }
                     }
                 }
@@ -916,6 +959,32 @@
                     ret[ret.length] = retP2;
                 }       
                 return ret;
+            }
+            
+            function intersectCircleCircle(circle1, circle2)
+            {
+                var a, dx, dy, d, h, rx, ry;
+                var x0 = circle1.center.x, y0 = circle1.center.y, r0 = circle1.radius, x1 = circle2.center.x, y1 = circle2.center.y, r1 = circle2.radius, x2, y2;
+                dx = x1 - x0;
+                dy = y1 - y0;
+                d = Math.sqrt((dy*dy) + (dx*dx));
+                if (d > (r0 + r1)) {
+                    return false;
+                }
+                if (d < Math.abs(r0 - r1)) {
+                    return false;
+                }
+                a = ((r0*r0) - (r1*r1) + (d*d)) / (2.0 * d) ;
+                x2 = x0 + (dx * a/d);
+                y2 = y0 + (dy * a/d);
+                h = Math.sqrt((r0*r0) - (a*a));
+                rx = -dy * (h/d);
+                ry = dx * (h/d);
+                var xi = x2 + rx;
+                var xi_prime = x2 - rx;
+                var yi = y2 + ry;
+                var yi_prime = y2 - ry;
+                return [new Point(xi, yi), new Point(xi_prime, yi_prime)];
             }
             
             function clampMin(num, min)
