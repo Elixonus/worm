@@ -278,6 +278,7 @@
                 {
                     super(camera);
                     this.type = Math.round(2 * Math.random());
+                    this.opacity = 1;
                     var tempRotation = 2 * Math.PI * Math.random();
                     var tempRadius = worldRadius * Math.sqrt(Math.random());
                     this.x = tempRadius * Math.cos(tempRotation);
@@ -424,7 +425,7 @@
             var camera = new Camera();
             var worldRadius = 10000;
             var gridSize = 100;
-            var wormBotCount = 100;
+            var wormBotCount = 0;
             var energyCount = 1000;
             var worms = [new Worm("Human", Math.round(Math.random() * 50 + 20), camera)];
             var deadWorms = [];
@@ -533,9 +534,21 @@
                     
                     if(tempMinimumDistance < 50 && tempMinimumDistance !== false)
                     {
-                        energies.splice(n, 1);
-                        worms[tempClosestWorm].addSmoothNode(5);
-                        n--;
+                        //energies.splice(n, 1);
+                        energy.opacity -= 0.05;
+                        //n--;
+                    }
+                    
+                    if(energy.opacity < 1)
+                    {
+                        energy.opacity -= 0.05;
+                        
+                        if(energy.opacity <= 0)
+                        {
+                            energies.splice(n, 1);
+                            worms[tempClosestWorm].addSmoothNode(5);
+                            n--;
+                        }
                     }
                 }
                 
@@ -585,6 +598,7 @@
                     
                     if(d(new Point(0, 0), new Point(energy.x - camera.x, energy.y - camera.y)) < d(new Point(0, 0), new Point(canvas.width / 2, canvas.height / 2)) + 100)
                     {
+                        ctx.globalAlpha = energy.opacity;
                         ctx.translate(energy.x, energy.y);
                         
                         if(energy.type === 0)
@@ -628,6 +642,7 @@
                 }
                 
                 ctx.shadowBlur = 0;
+                ctx.globalAlpha = 1;
                 
                 for(var n = 0; n < deadWorms.length; n++)
                 {
@@ -712,14 +727,14 @@
                             ctx.translate(-worm.nodes[m].x, -worm.nodes[m].y);
                         }
                         ctx.arc(worm.nodes[worm.nodes.length - 1].x, worm.nodes[worm.nodes.length - 1].y, 25, -(worm.nodes[worm.nodes.length - 1].r - Math.PI / 2), -(worm.nodes[worm.nodes.length - 1].r + Math.PI / 2));
-                        for(var m = worm.nodes.length - 2; m > 0; m -= 4)
+                        for(var m = worm.nodes.length - 2 - ((worm.nodes.length + 1) % 4); m > 0; m -= 4)
                         {
                             ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
                             ctx.rotate(-worm.nodes[m].r);
+                            ctx.lineTo(-7.5, -25);
+                            ctx.lineTo(-5, -20);
+                            ctx.lineTo(-2.5, -20);
                             ctx.lineTo(0, -25);
-                            ctx.lineTo(2.5, -20);
-                            ctx.lineTo(5, -20);
-                            ctx.lineTo(7.5, -25);
                             ctx.rotate(worm.nodes[m].r);
                             ctx.translate(-worm.nodes[m].x, -worm.nodes[m].y);
                         }
@@ -788,6 +803,8 @@
                 {
                     if(d(new Point(0, 0), new Point(minimap.zoom * (energies[n].x - camera.x), minimap.zoom * (energies[n].y - camera.y))) < d(new Point(0, 0), new Point(minimap.width / 2, minimap.height / 2)) + 100 * minimap.zoom || minimap.expanded)
                     {
+                        ctx.globalAlpha = energies[n].opacity;
+                        
                         if(energies[n].type === 0)
                         {
                             ctx.fillStyle = "#ff0000";
@@ -814,6 +831,7 @@
                 
                 ctx.lineWidth = 40 * minimap.zoom;
                 ctx.lineCap = "round";
+                ctx.globalAlpha = 1;
                 
                 for(var n = 0; n < worms.length; n++)
                 {
