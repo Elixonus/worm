@@ -247,7 +247,7 @@
                         {
                             if(tempCurrentNode.activeNumber < 1)
                             {
-                                tempCurrentNode.activeNumber += 0.05;
+                                tempCurrentNode.activeNumber += 0.05 * 60 / clampMin(fps, 20) * timeScale;
                                 
                                 if(tempCurrentNode.activeNumber > 1)
                                 {
@@ -280,9 +280,9 @@
                                         tempCurrentNode.x = intersections[1].x;
                                         tempCurrentNode.y = intersections[1].y;
                                     }
-                                    
-                                    tempCurrentNode.r = Math.PI - Math.atan2(tempCurrentNode.y - tempPreviousNode.y, tempCurrentNode.x - tempPreviousNode.x);
                                 }
+                                
+                                tempCurrentNode.r = Math.PI - Math.atan2(tempCurrentNode.y - tempPreviousNode.y, tempCurrentNode.x - tempPreviousNode.x);
                             }
                         }
                     }
@@ -544,12 +544,12 @@
                             
                             if(dotProduct < 0)
                             {
-                                worm.turn = 1;
+                                worm.turn = -1;
                             }
                             
                             if(dotProduct > 0)
                             {
-                                worm.turn = -1;
+                                worm.turn = 1;
                             }
                         }
                     }
