@@ -127,6 +127,7 @@
                             this.nodes.push(
                             {
                                 active: true,
+                                activeNumber: 1,
                                 x: tempRadius * Math.cos(tempRotation),
                                 y: tempRadius * Math.sin(tempRotation),
                                 r: 2 * Math.PI * Math.random()
@@ -139,6 +140,7 @@
                             this.nodes.push(
                             {
                                 active: true,
+                                activeNumber: 1,
                                 x: tempLastNode.x - 20 * Math.cos(tempLastNode.r),
                                 y: tempLastNode.y + 20 * Math.sin(tempLastNode.r),
                                 r: tempLastNode.r
@@ -149,7 +151,7 @@
                     }
                 }
                 
-                addSmoothNode(count)
+                addNodeSmooth(count)
                 {
                     if(count === undefined)
                     {
@@ -167,6 +169,7 @@
                             this.nodes.push(
                             {
                                 active: true,
+                                activeNumber: 1,
                                 x: tempRadius * Math.cos(tempRotation),
                                 y: tempRadius * Math.sin(tempRotation),
                                 r: 2 * Math.PI * Math.random()
@@ -179,6 +182,7 @@
                             this.nodes.push(
                             {
                                 active: false,
+                                activeNumber: 0,
                                 x: tempLastNode.x,
                                 y: tempLastNode.y,
                                 r: tempLastNode.r
@@ -241,6 +245,16 @@
                         
                         if(tempCurrentNode.active === true)
                         {
+                            if(tempCurrentNode.activeNumber < 1)
+                            {
+                                tempCurrentNode.activeNumber += 0.05;
+                                
+                                if(tempCurrentNode.activeNumber > 1)
+                                {
+                                    tempCurrentNode.activeNumber = 1;
+                                }
+                            }
+                            
                             tempCurrentNode.r = Math.PI - Math.atan2(tempCurrentNode.y - tempPreviousNode.y, tempCurrentNode.x - tempPreviousNode.x);
                             tempCurrentNode.x = tempPreviousNode.x - 5 * Math.cos(tempCurrentNode.r);
                             tempCurrentNode.y = tempPreviousNode.y + 5 * Math.sin(tempCurrentNode.r);
@@ -581,7 +595,7 @@
                         if(energy.opacity <= 0)
                         {
                             energies.splice(n, 1);
-                            worms[tempClosestWorm].addSmoothNode(5);
+                            worms[tempClosestWorm].addNodeSmooth(5);
                             n--;
                         }
                     }
@@ -758,26 +772,52 @@
                         
                         ctx.beginPath();
                         ctx.arc(worm.nodes[0].x, worm.nodes[0].y, 25, -(worm.nodes[0].r + Math.PI / 2), -(worm.nodes[0].r - Math.PI / 2));
-                        for(var m = 1; m < worm.nodes.length - 1; m += 4)
+                        for(var m = 1; m < worm.nodes.length - 1; m += 1)
                         {
                             ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
                             ctx.rotate(-worm.nodes[m].r);
-                            ctx.lineTo(0, 25);
-                            ctx.lineTo(-2.5, 20);
-                            ctx.lineTo(-5, 20);
-                            ctx.lineTo(-7.5, 25);
+                            
+                            switch(m % 4)
+                            {
+                                case 0:
+                                    ctx.lineTo(3, 25);
+                                    break;
+                                case 1:
+                                    ctx.lineTo(-3, 25);
+                                    break;
+                                case 2:
+                                    ctx.lineTo(0, 25 - 5 * worm.nodes[m].activeNumber);
+                                    break;
+                                case 3:
+                                    ctx.lineTo(0, 25 - 5 * worm.nodes[m].activeNumber);
+                                    break;
+                            }
+                            
                             ctx.rotate(worm.nodes[m].r);
                             ctx.translate(-worm.nodes[m].x, -worm.nodes[m].y);
                         }
                         ctx.arc(worm.nodes[worm.nodes.length - 1].x, worm.nodes[worm.nodes.length - 1].y, 25, -(worm.nodes[worm.nodes.length - 1].r - Math.PI / 2), -(worm.nodes[worm.nodes.length - 1].r + Math.PI / 2));
-                        for(var m = worm.nodes.length - 2 - ((worm.nodes.length + 1) % 4); m > 0; m -= 4)
+                        for(var m = worm.nodes.length - 2; m > 0; m -= 1)
                         {
                             ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
                             ctx.rotate(-worm.nodes[m].r);
-                            ctx.lineTo(-7.5, -25);
-                            ctx.lineTo(-5, -20);
-                            ctx.lineTo(-2.5, -20);
-                            ctx.lineTo(0, -25);
+                            
+                            switch(m % 4)
+                            {
+                                case 0:
+                                    ctx.lineTo(3, -25);
+                                    break;
+                                case 1:
+                                    ctx.lineTo(-3, -25);
+                                    break;
+                                case 2:
+                                    ctx.lineTo(0, -25 + 5 * worm.nodes[m].activeNumber);
+                                    break;
+                                case 3:
+                                    ctx.lineTo(0, -25 + 5 * worm.nodes[m].activeNumber);
+                                    break;
+                            }
+                            
                             ctx.rotate(worm.nodes[m].r);
                             ctx.translate(-worm.nodes[m].x, -worm.nodes[m].y);
                         }
