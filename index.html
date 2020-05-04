@@ -89,24 +89,14 @@
             
             class Worm extends Filmable
             {
-                constructor(type, count, camera)
+                constructor(controllable, camera)
                 {
                     super(camera);
-                    
-                    if(type === "Human")
-                    {
-                        this.controllable = true;
-                        this.color = "#00ff00";
-                    }
-                    
-                    if(type === "Bot")
-                    {
-                        this.controllable = false;
-                        this.color = "hsl(" + Math.round(Math.random() * 90 + 270) + ", 100%, 50%)";
-                    }
-                    this.nodes = [];
+                    this.controllable = controllable;
+                    this.color = "hsl(" + Math.round(Math.random() * 90 + 270) + ", 100%, 50%)";
                     this.turn = 0;
-                    this.addNode(count);
+                    this.nodes = [];
+                    this.addNode(Math.round(Math.random() * 50 + 5));
                 }
                 
                 addNode(count)
@@ -319,16 +309,20 @@
                     super(camera);
                     this.type = Math.round(2 * Math.random());
                     this.opacity = 1;
+                    this.phase = 0;
                     var tempRotation = 2 * Math.PI * Math.random();
                     var tempRadius = worldRadius * Math.sqrt(Math.random());
                     this.x = tempRadius * Math.cos(tempRotation);
                     this.y = tempRadius * Math.sin(tempRotation);
                     this.r = 2 * Math.PI * Math.random();
+                    this.rUnshifted = this.r;
                 }
                 
                 move()
                 {
-
+                    this.phase += 0.02;
+                    this.r = this.rUnshifted + 0.2 * Math.sin(this.phase);
+                    this.updateCameraPosition();
                 }
 
                 updateCameraPosition()
@@ -343,19 +337,14 @@
             
             class Camera
             {
-                constructor()
-                {
-                    this.x = null;
-                    this.y = null;
-                    this.FilmedObject = null;
-                }
+                
             }
             
             function killWorm(n)
             {
-                var temp = worms[n];
+                var deadWorm = worms[n];
                 worms.splice(n, 1);
-                deadWorms.push(temp);
+                deadWorms.push(deadWorm);
             }
             
             function resize()
@@ -468,13 +457,15 @@
             var gridSize = 100;
             var wormBotCount = 100;
             var energyCount = 1000;
-            var worms = [new Worm("Human", Math.round(Math.random() * 50 + 5), camera)];
+            var worms = [new Worm(true, camera)];
             var deadWorms = [];
             var energies = [];
             
+            worms[0].follow();
+            
             for(var n = 0; n < wormBotCount; n++)
             {
-                worms.push(new Worm("Bot", Math.round(Math.random() * 50 + 5), camera));
+                worms.push(new Worm(false, camera));
             }
             
             for(var n = 0; n < energyCount; n++)
@@ -497,7 +488,6 @@
             var fps = 60;
             var previousTime;
             var currentTime = new Date();
-            worms[0].follow();
 
             function render()
             {
