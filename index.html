@@ -89,14 +89,17 @@
             
             class Worm extends Filmable
             {
-                constructor(controllable, camera)
+                constructor(controllable, type, hue, camera)
                 {
                     super(camera);
-                    this.type = 0;
                     this.controllable = controllable;
-                    this.hue = 0;
+                    this.type = type;
+                    this.hue = hue;
                     this.turn = 0;
                     this.nodes = [];
+                    this.happiness = 0;
+                    this.happinessCounter = 0;
+                    this.happinessDirection = -1;
                     this.addNode(Math.round(Math.random() * 50 + 5));
                 }
                 
@@ -208,6 +211,32 @@
                     }
                     
                     this.nodes.splice(this.nodes.length - count, count);
+                }
+                
+                increaseHappiness(value)
+                {
+                    if(this.happiness < 1)
+                    {
+                        this.happiness += value;
+                        
+                        if(this.happiness > 1)
+                        {
+                            this.happiness = 1;
+                        }
+                    }
+                }
+                
+                decreaseHappiness(value)
+                {
+                    if(this.happiness > 0)
+                    {
+                        this.happiness -= value;
+                        
+                        if(this.happiness < 0)
+                        {
+                            this.happiness = 0;
+                        }
+                    }
                 }
                 
                 move()
@@ -475,27 +504,19 @@
             var keys = [];
             var camera = new Camera();
             var timeScale = 1;
-            var worldRadius = 10000;
+            var worldRadius = 1000;
             var gridSize = 100;
-            var wormBotCount = 100;
-            var energyCount = 1000;
-            var worms = [new Worm(true, camera)];
+            var wormBotCount = 3;
+            var energyCount = 50;
+            var worms = [new Worm(true, 0, 120, camera)];
             var deadWorms = [];
             var energies = [];
             
-            worms[0].setHue(120);
             worms[0].follow();
             
             for(var n = 0; n < wormBotCount; n++)
             {
-                var wormBot = new Worm(false, camera);
-                wormBot.setRandomHue(0, 100);
-                worms.push(wormBot);
-            }
-            
-            for(var n = 0; n < worms.length; n++)
-            {
-                worms[n].type = Math.round(Math.random() * 2);
+                worms.push(new Worm(false, Math.round(Math.random() * 2), Math.random() * 100, camera));
             }
             
             for(var n = 0; n < energyCount; n++)
@@ -564,12 +585,12 @@
                             
                             if(dotProduct < 0)
                             {
-                                worm.turn = 1;
+                                worm.turn = -1;
                             }
                             
                             if(dotProduct > 0)
                             {
-                                worm.turn = -1;
+                                worm.turn = 1;
                             }
                         }
                     }
@@ -587,6 +608,68 @@
                         worm.moveTo(intersection[0]);
                         killWorm(n);
                         n--;
+                    }
+                }
+                
+                for(var n = 0; n < worms.length; n++)
+                {
+                    var foundHappiness = false;
+                    
+                    for(var m = 0; m < worms.length; m++)
+                    {
+                        if(n !== m)
+                        {
+                            if(d(worms[n].nodes[0], worms[m].nodes[0]) < 150)
+                            {
+                                foundHappiness = true;
+                            }
+                        }
+                    }
+                    
+                    if(foundHappiness)
+                    {
+                        if(worms[n].happinessCounter < 50)
+                        {
+                            worms[n].happinessCounter += 60 / clampMin(fps, 20) * timeScale;
+                            
+                            if(worms[n].happinessCounter > 50)
+                            {
+                                worms[n].happinessCounter = 50;
+                            }
+                        }
+                    }
+                    
+                    else
+                    {
+                        if(worms[n].happinessCounter > 0)
+                        {
+                            worms[n].happinessCounter -= 60 / clampMin(fps, 20) * timeScale;
+                            
+                            if(worms[n].happinessCounter < 0)
+                            {
+                                worms[n].happinessCounter = 0;
+                            }
+                        }
+                    }
+                    
+                    if(worms[n].happinessCounter === 0)
+                    {
+                        worms[n].happinessDirection = -1;
+                    }
+                    
+                    else if(worms[n].happinessCounter === 50)
+                    {
+                        worms[n].happinessDirection = 1;
+                    }
+                    
+                    if(worms[n].happinessDirection === -1)
+                    {
+                        worms[n].decreaseHappiness(1 / 10 * 60 / clampMin(fps, 20) * timeScale);
+                    }
+                    
+                    else if(worms[n].happinessDirection === 1)
+                    {
+                        worms[n].increaseHappiness(1 / 10 * 60 / clampMin(fps, 20) * timeScale);
                     }
                 }
                 
@@ -819,7 +902,8 @@
                                 ctx.rotate(-worm.nodes[0].r);
                                 ctx.lineWidth = 2;
                                 ctx.beginPath();
-                                ctx.arc(0, 0, 15, -Math.PI / 3, Math.PI / 3);
+                                ctx.moveTo(interpolateQuadratic(12, 6, worm.happiness), interpolateQuadratic(-11, -15, worm.happiness));
+                                ctx.bezierCurveTo(interpolateQuadratic(4, 19, worm.happiness), -7, interpolateQuadratic(4, 19, worm.happiness), 7, interpolateQuadratic(12, 6, worm.happiness), interpolateQuadratic(11, 15, worm.happiness));
                                 ctx.stroke();
                                 ctx.beginPath();
                                 ctx.arc(0, -5, 2, 0, 2 * Math.PI);
@@ -888,7 +972,8 @@
                                 ctx.rotate(-worm.nodes[0].r);
                                 ctx.lineWidth = 2;
                                 ctx.beginPath();
-                                ctx.arc(0, 0, 15, -Math.PI / 3, Math.PI / 3);
+                                ctx.moveTo(interpolateQuadratic(12, 6, worm.happiness), interpolateQuadratic(-11, -15, worm.happiness));
+                                ctx.bezierCurveTo(interpolateQuadratic(4, 19, worm.happiness), -7, interpolateQuadratic(4, 19, worm.happiness), 7, interpolateQuadratic(12, 6, worm.happiness), interpolateQuadratic(11, 15, worm.happiness));
                                 ctx.stroke();
                                 ctx.beginPath();
                                 ctx.arc(0, -5, 2, 0, 2 * Math.PI);
@@ -1067,6 +1152,16 @@
             function d(p1, p2)
             {
                 return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+            }
+            
+            function interpolateLinear(startingValue, endingValue, t)
+            {
+                return (startingValue + (endingValue - startingValue) * t);
+            }
+            
+            function interpolateQuadratic(startingValue, endingValue, t)
+            {
+                return interpolateLinear(startingValue, endingValue, t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
             }
             
             function intersectCircleLineSegment(circle, line)
