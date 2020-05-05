@@ -137,7 +137,7 @@
                             this.nodes.push(
                             {
                                 active: true,
-                                activeNumber: 1,
+                                activeCounter: 1,
                                 x: tempRadius * Math.cos(tempRotation),
                                 y: tempRadius * Math.sin(tempRotation),
                                 r: 2 * Math.PI * Math.random()
@@ -150,7 +150,7 @@
                             this.nodes.push(
                             {
                                 active: true,
-                                activeNumber: 1,
+                                activeCounter: 1,
                                 x: tempLastNode.x - 20 * Math.cos(tempLastNode.r),
                                 y: tempLastNode.y + 20 * Math.sin(tempLastNode.r),
                                 r: tempLastNode.r
@@ -179,7 +179,7 @@
                             this.nodes.push(
                             {
                                 active: true,
-                                activeNumber: 1,
+                                activeCounter: 1,
                                 x: tempRadius * Math.cos(tempRotation),
                                 y: tempRadius * Math.sin(tempRotation),
                                 r: 2 * Math.PI * Math.random()
@@ -192,7 +192,7 @@
                             this.nodes.push(
                             {
                                 active: false,
-                                activeNumber: 0,
+                                activeCounter: 0,
                                 x: tempLastNode.x,
                                 y: tempLastNode.y,
                                 r: tempLastNode.r
@@ -281,13 +281,13 @@
                         
                         if(tempCurrentNode.active === true)
                         {
-                            if(tempCurrentNode.activeNumber < 1)
+                            if(tempCurrentNode.activeCounter < 1)
                             {
-                                tempCurrentNode.activeNumber += 0.05 * 60 / clampMin(fps, 20) * timeScale;
+                                tempCurrentNode.activeCounter += 0.05 * 60 / clampMin(fps, 20) * timeScale;
                                 
-                                if(tempCurrentNode.activeNumber > 1)
+                                if(tempCurrentNode.activeCounter > 1)
                                 {
-                                    tempCurrentNode.activeNumber = 1;
+                                    tempCurrentNode.activeCounter = 1;
                                 }
                             }
                             
@@ -504,10 +504,10 @@
             var keys = [];
             var camera = new Camera();
             var timeScale = 1;
-            var worldRadius = 1000;
+            var worldRadius = 10000;
             var gridSize = 100;
-            var wormBotCount = 3;
-            var energyCount = 50;
+            var wormBotCount = 100;
+            var energyCount = 1000;
             var worms = [new Worm(true, 0, 120, camera)];
             var deadWorms = [];
             var energies = [];
@@ -516,7 +516,7 @@
             
             for(var n = 0; n < wormBotCount; n++)
             {
-                worms.push(new Worm(false, Math.round(Math.random() * 2), Math.random() * 100, camera));
+                worms.push(new Worm(false, Math.round(Math.random() * 2), Math.random() * 100 + 260, camera));
             }
             
             for(var n = 0; n < energyCount; n++)
@@ -898,12 +898,15 @@
                                 }
                                 ctx.closePath();
                                 ctx.stroke();
+                                var interpolation1 = interpolateQuadratic(12, 6, worm.happiness);
+                                var interpolation2 = interpolateQuadratic(-11, -15, worm.happiness);
+                                var interpolation3 = interpolateQuadratic(4, 19, worm.happiness);
                                 ctx.translate(worm.nodes[0].x, worm.nodes[0].y);
                                 ctx.rotate(-worm.nodes[0].r);
                                 ctx.lineWidth = 2;
                                 ctx.beginPath();
-                                ctx.moveTo(interpolateQuadratic(12, 6, worm.happiness), interpolateQuadratic(-11, -15, worm.happiness));
-                                ctx.bezierCurveTo(interpolateQuadratic(4, 19, worm.happiness), -7, interpolateQuadratic(4, 19, worm.happiness), 7, interpolateQuadratic(12, 6, worm.happiness), interpolateQuadratic(11, 15, worm.happiness));
+                                ctx.moveTo(interpolation1, interpolation2);
+                                ctx.bezierCurveTo(interpolation3, -7, interpolation3, 7, interpolation1, -interpolation2);
                                 ctx.stroke();
                                 ctx.beginPath();
                                 ctx.arc(0, -5, 2, 0, 2 * Math.PI);
@@ -931,10 +934,10 @@
                                             ctx.lineTo(-3, 25);
                                             break;
                                         case 2:
-                                            ctx.lineTo(0, 25 - 5 * worm.nodes[m].activeNumber);
+                                            ctx.lineTo(0, 25 - 5 * worm.nodes[m].activeCounter);
                                             break;
                                         case 3:
-                                            ctx.lineTo(0, 25 - 5 * worm.nodes[m].activeNumber);
+                                            ctx.lineTo(0, 25 - 5 * worm.nodes[m].activeCounter);
                                             break;
                                     }
                                     
@@ -956,10 +959,10 @@
                                             ctx.lineTo(-3, -25);
                                             break;
                                         case 2:
-                                            ctx.lineTo(0, -25 + 5 * worm.nodes[m].activeNumber);
+                                            ctx.lineTo(0, -25 + 5 * worm.nodes[m].activeCounter);
                                             break;
                                         case 3:
-                                            ctx.lineTo(0, -25 + 5 * worm.nodes[m].activeNumber);
+                                            ctx.lineTo(0, -25 + 5 * worm.nodes[m].activeCounter);
                                             break;
                                     }
                                     
@@ -968,12 +971,15 @@
                                 }
                                 ctx.closePath();
                                 ctx.stroke();
+                                var interpolation1 = interpolateQuadratic(12, 6, worm.happiness);
+                                var interpolation2 = interpolateQuadratic(-11, -15, worm.happiness);
+                                var interpolation3 = interpolateQuadratic(4, 19, worm.happiness);
                                 ctx.translate(worm.nodes[0].x, worm.nodes[0].y);
                                 ctx.rotate(-worm.nodes[0].r);
                                 ctx.lineWidth = 2;
                                 ctx.beginPath();
-                                ctx.moveTo(interpolateQuadratic(12, 6, worm.happiness), interpolateQuadratic(-11, -15, worm.happiness));
-                                ctx.bezierCurveTo(interpolateQuadratic(4, 19, worm.happiness), -7, interpolateQuadratic(4, 19, worm.happiness), 7, interpolateQuadratic(12, 6, worm.happiness), interpolateQuadratic(11, 15, worm.happiness));
+                                ctx.moveTo(interpolation1, interpolation2);
+                                ctx.bezierCurveTo(interpolation3, -7, interpolation3, 7, interpolation1, -interpolation2);
                                 ctx.stroke();
                                 ctx.beginPath();
                                 ctx.arc(0, -5, 2, 0, 2 * Math.PI);
@@ -1007,21 +1013,22 @@
                                 ctx.closePath();
                                 ctx.stroke();
                                 
+                                var interpolation = interpolateQuadratic(Math.PI / 4, Math.PI / 6, worm.happiness);
                                 ctx.translate(worm.nodes[0].x, worm.nodes[0].y);
                                 ctx.rotate(-worm.nodes[0].r);
                                 ctx.beginPath();
-                                ctx.moveTo(25 * Math.cos(-Math.PI / 4), 25 * Math.sin(-Math.PI / 4));
-                                ctx.lineTo(50 * Math.cos(-Math.PI / 4), 50 * Math.sin(-Math.PI / 4));
+                                ctx.moveTo(25 * Math.cos(-interpolation), 25 * Math.sin(-interpolation));
+                                ctx.lineTo(50 * Math.cos(-interpolation), 50 * Math.sin(-interpolation));
                                 ctx.stroke();
                                 ctx.beginPath();
-                                ctx.moveTo(25 * Math.cos(Math.PI / 4), 25 * Math.sin(Math.PI / 4));
-                                ctx.lineTo(50 * Math.cos(Math.PI / 4), 50 * Math.sin(Math.PI / 4));
+                                ctx.moveTo(25 * Math.cos(interpolation), 25 * Math.sin(interpolation));
+                                ctx.lineTo(50 * Math.cos(interpolation), 50 * Math.sin(interpolation));
                                 ctx.stroke();
                                 ctx.beginPath();
-                                ctx.arc(50 * Math.cos(-Math.PI / 4), 50 * Math.sin(-Math.PI / 4), 5, 0, 2 * Math.PI);
+                                ctx.arc(50 * Math.cos(-interpolation), 50 * Math.sin(-interpolation), 5, 0, 2 * Math.PI);
                                 ctx.fill();
                                 ctx.beginPath();
-                                ctx.arc(50 * Math.cos(Math.PI / 4), 50 * Math.sin(Math.PI / 4), 5, 0, 2 * Math.PI);
+                                ctx.arc(50 * Math.cos(interpolation), 50 * Math.sin(interpolation), 5, 0, 2 * Math.PI);
                                 ctx.fill();
                                 ctx.rotate(worm.nodes[0].r);
                                 ctx.translate(-worm.nodes[0].x, -worm.nodes[0].y);
