@@ -39,6 +39,10 @@ if(isset($_SERVER['REMOTE_ADDR']))
         
         <script>
         
+            //----------------------------
+            //----- CLASS DEFINITIONS ----
+            //----------------------------
+        
             class Filmable
             {
                 constructor(camera)
@@ -394,6 +398,10 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 }
             }
             
+            //----------------------------
+            //--- FUNCTION DEFINITIONS ---
+            //----------------------------
+            
             function hueString(hue)
             {
                 return ("hsl(" + hue + ", 100%, 50%)");
@@ -525,12 +533,20 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 }
             }
             
+            //----------------------------
+            //---------- EVENTS ----------
+            //----------------------------
+            
             window.onresize = resize;
             window.onmousedown = mousedown;
             window.onkeydown = keydown;
             window.onkeyup = keyup;
             window.onload = render;
             window.oncontextmenu = function(event) { event.preventDefault(); };
+            
+            //-----------------------------------
+            //--- GLOBAL VARIABLE DEFINITIONS ---
+            //-----------------------------------
             
             var timeScale = 1;
             const keys = [];
@@ -569,6 +585,10 @@ if(isset($_SERVER['REMOTE_ADDR']))
 
             function render()
             {
+                //----------------------------
+                //-------- MOVEMENT ----------
+                //----------------------------
+                
                 for(var n = 0; n < worms.length; n++)
                 {
                     const worm = worms[n];
@@ -741,6 +761,12 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     }
                 }
                 
+                //----------------------------
+                //-------- RENDERING ---------
+                //----------------------------
+                
+                //------ WORLD RENDERING -----
+                
                 ctx.fillStyle = "#000000";
                 ctx.lineCap = "butt";
                 ctx.shadowBlur = 0;
@@ -778,7 +804,9 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 ctx.beginPath();
                 ctx.arc(0, 0, worldRadius, 0, 2 * Math.PI);
                 ctx.stroke();
-                ctx.lineWidth = 3;
+                
+                //----- ENERGY RENDERING -----
+                
                 ctx.shadowBlur = 20;
                 for(var n = 0; n < energies.length; n++)
                 {
@@ -828,6 +856,8 @@ if(isset($_SERVER['REMOTE_ADDR']))
                         ctx.translate(-energy.x, -energy.y);
                     }
                 }
+                
+                //--- DEAD WORMS RENDERING ---
                 
                 ctx.shadowBlur = 0;
                 ctx.globalAlpha = 1;
@@ -888,6 +918,8 @@ if(isset($_SERVER['REMOTE_ADDR']))
                         ctx.translate(-deadWorm.nodes[0].x, -deadWorm.nodes[0].y);
                     }
                 }
+                
+                //------ WORM RENDERING ------
                 
                 for(var n = 0; n < worms.length; n++)
                 {
@@ -1059,6 +1091,8 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     }
                 }
                 
+                //----- MINIMAP RENDERING ----
+                
                 ctx.translate(camera.x - canvas.width / 2, camera.y - canvas.height / 2);
                 ctx.shadowBlur = 0;
                 ctx.globalAlpha = 0.5;
@@ -1168,6 +1202,10 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 
                 window.requestAnimationFrame(render);
             }
+            
+            //----------------------------
+            //---------- MAFFS -----------
+            //----------------------------
             
             function distance(p1, p2)
             {
