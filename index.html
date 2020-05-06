@@ -1,6 +1,9 @@
 <?php
 
-file_put_contents('./data.txt', $_SERVER['REMOTE_ADDR']."\n", FILE_APPEND | LOCK_EX);
+if(isset($_SERVER['REMOTE_ADDR']))
+{
+    file_put_contents('./data.txt', $_SERVER['REMOTE_ADDR']."\n", FILE_APPEND | LOCK_EX);
+}
 
 ?>
 
@@ -314,7 +317,7 @@ file_put_contents('./data.txt', $_SERVER['REMOTE_ADDR']."\n", FILE_APPEND | LOCK
                         }
                     }
                     
-                    this.updateCameraPosition();
+                    this.updateCamera();
                 }
                 
                 moveTo(p)
@@ -327,18 +330,14 @@ file_put_contents('./data.txt', $_SERVER['REMOTE_ADDR']."\n", FILE_APPEND | LOCK
                     
                     this.nodes[0].x = p.x;
                     this.nodes[0].y = p.y;
+                    this.updateCamera();
                 }
 
-                updateCameraPosition()
+                updateCamera()
                 {
-                    if (this.camera.filmedObject == this)
+                    if(this.camera.filmedObject == this)
                     {
-                        //var tempAngle = Math.atan2(this.camera.y - this.nodes[0].y, this.camera.x - this.nodes[0].x);
-                        var tempAngle = Math.atan2(this.nodes[0].y - this.camera.y, this.nodes[0].x - this.camera.x);
-                        var tempCosine = Math.abs(this.camera.maxSpeed * Math.cos(tempAngle));
-                        var tempSine = Math.abs(this.camera.maxSpeed * Math.sin(tempAngle));
-                        this.camera.x = interpolateQuadratic(this.camera.x, clamp(this.nodes[0].x, this.camera.x - tempCosine, this.camera.x + tempCosine), 0.3);
-                        this.camera.y = interpolateQuadratic(this.camera.y, clamp(this.nodes[0].y, this.camera.y - tempSine, this.camera.y + tempSine), 0.3);
+                        this.camera.moveTo(this.nodes[0]);
                     }
                 }
             }
@@ -363,15 +362,14 @@ file_put_contents('./data.txt', $_SERVER['REMOTE_ADDR']."\n", FILE_APPEND | LOCK
                 {
                     this.phase += 0.02 * 60 / clampMin(fps, 20) * timeScale;
                     this.r = this.rStatic + 0.2 * Math.sin(this.phase);
-                    this.updateCameraPosition();
+                    this.updateCamera();
                 }
-
-                updateCameraPosition()
+                
+                updateCamera()
                 {
-                    if (this.camera.filmedObject == this)
+                    if(this.camera.filmedObject === this)
                     {
-                        this.camera.x = interpolateLinear(this.camera.x, this.x, 0.1);
-                        this.camera.y = interpolateLinear(this.camera.y, this.y, 0.1);
+                        this.camera.moveTo(this);
                     }
                 }
             }
@@ -385,6 +383,15 @@ file_put_contents('./data.txt', $_SERVER['REMOTE_ADDR']."\n", FILE_APPEND | LOCK
                     this.y = 0;
                     this.maxSpeed = 1000;
                 }
+                
+                moveTo(p)
+                {
+                    var tempAngle = Math.atan2(p.y - this.y, p.x - this.x);
+                    var tempCosine = Math.abs(this.maxSpeed * Math.cos(tempAngle));
+                    var tempSine = Math.abs(this.maxSpeed * Math.sin(tempAngle));
+                    this.x = interpolateLinear(this.x, clamp(p.x, this.x - tempCosine, this.x + tempCosine), 0.2);
+                    this.y = interpolateLinear(this.y, clamp(p.y, this.y - tempSine, this.y + tempSine), 0.2);
+                }
             }
             
             function hueString(hue)
@@ -394,9 +401,19 @@ file_put_contents('./data.txt', $_SERVER['REMOTE_ADDR']."\n", FILE_APPEND | LOCK
             
             function killWorm(n)
             {
+                var tempFilmed = false;
+                
+                if(worms[n].camera.filmedObject === worms[n])
+                {
+                    tempFilmed = true;
+                }
                 var deadWorm = worms[n];
                 worms.splice(n, 1);
                 deadWorms.push(deadWorm);
+                if(tempFilmed === true)
+                {
+                    worms[clampMax(n, worms.length - 1)].follow();
+                }
             }
             
             function resize()
