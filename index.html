@@ -39,12 +39,12 @@
 
                 follow()
                 {
-                    this.camera.FilmedObject = this;
+                    this.camera.filmedObject = this;
                 }
                 
                 unfollow()
                 {
-                    this.camera.FilmedObject = null;
+                    this.camera.filmedObject = null;
                 }
             }
             
@@ -55,34 +55,6 @@
                     y: y
                 };
             }
-
-            /*class Point extends Filmable
-            {
-                constructor(x, y, camera = null)
-                {
-                    super(camera);
-                    this.x = x;
-                    this.y = y;
-                }
-
-                updateCameraPosition()
-                {
-                    if(this.camera.FilmedObject == this)
-                    {
-                        this.camera.x = this.x;
-                        this.camera.y = this.y;
-                    }
-                }
-            }*/
-            
-            /*class Line
-            {
-                constructor(p1, p2)
-                {
-                    this.p1 = p1;
-                    this.p2 = p2;
-                }
-            }*/
             
             function line(p1, p2)
             {
@@ -91,15 +63,6 @@
                     p2: p2
                 };
             }
-            
-            /*class Circle
-            {
-                constructor(center, radius)
-                {
-                    this.center = center;
-                    this.radius = radius;
-                }
-            }*/
             
             function circle(center, radius)
             {
@@ -362,7 +325,7 @@
 
                 updateCameraPosition()
                 {
-                    if (this.camera.FilmedObject == this)
+                    if (this.camera.filmedObject == this)
                     {
                         this.camera.x = this.nodes[0].x;
                         this.camera.y = this.nodes[0].y;
@@ -395,7 +358,7 @@
 
                 updateCameraPosition()
                 {
-                    if (this.camera.FilmedObject == this)
+                    if (this.camera.filmedObject == this)
                     {
                         this.camera.x = this.x;
                         this.camera.y = this.y;
@@ -405,7 +368,10 @@
             
             class Camera
             {
-                
+                constructor()
+                {
+                    this.filmedObject = null;
+                }
             }
             
             function hueString(hue)
@@ -537,7 +503,7 @@
             const worms = [new Worm(true, 1, 120, camera)];
             const deadWorms = [];
             const energies = [];
-            const minimap = {width: 250, height: 250, zoom: 0.1, fired: false, expanded: false};
+            const minimap = {width: 250, height: 200, zoom: 0.1, fired: false, expanded: false};
             
             worms[0].follow();
             
