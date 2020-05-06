@@ -40,17 +40,23 @@
                 follow()
                 {
                     this.camera.FilmedObject = this;
-                    this.updateCameraPosition();
                 }
                 
                 unfollow()
                 {
                     this.camera.FilmedObject = null;
-                    this.updateCameraPosition();
                 }
             }
+            
+            function point(x, y)
+            {
+                return {
+                    x: x,
+                    y: y
+                };
+            }
 
-            class Point extends Filmable
+            /*class Point extends Filmable
             {
                 constructor(x, y, camera = null)
                 {
@@ -67,24 +73,40 @@
                         this.camera.y = this.y;
                     }
                 }
-            }
+            }*/
             
-            class Line
+            /*class Line
             {
                 constructor(p1, p2)
                 {
                     this.p1 = p1;
                     this.p2 = p2;
                 }
+            }*/
+            
+            function line(p1, p2)
+            {
+                return {
+                    p1: p1,
+                    p2: p2
+                };
             }
             
-            class Circle
+            /*class Circle
             {
                 constructor(center, radius)
                 {
                     this.center = center;
                     this.radius = radius;
                 }
+            }*/
+            
+            function circle(center, radius)
+            {
+                return {
+                    center: center,
+                    radius: radius
+                };
             }
             
             class Worm extends Filmable
@@ -273,7 +295,7 @@
                         
                         if(tempCurrentNode.active === false)
                         {
-                            if(d(tempCurrentNode, tempPreviousNode) > 5)
+                            if(distance(tempCurrentNode, tempPreviousNode) > 5)
                             {
                                 tempCurrentNode.active = true;
                             }
@@ -298,15 +320,15 @@
                             if(n > 1)
                             {
                                 var tempPreviousPreviousNode = this.nodes[n - 2];
-                                var nodeDistance = d(tempCurrentNode, tempPreviousPreviousNode);
+                                var nodeDistance = distance(tempCurrentNode, tempPreviousPreviousNode);
                                 
                                 if(nodeDistance < 9.993)
                                 {
-                                    var circle1 = new Circle(tempPreviousNode, 5);
-                                    var circle2 = new Circle(tempPreviousPreviousNode, 9.993);
+                                    var circle1 = circle(tempPreviousNode, 5);
+                                    var circle2 = circle(tempPreviousPreviousNode, 9.993);
                                     var intersections = intersectCircleCircle(circle1, circle2);
                                     
-                                    if(d(tempCurrentNode, intersections[0]) < d(tempCurrentNode, intersections[1]))
+                                    if(distance(tempCurrentNode, intersections[0]) < distance(tempCurrentNode, intersections[1]))
                                     {
                                         tempCurrentNode.x = intersections[0].x;
                                         tempCurrentNode.y = intersections[0].y;
@@ -458,11 +480,13 @@
                     event = window.event;
                 }
                 
-                if(keys.includes(event.keyCode) === false)
+                var eventKey = event.key;
+                
+                if(keys.includes(eventKey) === false)
                 {
-                    keys.push(event.keyCode);
+                    keys.push(eventKey);
                     
-                    if(event.keyCode === 77 && !minimap.fired)
+                    if(eventKey.toUpperCase() === "M" && !minimap.fired)
                     {
                         minimap.fired = true;
                         
@@ -486,9 +510,11 @@
                     event = window.event;
                 }
                 
-                keys.splice(keys.indexOf(event.keyCode), 1);
+                var eventKey = event.key;
                 
-                if(event.keyCode === 77)
+                keys.splice(keys.indexOf(eventKey), 1);
+                
+                if(eventKey.toUpperCase() === "M")
                 {
                     minimap.fired = false;
                 }
@@ -499,18 +525,19 @@
             window.onkeydown = keydown;
             window.onkeyup = keyup;
             window.onload = render;
-            window.addEventListener("contextmenu", event => event.preventDefault());
+            window.oncontextmenu = function(event) { event.preventDefault(); };
             
-            var keys = [];
-            var camera = new Camera();
             var timeScale = 1;
-            var worldRadius = 10000;
-            var gridSize = 100;
-            var wormBotCount = 100;
-            var energyCount = 1000;
-            var worms = [new Worm(true, 0, 120, camera)];
-            var deadWorms = [];
-            var energies = [];
+            const keys = [];
+            const camera = new Camera();
+            const worldRadius = 10000;
+            const gridSize = 100;
+            const wormBotCount = 100;
+            const energyCount = 1000;
+            const worms = [new Worm(true, 1, 120, camera)];
+            const deadWorms = [];
+            const energies = [];
+            const minimap = {width: 250, height: 250, zoom: 0.1, fired: false, expanded: false};
             
             worms[0].follow();
             
@@ -524,42 +551,37 @@
                 energies.push(new Energy(camera));
             }
             
-            var minimap =
-            {
-                width: 250,
-                height: 200,
-                zoom: 0.1,
-                fired: false,
-                expanded: false
-            };
-            
+            const canvas = document.getElementById("canvas");
+            const ctx = canvas.getContext("2d", {alpha: false});
             var activeWorm = 0;
-            var canvas = document.getElementById("canvas");
-            var ctx = canvas.getContext("2d", {alpha: false});
             var fps = 60;
             var previousTime;
             var currentTime = new Date();
+            resize();
+            
+            const pointOrigin = point(0, 0), pointCanvasCenter = point(canvas.width / 2, canvas.height / 2);
+            const distanceOriginCenter = distance(pointOrigin, pointCanvasCenter);
 
             function render()
             {
                 for(var n = 0; n < worms.length; n++)
                 {
-                    var worm = worms[n];
+                    const worm = worms[n];
                     worm.turn = 0;
                     
                     if(worm.controllable)
                     {
-                        if(keys.includes(37) || keys.includes(65))
+                        if(keys.includes("ArrowLeft") || keys.includes("a") || keys.includes("A"))
                         {
                             worm.turn -= 1;
                         }
                         
-                        if(keys.includes(39) || keys.includes(68))
+                        if(keys.includes("ArrowRight") || keys.includes("d") || keys.includes("D"))
                         {
                             worm.turn += 1;
                         }
                         
-                        if(keys.includes(109) || keys.includes(188))
+                        if(keys.includes("-") || keys.includes(","))
                         {
                             timeScale -= 0.01;
                             
@@ -569,7 +591,7 @@
                             }
                         }
                         
-                        if(keys.includes(107) || keys.includes(190))
+                        if(keys.includes("+") || keys.includes("."))
                         {
                             timeScale += 0.01;
                         }
@@ -577,7 +599,7 @@
                     
                     else
                     {
-                        if(d(worms[0].nodes[0], worm.nodes[0]) < 500)
+                        if(distance(worms[0].nodes[0], worm.nodes[0]) < 500)
                         {
                             var dx = worms[0].nodes[0].x - worm.nodes[0].x;
                             var dy = worms[0].nodes[0].y - worm.nodes[0].y;
@@ -600,11 +622,11 @@
                     
                     worm.move();
                     
-                    if(d(new Point(0, 0), worm.nodes[0]) > worldRadius)
+                    if(distance(pointOrigin, worm.nodes[0]) > worldRadius)
                     {
                         var newX = worm.nodes[0].x;
                         var newY = worm.nodes[0].y;
-                        var intersection = intersectCircleLineSegment(new Circle(new Point(0, 0), worldRadius), new Line(new Point(oldX, oldY), new Point(newX, newY)));
+                        var intersection = intersectCircleLineSegment(circle(pointOrigin, worldRadius), line(point(oldX, oldY), point(newX, newY)));
                         worm.moveTo(intersection[0]);
                         killWorm(n);
                         n--;
@@ -619,7 +641,7 @@
                     {
                         if(n !== m)
                         {
-                            if(d(worms[n].nodes[0], worms[m].nodes[0]) < 150)
+                            if(distance(worms[n].nodes[0], worms[m].nodes[0]) < 150)
                             {
                                 foundHappiness = true;
                             }
@@ -628,13 +650,13 @@
                     
                     if(foundHappiness)
                     {
-                        if(worms[n].happinessCounter < 50)
+                        if(worms[n].happinessCounter < 1)
                         {
-                            worms[n].happinessCounter += 60 / clampMin(fps, 20) * timeScale;
+                            worms[n].happinessCounter += 1 / 50 * 60 / clampMin(fps, 20) * timeScale;
                             
-                            if(worms[n].happinessCounter > 50)
+                            if(worms[n].happinessCounter > 1)
                             {
-                                worms[n].happinessCounter = 50;
+                                worms[n].happinessCounter = 1;
                             }
                         }
                     }
@@ -643,7 +665,7 @@
                     {
                         if(worms[n].happinessCounter > 0)
                         {
-                            worms[n].happinessCounter -= 60 / clampMin(fps, 20) * timeScale;
+                            worms[n].happinessCounter -= 1 / 50 * 60 / clampMin(fps, 20) * timeScale;
                             
                             if(worms[n].happinessCounter < 0)
                             {
@@ -657,7 +679,7 @@
                         worms[n].happinessDirection = -1;
                     }
                     
-                    else if(worms[n].happinessCounter === 50)
+                    else if(worms[n].happinessCounter === 1)
                     {
                         worms[n].happinessDirection = 1;
                     }
@@ -675,16 +697,16 @@
                 
                 for(var n = 0; n < energies.length; n++)
                 {
-                    var energy = energies[n];
+                    const energy = energies[n];
                     energy.move();
                     var tempClosestWorm;
-                    var tempMinimumDistance = false;
+                    var tempMinimumDistance = -1;
                     
                     for(var m = 0; m < worms.length; m++)
                     {
-                        var tempDistance = d(energies[n], worms[m].nodes[0]);
+                        var tempDistance = distance(energies[n], worms[m].nodes[0]);
                         
-                        if(tempDistance < tempMinimumDistance || tempMinimumDistance === false)
+                        if(tempDistance < tempMinimumDistance || tempMinimumDistance === -1)
                         {
                             tempMinimumDistance = tempDistance;
                             tempClosestWorm = m;
@@ -701,9 +723,11 @@
                             worms[tempClosestWorm].addNodeSmooth(5);
                             n--;
                         }
+                        
+                        continue;
                     }
                     
-                    if(tempMinimumDistance < 50 && tempMinimumDistance !== false)
+                    if(tempMinimumDistance < 50 && tempMinimumDistance !== -1)
                     {
                         if(energy.opacity === 1)
                         {
@@ -745,7 +769,6 @@
                 ctx.lineTo(worldRadius, worldRadius);
                 ctx.closePath();
                 ctx.fill();
-                ctx.strokeStyle = "#141414";
                 ctx.lineWidth = 3;
                 ctx.beginPath();
                 ctx.arc(0, 0, worldRadius, 0, 2 * Math.PI);
@@ -754,9 +777,9 @@
                 ctx.shadowBlur = 20;
                 for(var n = 0; n < energies.length; n++)
                 {
-                    var energy = energies[n];
+                    const energy = energies[n];
                     
-                    if(d(new Point(0, 0), new Point(energy.x - camera.x, energy.y - camera.y)) < d(new Point(0, 0), new Point(canvas.width / 2, canvas.height / 2)) + 100)
+                    if(distance(pointOrigin, point(energy.x - camera.x, energy.y - camera.y)) < distanceOriginCenter + 100)
                     {
                         ctx.globalAlpha = energy.opacity;
                         ctx.translate(energy.x, energy.y);
@@ -808,7 +831,7 @@
                 {
                     var deadWorm = deadWorms[n];
                     
-                    if(d(new Point(0, 0), new Point(deadWorm.nodes[0].x - camera.x, deadWorm.nodes[0].y - camera.y)) < d(new Point(0, 0), new Point(canvas.width / 2, canvas.height / 2)) + 5 * deadWorm.nodes.length + 100)
+                    if(distance(pointOrigin, point(deadWorm.nodes[0].x - camera.x, deadWorm.nodes[0].y - camera.y)) < distanceOriginCenter + 5 * deadWorm.nodes.length + 100)
                     {
                         ctx.lineWidth = 3;
                         ctx.strokeStyle = "#171717";
@@ -863,10 +886,10 @@
                 
                 for(var n = 0; n < worms.length; n++)
                 {
-                    var worm = worms[n];
+                    const worm = worms[n];
                     var color = hueString(worm.hue);
                     
-                    if(d(new Point(0, 0), new Point(worm.nodes[0].x - camera.x, worm.nodes[0].y - camera.y)) < d(new Point(0, 0), new Point(canvas.width / 2, canvas.height / 2)) + 5 * worm.nodes.length + 100)
+                    if(distance(pointOrigin, point(worm.nodes[0].x - camera.x, worm.nodes[0].y - camera.y)) < distanceOriginCenter + 5 * worm.nodes.length + 100)
                     {
                         ctx.lineWidth = 3;
                         ctx.strokeStyle = color;
@@ -925,18 +948,15 @@
                                     ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
                                     ctx.rotate(-worm.nodes[m].r);
                                     
-                                    switch(m % 4)
+                                    switch(true)
                                     {
-                                        case 0:
+                                        case m % 4 === 0:
                                             ctx.lineTo(3, 25);
                                             break;
-                                        case 1:
+                                        case m % 4 === 1:
                                             ctx.lineTo(-3, 25);
                                             break;
-                                        case 2:
-                                            ctx.lineTo(0, 25 - 5 * worm.nodes[m].activeCounter);
-                                            break;
-                                        case 3:
+                                        case m % 4 > 1:
                                             ctx.lineTo(0, 25 - 5 * worm.nodes[m].activeCounter);
                                             break;
                                     }
@@ -950,18 +970,15 @@
                                     ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
                                     ctx.rotate(-worm.nodes[m].r);
                                     
-                                    switch(m % 4)
+                                    switch(true)
                                     {
-                                        case 0:
+                                        case m % 4 === 0:
                                             ctx.lineTo(3, -25);
                                             break;
-                                        case 1:
+                                        case m % 4 === 1:
                                             ctx.lineTo(-3, -25);
                                             break;
-                                        case 2:
-                                            ctx.lineTo(0, -25 + 5 * worm.nodes[m].activeCounter);
-                                            break;
-                                        case 3:
+                                        case m % 4 > 1:
                                             ctx.lineTo(0, -25 + 5 * worm.nodes[m].activeCounter);
                                             break;
                                     }
@@ -1034,12 +1051,7 @@
                                 ctx.translate(-worm.nodes[0].x, -worm.nodes[0].y);
                                 break;
                         }
-                        
-
                     }
-                    
-                    ctx.strokeStyle = "#ffffff";
-                    ctx.shadowColor = ctx.strokeStyle;
                 }
                 
                 ctx.translate(camera.x - canvas.width / 2, camera.y - canvas.height / 2);
@@ -1054,7 +1066,6 @@
                     ctx.clip(region, "nonzero");
                     ctx.fillStyle = "#020202";
                     ctx.fillRect(canvas.width - minimap.width - 10, canvas.height - minimap.height - 10, minimap.width, minimap.height);
-                    
                     ctx.translate(canvas.width - 10 - minimap.width / 2, canvas.height - 10 - minimap.height / 2);
                 }
                 
@@ -1064,7 +1075,6 @@
                     ctx.shadowColor = "#000000";
                     ctx.globalAlpha = 0.8;
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    
                     ctx.translate(canvas.width / 2, canvas.height / 2);
                 }
                 
@@ -1073,12 +1083,11 @@
                 ctx.beginPath();
                 ctx.arc(minimap.zoom * (0 - camera.x), minimap.zoom * (0 - camera.y), worldRadius * minimap.zoom, 0, 2 * Math.PI);
                 ctx.stroke();
-                
                 ctx.shadowBlur = 20;
                 
                 for(var n = 0; n < energies.length; n++)
                 {
-                    if(d(new Point(0, 0), new Point(minimap.zoom * (energies[n].x - camera.x), minimap.zoom * (energies[n].y - camera.y))) < d(new Point(0, 0), new Point(minimap.width / 2, minimap.height / 2)) + 100 * minimap.zoom || minimap.expanded)
+                    if(distance(pointOrigin, point(minimap.zoom * (energies[n].x - camera.x), minimap.zoom * (energies[n].y - camera.y))) < distanceOriginCenter + 100 * minimap.zoom || minimap.expanded)
                     {
                         ctx.globalAlpha = energies[n].opacity;
                         
@@ -1112,10 +1121,10 @@
                 
                 for(var n = 0; n < worms.length; n++)
                 {
-                    var worm = worms[n];
+                    const worm = worms[n];
                     var color = hueString(worm.hue);
                     
-                    if(d(new Point(0, 0), new Point(minimap.zoom * (worm.nodes[0].x - camera.x), minimap.zoom * (worm.nodes[0].y - camera.y))) < d(new Point(0, 0), new Point(minimap.width / 2, minimap.height / 2)) + (5 * worm.nodes.length + 100) * minimap.zoom || minimap.expanded)
+                    if(distance(pointOrigin, point(minimap.zoom * (worm.nodes[0].x - camera.x), minimap.zoom * (worm.nodes[0].y - camera.y))) < distance(pointOrigin, point(minimap.width / 2, minimap.height / 2)) + (5 * worm.nodes.length + 100) * minimap.zoom || minimap.expanded)
                     {
                         ctx.strokeStyle = color;
                         ctx.shadowColor = color;
@@ -1126,6 +1135,7 @@
                         {
                             ctx.lineTo(minimap.zoom * (worm.nodes[m].x - camera.x), minimap.zoom * (worm.nodes[m].y - camera.y));
                         }
+                        
                         ctx.stroke();
                     }
                 }
@@ -1154,11 +1164,19 @@
                 window.requestAnimationFrame(render);
             }
             
-            resize();
-            
-            function d(p1, p2)
+            function distance(p1, p2)
             {
                 return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+            }
+            
+            function distanceSquared(p1, p2)
+            {
+                return Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2);
+            }
+            
+            function distanceManhattan(p1, p2)
+            {
+                return Math.abs(p1.x - p2.x) + Math.abs(p1.y - p2.y);
             }
             
             function interpolateLinear(startingValue, endingValue, t)
@@ -1231,7 +1249,7 @@
                 var xi_prime = x2 - rx;
                 var yi = y2 + ry;
                 var yi_prime = y2 - ry;
-                return [new Point(xi, yi), new Point(xi_prime, yi_prime)];
+                return [point(xi, yi), point(xi_prime, yi_prime)];
             }
             
             function clampMin(num, min)
