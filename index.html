@@ -412,7 +412,10 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 deadWorms.push(deadWorm);
                 if(tempFilmed === true)
                 {
-                    worms[clampMax(n, worms.length - 1)].follow();
+                    if(worms.length !== 0)
+                    {
+                        worms[clampMax(n, worms.length - 1)].follow();
+                    }
                 }
             }
             
