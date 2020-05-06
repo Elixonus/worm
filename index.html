@@ -416,9 +416,12 @@ file_put_contents('./data.txt', $_SERVER['REMOTE_ADDR']."\n", FILE_APPEND | LOCK
                     event = window.event;
                 }
 
-                if(event.button === 0)
+                if(event.button === 0 && camera.filmedObject != null)
                 {
-                    activeWorm--;
+                    if(camera.filmedObject.constructor.name === "Worm")
+                    {
+                        activeWorm--;
+                    }
                 }
                 
                 if(event.button === 1)
@@ -426,9 +429,12 @@ file_put_contents('./data.txt', $_SERVER['REMOTE_ADDR']."\n", FILE_APPEND | LOCK
                     worms[activeWorm].unfollow();
                 }
 
-                if(event.button === 2)
+                if(event.button === 2 && camera.filmedObject != null)
                 {
-                    activeWorm++;
+                    if(camera.filmedObject.constructor.name === "Worm")
+                    {
+                        activeWorm++;
+                    }
                 }
 
                 if(activeWorm < 0)
