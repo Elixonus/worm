@@ -390,9 +390,10 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 
                 moveTo(p)
                 {
+                    var tempActualSpeed = this.maxSpeed * 60 / clampMin(fps, 20);
                     var tempAngle = Math.atan2(p.y - this.y, p.x - this.x);
-                    var tempCosine = Math.abs(this.maxSpeed * Math.cos(tempAngle));
-                    var tempSine = Math.abs(this.maxSpeed * Math.sin(tempAngle));
+                    var tempCosine = Math.abs(tempActualSpeed * Math.cos(tempAngle));
+                    var tempSine = Math.abs(tempActualSpeed * Math.sin(tempAngle));
                     this.x = interpolateLinear(this.x, clamp(p.x, this.x - tempCosine, this.x + tempCosine), 0.2);
                     this.y = interpolateLinear(this.y, clamp(p.y, this.y - tempSine, this.y + tempSine), 0.2);
                 }
@@ -541,7 +542,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
             window.onmousedown = mousedown;
             window.onkeydown = keydown;
             window.onkeyup = keyup;
-            window.onload = render;
+            window.onload = function() { window.requestAnimationFrame(render); };
             window.oncontextmenu = function(event) { event.preventDefault(); };
             
             //-----------------------------------
