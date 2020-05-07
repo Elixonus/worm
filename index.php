@@ -341,7 +341,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 {
                     if(this.camera.filmedObject == this)
                     {
-                        this.camera.moveTo(this.nodes[0]);
+                        this.camera.moveToSmooth(this.nodes[0]);
                     }
                 }
             }
@@ -373,7 +373,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 {
                     if(this.camera.filmedObject === this)
                     {
-                        this.camera.moveTo(this);
+                        this.camera.moveToSmooth(this);
                     }
                 }
             }
@@ -389,6 +389,12 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 }
                 
                 moveTo(p)
+                {
+                    this.x = p.x;
+                    this.y = p.y;
+                }
+                
+                moveToSmooth(p)
                 {
                     var tempActualSpeed = this.maxSpeed * 60 / clampMin(fps, 20);
                     var tempAngle = Math.atan2(p.y - this.y, p.x - this.x);
@@ -408,22 +414,47 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 return ("hsl(" + hue + ", 100%, 50%)");
             }
             
-            function killWorm(n)
+            function killWorm(worm)
             {
+                var index = worms.indexOf(worm);
                 var tempFilmed = false;
                 
-                if(worms[n].camera.filmedObject === worms[n])
+                if(worms[index].camera.filmedObject === worms[index])
                 {
                     tempFilmed = true;
                 }
-                var deadWorm = worms[n];
-                worms.splice(n, 1);
+                var deadWorm = worms[index];
+                worms.splice(index, 1);
                 deadWorms.push(deadWorm);
                 if(tempFilmed === true)
                 {
                     if(worms.length !== 0)
                     {
-                        worms[clampMax(n, worms.length - 1)].follow();
+                        worms[clampMax(index, worms.length - 1)].follow();
+                    }
+                }
+            }
+            
+            function destroyEnergy(energy)
+            {
+                var index = energies.indexOf(energy);
+                var tempFilmed = false;
+                
+                if(energies[index].camera.filmedObject === energies[index])
+                {
+                    tempFilmed = true;
+                }
+                energies.splice(index, 1);
+                if(tempFilmed === true)
+                {
+                    if(energies.length !== 0)
+                    {
+                        energies[clampMax(index, energies.length - 1)].follow();
+                    }
+                    
+                    else if(worms.length !== 0)
+                    {
+                        worms[Math.round(Math.random() * worms.length - 1)].follow();
                     }
                 }
             }
@@ -555,13 +586,15 @@ if(isset($_SERVER['REMOTE_ADDR']))
             const worldRadius = 10000;
             const gridSize = 100;
             const wormBotCount = 100;
-            const energyCount = 250;
+            const energyCount = 1000;
             const worms = [new Worm(true, 1, 120, camera)];
             const deadWorms = [];
             const energies = [];
             const minimap = {width: 250, height: 200, zoom: 0.1, fired: false, expanded: false};
             
             worms[0].follow();
+            worms[0].camera.x = worms[0].nodes[0].x;
+            worms[0].camera.y = worms[0].nodes[0].y;
             
             for(var n = 0; n < wormBotCount; n++)
             {
@@ -654,7 +687,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                         var newY = worm.nodes[0].y;
                         var intersection = intersectCircleLineSegment(circle(pointOrigin, worldRadius), line(point(oldX, oldY), point(newX, newY)));
                         worm.moveTo(intersection[0]);
-                        killWorm(n);
+                        killWorm(worms[n]);
                         n--;
                     }
                 }
@@ -745,7 +778,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                         
                         if(energy.opacity <= 0)
                         {
-                            energies.splice(n, 1);
+                            destroyEnergy(energies[n]);
                             worms[tempClosestWorm].addNodeSmooth(5);
                             n--;
                         }
