@@ -101,7 +101,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     this.happiness = 0;
                     this.happinessCounter = 0;
                     this.happinessDirection = -1;
-                    this.addNode(Math.round(Math.random() * 50 + 5));
+                    this.addNode(length);
                     
                     if(!this.controllable)
                     {
