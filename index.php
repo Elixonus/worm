@@ -68,6 +68,15 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     radius: radius
                 };
             }
+            
+            function rectangle(center, width, height)
+            {
+                return {
+                    center: center,
+                    width: width,
+                    height: height
+                };
+            }
         
             class Filmable
             {
@@ -356,11 +365,13 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 
                 inCanvas(camera)
                 {
-                    var tempPadding = 80 + 20;
+                    var tempShapePadding = 80;
+                    var tempGlowPadding = 20;
+                    var tempPadding = tempShapePadding + tempGlowPadding;
                     
                     for(var n = 0; n < this.nodes.length; n++)
                     {
-                        if(this.nodes[n].x - camera.x > -(canvasHalfWidth + tempPadding) && this.nodes[n].x - camera.x < canvasHalfWidth + tempPadding && this.nodes[n].y - camera.y > -(canvasHalfHeight + tempPadding) && this.nodes[n].y - camera.y < canvasHalfHeight + tempPadding)
+                        if(pointInRectangle(point(this.nodes[n].x - camera.x, this.nodes[n].y - camera.y), rectangle(pointOrigin, canvasWidth, canvasHeight), tempPadding))
                         {
                             return true;
                         }
@@ -371,11 +382,13 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 
                 inMinimap(camera)
                 {
-                    var tempPadding = 80 * minimapZoom + 20;
+                    var tempShapePadding = 80;
+                    var tempGlowPadding = 20;
+                    var tempPadding = tempShapePadding * minimapZoom + tempGlowPadding;
                     
                     for(var n = 0; n < this.nodes.length; n++)
                     {
-                        if(minimapZoom * (this.nodes[n].x - camera.x) + tempPadding > -minimapHalfWidth && minimapZoom * (this.nodes[n].x - camera.x) - tempPadding < minimapHalfWidth && minimapZoom * (this.nodes[n].y - camera.y) + tempPadding > -minimapHalfHeight && minimapZoom * (this.nodes[n].y - camera.y) - tempPadding < minimapHalfHeight)
+                        if(pointInRectangle(point(this.nodes[n].x - camera.x, this.nodes[n].y - camera.y), rectangle(pointOrigin, canvasWidth / minimapZoom, canvasHeight / minimapZoom), tempPadding))
                         {
                             return true;
                         }
@@ -418,9 +431,11 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 
                 inCanvas(camera)
                 {
-                    var tempPadding = 80 + 20;
+                    var tempShapePadding = 80;
+                    var tempGlowPadding = 20;
+                    var tempPadding = tempShapePadding + tempGlowPadding;
                     
-                    if(this.x - camera.x > -(canvasHalfWidth + tempPadding) && this.x - camera.x < canvasHalfWidth + tempPadding && this.y - camera.y > -(canvasHalfHeight + tempPadding) && this.y - camera.y < canvasHalfHeight + tempPadding)
+                    if(pointInRectangle(point(this.x - camera.x, this.y - camera.y), rectangle(pointOrigin, canvasWidth, canvasHeight), tempPadding))
                     {
                         return true;
                     }
@@ -430,9 +445,11 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 
                 inMinimap(camera)
                 {
-                    var tempPadding = 80 * minimapZoom + 20;
+                    var tempShapePadding = 80;
+                    var tempGlowPadding = 20;
+                    var tempPadding = tempShapePadding * minimapZoom + tempGlowPadding;
                     
-                    if(minimapZoom * (this.x - camera.x) + tempPadding > -minimapHalfWidth && minimapZoom * (this.x - camera.x) - tempPadding < minimapHalfWidth && minimapZoom * (this.y - camera.y) + tempPadding > -minimapHalfHeight && minimapZoom * (this.y - camera.y) - tempPadding < minimapHalfHeight)
+                    if(pointInRectangle(point(this.x - camera.x, this.y - camera.y), rectangle(pointOrigin, canvasWidth / minimapZoom, canvasHeight / minimapZoom), tempPadding))
                     {
                         return true;
                     }
@@ -661,8 +678,6 @@ if(isset($_SERVER['REMOTE_ADDR']))
             var minimapExpanded = false;
             
             worms[0].follow();
-            worms[0].camera.x = worms[0].nodes[0].x;
-            worms[0].camera.y = worms[0].nodes[0].y;
             
             for(var n = 0; n < WORM_BOT_COUNT; n++)
             {
@@ -679,6 +694,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
             const canvasHeight = canvas.height;
             const canvasHalfWidth = canvasWidth / 2;
             const canvasHalfHeight = canvasHeight / 2;
+            const canvasZoom = 1;
             const ctx = canvas.getContext("2d", {alpha: false});
             var activeWorm = 0;
             var previousTime;
@@ -1216,7 +1232,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 
                 //----- MINIMAP RENDERING ----
                 
-                ctx.translate(camera.x - canvasHalfWidth, camera.y - canvasHalfHeight);
+                ctx.resetTransform();
                 ctx.shadowBlur = 0;
                 ctx.globalAlpha = 0.5;
                 
@@ -1306,13 +1322,12 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 
                 if(!minimapExpanded)
                 {
-                    ctx.translate(-canvasWidth + 10 + minimapWidth / 2, -canvasHeight + 10 + minimapHeight / 2);
                     ctx.restore();
                 }
                 
-                if(minimapExpanded)
+                else
                 {
-                    ctx.translate(-canvasHalfWidth, -canvasHalfHeight);
+                    ctx.resetTransform();
                 }
                 
                 requestAnimationFrame(render);
@@ -1355,6 +1370,16 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 while(difference > Math.PI)
                     difference -= 2 * Math.PI;
                 return difference;
+            }
+            
+            function pointInRectangle(point, rectangle, padding = 0)
+            {
+                if(point.x >= rectangle.center.x - rectangle.width / 2 - padding && point.x <= rectangle.center.x + rectangle.width / 2 + padding && point.y >= rectangle.center.y - rectangle.height / 2 - padding && point.y <= rectangle.center.y + rectangle.height / 2 + padding)
+                {
+                    return true;
+                }
+                
+                return false;
             }
             
             function intersectCircleLineSegment(circle, line)
