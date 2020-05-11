@@ -140,7 +140,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                         if(tempLength === 0)
                         {
                             var tempRotation = 2 * Math.PI * Math.random();
-                            var tempRadius = worldRadius * Math.sqrt(Math.random());
+                            var tempRadius = WORLD_RADIUS * Math.sqrt(Math.random());
                             this.nodes.push(
                             {
                                 active: true,
@@ -182,7 +182,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                         if(tempLength === 0)
                         {
                             var tempRotation = 2 * Math.PI * Math.random();
-                            var tempRadius = worldRadius * Math.sqrt(Math.random());
+                            var tempRadius = WORLD_RADIUS * Math.sqrt(Math.random());
                             this.nodes.push(
                             {
                                 active: true,
@@ -394,7 +394,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     this.opacity = 1;
                     this.phase = 2 * Math.PI * Math.random();
                     var tempRotation = 2 * Math.PI * Math.random();
-                    var tempRadius = worldRadius * Math.sqrt(Math.random());
+                    var tempRadius = WORLD_RADIUS * Math.sqrt(Math.random());
                     this.x = tempRadius * Math.cos(tempRotation);
                     this.y = tempRadius * Math.sin(tempRotation);
                     this.rStatic = 2 * Math.PI * Math.random();
@@ -645,10 +645,10 @@ if(isset($_SERVER['REMOTE_ADDR']))
             var timeScale = 1;
             const keys = [];
             const camera = new Camera();
-            const worldRadius = 1000;
-            const gridSize = 100;
-            const wormBotCount = 10;
-            const energyCount = 100;
+            const WORLD_RADIUS = 10000;
+            const GRID_SIZE = 100;
+            const WORM_BOT_COUNT = 100;
+            const ENERGY_COUNT = 1000;
             const worms = [new Worm(true, 1, Math.round(Math.random() * 50 + 5), 120, camera)];
             const deadWorms = [];
             const energies = [];
@@ -664,12 +664,12 @@ if(isset($_SERVER['REMOTE_ADDR']))
             worms[0].camera.x = worms[0].nodes[0].x;
             worms[0].camera.y = worms[0].nodes[0].y;
             
-            for(var n = 0; n < wormBotCount; n++)
+            for(var n = 0; n < WORM_BOT_COUNT; n++)
             {
                 worms.push(new Worm(false, Math.round(Math.random() * 2), Math.round(Math.random() * 50 + 5), Math.random() * 100 + 260, camera));
             }
             
-            for(var n = 0; n < energyCount; n++)
+            for(var n = 0; n < ENERGY_COUNT; n++)
             {
                 energies.push(new Energy(camera));
             }
@@ -768,11 +768,11 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     
                     worm.move();
                     
-                    if(distance(pointOrigin, worm.nodes[0]) > worldRadius)
+                    if(distance(pointOrigin, worm.nodes[0]) > WORLD_RADIUS)
                     {
                         var newX = worm.nodes[0].x;
                         var newY = worm.nodes[0].y;
-                        var intersection = intersectCircleLineSegment(circle(pointOrigin, worldRadius), line(point(oldX, oldY), point(newX, newY)));
+                        var intersection = intersectCircleLineSegment(circle(pointOrigin, WORLD_RADIUS), line(point(oldX, oldY), point(newX, newY)));
                         worm.moveTo(intersection[0]);
                         killWorm(worms[n]);
                         n--;
@@ -900,32 +900,32 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 
                 ctx.translate(canvasHalfWidth - camera.x, canvasHalfHeight - camera.y);
                 
-                for(var n = 1; n < 2 * worldRadius / gridSize; n++)
+                for(var n = 1; n < 2 * WORLD_RADIUS / GRID_SIZE; n++)
                 {
                     ctx.beginPath();
-                    ctx.moveTo(n * gridSize - worldRadius, 0 - worldRadius);
-                    ctx.lineTo(n * gridSize - worldRadius, 2 * worldRadius - worldRadius);
+                    ctx.moveTo(n * GRID_SIZE - WORLD_RADIUS, 0 - WORLD_RADIUS);
+                    ctx.lineTo(n * GRID_SIZE - WORLD_RADIUS, 2 * WORLD_RADIUS - WORLD_RADIUS);
                     ctx.stroke();
                     ctx.beginPath();
-                    ctx.moveTo(0 - worldRadius, n * gridSize - worldRadius);
-                    ctx.lineTo(2 * worldRadius - worldRadius, n * gridSize - worldRadius);
+                    ctx.moveTo(0 - WORLD_RADIUS, n * GRID_SIZE - WORLD_RADIUS);
+                    ctx.lineTo(2 * WORLD_RADIUS - WORLD_RADIUS, n * GRID_SIZE - WORLD_RADIUS);
                     ctx.stroke();
                 }
                 ctx.beginPath();
-                ctx.arc(0, 0, worldRadius, Math.PI, 0);
-                ctx.lineTo(worldRadius, -worldRadius);
-                ctx.lineTo(-worldRadius, -worldRadius);
+                ctx.arc(0, 0, WORLD_RADIUS, Math.PI, 0);
+                ctx.lineTo(WORLD_RADIUS, -WORLD_RADIUS);
+                ctx.lineTo(-WORLD_RADIUS, -WORLD_RADIUS);
                 ctx.closePath();
                 ctx.fill();
                 ctx.beginPath();
-                ctx.arc(0, 0, worldRadius, 0, -Math.PI);
-                ctx.lineTo(-worldRadius, worldRadius);
-                ctx.lineTo(worldRadius, worldRadius);
+                ctx.arc(0, 0, WORLD_RADIUS, 0, -Math.PI);
+                ctx.lineTo(-WORLD_RADIUS, WORLD_RADIUS);
+                ctx.lineTo(WORLD_RADIUS, WORLD_RADIUS);
                 ctx.closePath();
                 ctx.fill();
                 ctx.lineWidth = 3;
                 ctx.beginPath();
-                ctx.arc(0, 0, worldRadius, 0, 2 * Math.PI);
+                ctx.arc(0, 0, WORLD_RADIUS, 0, 2 * Math.PI);
                 ctx.stroke();
                 
                 //----- ENERGY RENDERING -----
@@ -1243,7 +1243,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 ctx.strokeStyle = "#171717";
                 ctx.lineWidth = 20 * minimapZoom;
                 ctx.beginPath();
-                ctx.arc(minimapZoom * (0 - camera.x), minimapZoom * (0 - camera.y), worldRadius * minimapZoom, 0, 2 * Math.PI);
+                ctx.arc(minimapZoom * (0 - camera.x), minimapZoom * (0 - camera.y), WORLD_RADIUS * minimapZoom, 0, 2 * Math.PI);
                 ctx.stroke();
                 ctx.shadowBlur = 20;
                 
