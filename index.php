@@ -12,6 +12,8 @@ if(isset($_SERVER['REMOTE_ADDR']))
     <head>
         <title>Worm</title>
         <link rel="shortcut icon" type="image/png" href="/favicon.ico"/>
+        <script src="/libraries/lodash/lodash.js"></script>
+        <script src="/libraries/stats/stats.js"></script>
     </head>
     
     <body>
@@ -43,24 +45,6 @@ if(isset($_SERVER['REMOTE_ADDR']))
             //----- CLASS DEFINITIONS ----
             //----------------------------
         
-            class Filmable
-            {
-                constructor(camera)
-                {
-                    this.camera = camera;
-                }
-
-                follow()
-                {
-                    this.camera.filmedObject = this;
-                }
-                
-                unfollow()
-                {
-                    this.camera.filmedObject = null;
-                }
-            }
-            
             function point(x, y)
             {
                 return {
@@ -84,13 +68,32 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     radius: radius
                 };
             }
+        
+            class Filmable
+            {
+                constructor(camera)
+                {
+                    this.camera = camera;
+                }
+
+                follow()
+                {
+                    this.camera.filmedObject = this;
+                }
+                
+                unfollow()
+                {
+                    this.camera.filmedObject = null;
+                }
+            }
             
             class Worm extends Filmable
             {
-                constructor(controllable, type, hue, camera)
+                constructor(controllable, type, length, hue, camera)
                 {
                     super(camera);
                     this.controllable = controllable;
+                    this.dead = false;
                     this.type = type;
                     this.hue = hue;
                     this.turn = 0;
@@ -243,7 +246,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     
                     if(this.turn === -1)
                     {
-                        tempFirstNode.r += Math.PI / 90 * 60 / clampMin(fps, 20) * timeScale;
+                        tempFirstNode.r += Math.PI / 90 * deltaTimeMultiplier * timeScale;
 
                         if(tempFirstNode.r >= 2 * Math.PI)
                         {
@@ -253,7 +256,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
 
                     if(this.turn === 1)
                     {
-                        tempFirstNode.r -= Math.PI / 90 * 60 / clampMin(fps, 20) * timeScale;
+                        tempFirstNode.r -= Math.PI / 90 * deltaTimeMultiplier * timeScale;
 
                         if(tempFirstNode.r < 0)
                         {
@@ -261,8 +264,8 @@ if(isset($_SERVER['REMOTE_ADDR']))
                         }
                     }
                     
-                    tempFirstNode.x += 3 * Math.cos(tempFirstNode.r) * 60 / clampMin(fps, 20) * timeScale;
-                    tempFirstNode.y -= 3 * Math.sin(tempFirstNode.r) * 60 / clampMin(fps, 20) * timeScale;
+                    tempFirstNode.x += 3 * Math.cos(tempFirstNode.r) * deltaTimeMultiplier * timeScale;
+                    tempFirstNode.y -= 3 * Math.sin(tempFirstNode.r) * deltaTimeMultiplier * timeScale;
                     
                     for(var n = 1; n < this.nodes.length; n++)
                     {
@@ -281,7 +284,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                         {
                             if(tempCurrentNode.activeCounter < 1)
                             {
-                                tempCurrentNode.activeCounter += 0.05 * 60 / clampMin(fps, 20) * timeScale;
+                                tempCurrentNode.activeCounter += 0.05 * deltaTimeMultiplier * timeScale;
                                 
                                 if(tempCurrentNode.activeCounter > 1)
                                 {
@@ -344,6 +347,32 @@ if(isset($_SERVER['REMOTE_ADDR']))
                         this.camera.moveToSmooth(this.nodes[0]);
                     }
                 }
+                
+                inCanvas(camera)
+                {
+                    for(var n = 0; n < this.nodes.length; n++)
+                    {
+                        if(this.nodes[n].x - camera.x > -canvasHalfWidth && this.nodes[n].x - camera.x < canvasHalfWidth && this.nodes[n].y - camera.y > -canvasHalfHeight && this.nodes[n].y - camera.y < canvasHalfHeight)
+                        {
+                            return true;
+                        }
+                    }
+                    
+                    return false;
+                }
+                
+                inMinimap(camera)
+                {
+                    for(var n = 0; n < this.nodes.length; n++)
+                    {
+                        if(minimapZoom * (this.nodes[n].x - camera.x) > -minimapHalfWidth && minimapZoom * (this.nodes[n].x - camera.x) < minimapHalfWidth && minimapZoom * (this.nodes[n].y - camera.y) > -minimapHalfHeight && minimapZoom * (this.nodes[n].y - camera.y) < minimapHalfHeight)
+                        {
+                            return true;
+                        }
+                    }
+                    
+                    return false;
+                }
             }
             
             class Energy extends Filmable
@@ -364,7 +393,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 
                 move()
                 {
-                    this.phase += 0.02 * 60 / clampMin(fps, 20) * timeScale;
+                    this.phase += 0.02 * deltaTimeMultiplier * timeScale;
                     this.r = this.rStatic + 0.2 * Math.sin(this.phase);
                     this.updateCamera();
                 }
@@ -375,6 +404,26 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     {
                         this.camera.moveToSmooth(this);
                     }
+                }
+                
+                inCanvas(camera)
+                {
+                    if(this.x - camera.x > -canvasHalfWidth && this.x - camera.x < canvasHalfWidth && this.y - camera.y > -canvasHalfHeight && this.y - camera.y < canvasHalfHeight)
+                    {
+                        return true;
+                    }
+                    
+                    return false;
+                }
+                
+                inMinimap(camera)
+                {
+                    if(minimapZoom * (this.x - camera.x) > -minimapHalfWidth && minimapZoom * (this.x - camera.x) < minimapHalfWidth && minimapZoom * (this.y - camera.y) > -minimapHalfHeight && minimapZoom * (this.y - camera.y) < minimapHalfHeight)
+                    {
+                        return true;
+                    }
+                    
+                    return false;
                 }
             }
             
@@ -396,7 +445,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 
                 moveToSmooth(p)
                 {
-                    var tempActualSpeed = this.maxSpeed * 60 / clampMin(fps, 20);
+                    var tempActualSpeed = this.maxSpeed * deltaTimeMultiplier;
                     var tempAngle = Math.atan2(p.y - this.y, p.x - this.x);
                     var tempCosine = Math.abs(tempActualSpeed * Math.cos(tempAngle));
                     var tempSine = Math.abs(tempActualSpeed * Math.sin(tempAngle));
@@ -461,16 +510,19 @@ if(isset($_SERVER['REMOTE_ADDR']))
             
             function resize()
             {
-                if(window.innerWidth / window.innerHeight > canvas.width / canvas.height)
+                const windowWidth = window.innerWidth;
+                const windowHeight = window.innerHeight;
+                
+                if(windowWidth / windowHeight > canvasWidth / canvasHeight)
                 {
-                    canvas.style.width = window.innerHeight / window.innerWidth * canvas.width / canvas.height * 100 + "%";
+                    canvas.style.width = `${(windowHeight / windowWidth) * ( canvasWidth / canvasHeight) * 100}%`;
                     canvas.style.height = "100%";
                 }
                 
                 else
                 {
                     canvas.style.width = "100%";
-                    canvas.style.height = window.innerWidth / window.innerHeight * canvas.height / canvas.width * 100 + "%";
+                    canvas.style.height = `${(windowWidth / windowHeight) * (canvasHeight / canvasWidth) * 100}%`;
                 }
             }
 
@@ -488,11 +540,6 @@ if(isset($_SERVER['REMOTE_ADDR']))
                         activeWorm--;
                     }
                 }
-                
-                if(event.button === 1)
-                {
-                    worms[activeWorm].unfollow();
-                }
 
                 if(event.button === 2 && camera.filmedObject != null)
                 {
@@ -501,20 +548,20 @@ if(isset($_SERVER['REMOTE_ADDR']))
                         activeWorm++;
                     }
                 }
-
-                if(activeWorm < 0)
-                {
-                    activeWorm = 0;
-                }
                 
-                if(activeWorm > worms.length - 1)
+                if(worms.length > 0)
                 {
-                    activeWorm = worms.length - 1;
-                }
-                
-                if(event.button !== 1)
-                {
-                    worms[activeWorm].follow();
+                    activeWorm = clamp(activeWorm, 0, worms.length - 1);
+                    
+                    if(event.button !== 1)
+                    {
+                        worms[activeWorm].follow();
+                    }
+                    
+                    else
+                    {
+                        worms[activeWorm].unfollow();
+                    }
                 }
             }
 
@@ -531,18 +578,18 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 {
                     keys.push(eventKey);
                     
-                    if(eventKey.toUpperCase() === "M" && !minimap.fired)
+                    if(eventKey.toUpperCase() === "M" && !minimapFired)
                     {
-                        minimap.fired = true;
+                        minimapFired = true;
                         
-                        if(minimap.expanded === false)
+                        if(minimapExpanded === false)
                         {
-                            minimap.expanded = true;
+                            minimapExpanded = true;
                         }
                         
                         else
                         {
-                            minimap.expanded = false;
+                            minimapExpanded = false;
                         }
                     }
                 }
@@ -561,7 +608,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 
                 if(eventKey.toUpperCase() === "M")
                 {
-                    minimap.fired = false;
+                    minimapFired = false;
                 }
             }
             
@@ -573,13 +620,14 @@ if(isset($_SERVER['REMOTE_ADDR']))
             window.onmousedown = mousedown;
             window.onkeydown = keydown;
             window.onkeyup = keyup;
-            window.onload = function() { window.requestAnimationFrame(render); };
+            window.onload = function() { requestAnimationFrame(render); };
             window.oncontextmenu = function(event) { event.preventDefault(); };
             
             //-----------------------------------
             //--- GLOBAL VARIABLE DEFINITIONS ---
             //-----------------------------------
             
+            var time = [];
             var timeScale = 1;
             const keys = [];
             const camera = new Camera();
@@ -587,10 +635,16 @@ if(isset($_SERVER['REMOTE_ADDR']))
             const gridSize = 100;
             const wormBotCount = 100;
             const energyCount = 1000;
-            const worms = [new Worm(true, 1, 120, camera)];
+            const worms = [new Worm(true, 1, Math.round(Math.random() * 50 + 5), 120, camera)];
             const deadWorms = [];
             const energies = [];
-            const minimap = {width: 250, height: 200, zoom: 0.1, fired: false, expanded: false};
+            const minimapWidth = 250;
+            const minimapHeight = 200;
+            const minimapHalfWidth = minimapWidth / 2;
+            const minimapHalfHeight = minimapHeight / 2;
+            var minimapZoom = 0.1;
+            var minimapFired = false;
+            var minimapExpanded = false;
             
             worms[0].follow();
             worms[0].camera.x = worms[0].nodes[0].x;
@@ -598,7 +652,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
             
             for(var n = 0; n < wormBotCount; n++)
             {
-                worms.push(new Worm(false, Math.round(Math.random() * 2), Math.random() * 100 + 260, camera));
+                worms.push(new Worm(false, Math.round(Math.random() * 2), Math.round(Math.random() * 50 + 5), Math.random() * 100 + 260, camera));
             }
             
             for(var n = 0; n < energyCount; n++)
@@ -607,18 +661,35 @@ if(isset($_SERVER['REMOTE_ADDR']))
             }
             
             const canvas = document.getElementById("canvas");
+            const canvasWidth = canvas.width;
+            const canvasHeight = canvas.height;
+            const canvasHalfWidth = canvasWidth / 2;
+            const canvasHalfHeight = canvasHeight / 2;
             const ctx = canvas.getContext("2d", {alpha: false});
             var activeWorm = 0;
-            var fps = 60;
             var previousTime;
             var currentTime = new Date();
+            var fps;
+            var deltaTimeMultiplier = 1;
+            
+            var stats = new Stats();
+            stats.showPanel(0);
+            document.body.appendChild(stats.dom);
+            
             resize();
             
-            const pointOrigin = point(0, 0), pointCanvasCenter = point(canvas.width / 2, canvas.height / 2);
+            const pointOrigin = point(0, 0), pointCanvasCenter = point(canvasHalfWidth, canvasHalfHeight);
             const distanceOriginCenter = distance(pointOrigin, pointCanvasCenter);
 
             function render()
             {
+                stats.update();
+                
+                previousTime = currentTime;
+                currentTime = new Date();
+                fps = 1000 / (currentTime - previousTime);
+                deltaTimeMultiplier = interpolateLinear(deltaTimeMultiplier, 60 / clamp(fps, 20, 60), 0.5);
+                
                 //----------------------------
                 //-------- MOVEMENT ----------
                 //----------------------------
@@ -711,7 +782,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     {
                         if(worms[n].happinessCounter < 1)
                         {
-                            worms[n].happinessCounter += 1 / 50 * 60 / clampMin(fps, 20) * timeScale;
+                            worms[n].happinessCounter += 1 / 50 * deltaTimeMultiplier * timeScale;
                             
                             if(worms[n].happinessCounter > 1)
                             {
@@ -724,7 +795,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     {
                         if(worms[n].happinessCounter > 0)
                         {
-                            worms[n].happinessCounter -= 1 / 50 * 60 / clampMin(fps, 20) * timeScale;
+                            worms[n].happinessCounter -= 1 / 50 * deltaTimeMultiplier * timeScale;
                             
                             if(worms[n].happinessCounter < 0)
                             {
@@ -745,12 +816,12 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     
                     if(worms[n].happinessDirection === -1)
                     {
-                        worms[n].decreaseHappiness(1 / 10 * 60 / clampMin(fps, 20) * timeScale);
+                        worms[n].decreaseHappiness(1 / 10 * deltaTimeMultiplier * timeScale);
                     }
                     
                     else if(worms[n].happinessDirection === 1)
                     {
-                        worms[n].increaseHappiness(1 / 10 * 60 / clampMin(fps, 20) * timeScale);
+                        worms[n].increaseHappiness(1 / 10 * deltaTimeMultiplier * timeScale);
                     }
                 }
                 
@@ -774,7 +845,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     
                     if(energy.opacity < 1)
                     {
-                        energy.opacity -= 0.1 * 60 / clampMin(fps, 20) * timeScale;
+                        energy.opacity -= 0.1 * deltaTimeMultiplier * timeScale;
                         
                         if(energy.opacity <= 0)
                         {
@@ -790,10 +861,12 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     {
                         if(energy.opacity === 1)
                         {
-                            energy.opacity -= 0.1 * 60 / clampMin(fps, 20) * timeScale;
+                            energy.opacity -= 0.1 * deltaTimeMultiplier * timeScale;
                         }
                     }
                 }
+                
+                //time.push(_.cloneDeep(worms));
                 
                 //----------------------------
                 //-------- RENDERING ---------
@@ -805,11 +878,11 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 ctx.lineCap = "butt";
                 ctx.shadowBlur = 0;
                 ctx.globalAlpha = 1;
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillRect(0, 0, canvasWidth, canvasHeight);
                 ctx.strokeStyle = "#141414";
                 ctx.lineWidth = 1;
                 
-                ctx.translate(canvas.width / 2 - camera.x, canvas.height / 2 - camera.y);
+                ctx.translate(canvasHalfWidth - camera.x, canvasHalfHeight - camera.y);
                 
                 for(var n = 1; n < 2 * worldRadius / gridSize; n++)
                 {
@@ -846,7 +919,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 {
                     const energy = energies[n];
                     
-                    if(distance(pointOrigin, point(energy.x - camera.x, energy.y - camera.y)) < distanceOriginCenter + 100)
+                    if(energy.inCanvas(camera))
                     {
                         ctx.globalAlpha = energy.opacity;
                         ctx.translate(energy.x, energy.y);
@@ -900,7 +973,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 {
                     var deadWorm = deadWorms[n];
                     
-                    if(distance(pointOrigin, point(deadWorm.nodes[0].x - camera.x, deadWorm.nodes[0].y - camera.y)) < distanceOriginCenter + 5 * deadWorm.nodes.length + 100)
+                    if(deadWorm.inCanvas(camera))
                     {
                         ctx.lineWidth = 3;
                         ctx.strokeStyle = "#171717";
@@ -960,7 +1033,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     const worm = worms[n];
                     var color = hueString(worm.hue);
                     
-                    if(distance(pointOrigin, point(worm.nodes[0].x - camera.x, worm.nodes[0].y - camera.y)) < distanceOriginCenter + 5 * worm.nodes.length + 100)
+                    if(worm.inCanvas(camera))
                     {
                         ctx.lineWidth = 3;
                         ctx.strokeStyle = color;
@@ -1127,68 +1200,70 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 
                 //----- MINIMAP RENDERING ----
                 
-                ctx.translate(camera.x - canvas.width / 2, camera.y - canvas.height / 2);
+                ctx.translate(camera.x - canvasHalfWidth, camera.y - canvasHalfHeight);
                 ctx.shadowBlur = 0;
                 ctx.globalAlpha = 0.5;
                 
-                if(!minimap.expanded)
+                if(!minimapExpanded)
                 {
                     var region = new Path2D();
-                    region.rect(canvas.width - minimap.width - 10, canvas.height - minimap.height - 10, minimap.width, minimap.height);
+                    region.rect(canvasWidth - minimapWidth - 10, canvasHeight - minimapHeight - 10, minimapWidth, minimapHeight);
                     ctx.save();
                     ctx.clip(region, "nonzero");
                     ctx.fillStyle = "#020202";
-                    ctx.fillRect(canvas.width - minimap.width - 10, canvas.height - minimap.height - 10, minimap.width, minimap.height);
-                    ctx.translate(canvas.width - 10 - minimap.width / 2, canvas.height - 10 - minimap.height / 2);
+                    ctx.fillRect(canvasWidth - minimapWidth - 10, canvasHeight - minimapHeight - 10, minimapWidth, minimapHeight);
+                    ctx.translate(canvasWidth - 10 - minimapWidth / 2, canvasHeight - 10 - minimapHeight / 2);
                 }
                 
-                if(minimap.expanded)
+                if(minimapExpanded)
                 {
                     ctx.fillStyle = "#000000";
                     ctx.shadowColor = "#000000";
                     ctx.globalAlpha = 0.8;
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    ctx.translate(canvas.width / 2, canvas.height / 2);
+                    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+                    ctx.translate(canvasHalfWidth, canvasHalfHeight);
                 }
                 
                 ctx.strokeStyle = "#171717";
-                ctx.lineWidth = 20 * minimap.zoom;
+                ctx.lineWidth = 20 * minimapZoom;
                 ctx.beginPath();
-                ctx.arc(minimap.zoom * (0 - camera.x), minimap.zoom * (0 - camera.y), worldRadius * minimap.zoom, 0, 2 * Math.PI);
+                ctx.arc(minimapZoom * (0 - camera.x), minimapZoom * (0 - camera.y), worldRadius * minimapZoom, 0, 2 * Math.PI);
                 ctx.stroke();
                 ctx.shadowBlur = 20;
                 
                 for(var n = 0; n < energies.length; n++)
                 {
-                    if(distance(pointOrigin, point(minimap.zoom * (energies[n].x - camera.x), minimap.zoom * (energies[n].y - camera.y))) < distanceOriginCenter + 100 * minimap.zoom || minimap.expanded)
+                    const energy = energies[n];
+                    
+                    if(minimapExpanded || energy.inMinimap(camera))
                     {
-                        ctx.globalAlpha = energies[n].opacity;
+                        ctx.globalAlpha = energy.opacity;
                         
-                        if(energies[n].type === 0)
+                        if(energy.type === 0)
                         {
                             ctx.fillStyle = "#ff0000";
                             ctx.shadowColor = "#ff0000";
                         }
                         
-                        if(energies[n].type === 1)
+                        if(energy.type === 1)
                         {
                             ctx.fillStyle = "#00e5ff";
                             ctx.shadowColor = "#00e5ff";
                         }
                         
-                        if(energies[n].type === 2)
+                        if(energy.type === 2)
                         {
                             ctx.fillStyle = "#ff9100";
                             ctx.shadowColor = "#ff9100";
                         }
                         
                         ctx.beginPath();
-                        ctx.arc(minimap.zoom * (energies[n].x - camera.x), minimap.zoom * (energies[n].y - camera.y), 20 * minimap.zoom, 0, 2 * Math.PI);
+                        ctx.arc(minimapZoom * (energy.x - camera.x), minimapZoom * (energy.y - camera.y), 20 * minimapZoom, 0, 2 * Math.PI);
                         ctx.fill();
                     }
                 }
                 
-                ctx.lineWidth = 40 * minimap.zoom;
+                ctx.lineWidth = 40 * minimapZoom;
                 ctx.lineCap = "round";
                 ctx.globalAlpha = 1;
                 
@@ -1197,44 +1272,34 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     const worm = worms[n];
                     var color = hueString(worm.hue);
                     
-                    if(distance(pointOrigin, point(minimap.zoom * (worm.nodes[0].x - camera.x), minimap.zoom * (worm.nodes[0].y - camera.y))) < distance(pointOrigin, point(minimap.width / 2, minimap.height / 2)) + (5 * worm.nodes.length + 100) * minimap.zoom || minimap.expanded)
+                    if(minimapExpanded || worm.inMinimap(camera))
                     {
                         ctx.strokeStyle = color;
                         ctx.shadowColor = color;
                         ctx.beginPath();
-                        ctx.moveTo(minimap.zoom * (worm.nodes[0].x - camera.x), minimap.zoom * (worm.nodes[0].y - camera.y));
+                        ctx.moveTo(minimapZoom * (worm.nodes[0].x - camera.x), minimapZoom * (worm.nodes[0].y - camera.y));
                         
                         for(var m = 1; m < worm.nodes.length; m++)
                         {
-                            ctx.lineTo(minimap.zoom * (worm.nodes[m].x - camera.x), minimap.zoom * (worm.nodes[m].y - camera.y));
+                            ctx.lineTo(minimapZoom * (worm.nodes[m].x - camera.x), minimapZoom * (worm.nodes[m].y - camera.y));
                         }
                         
                         ctx.stroke();
                     }
                 }
                 
-                if(!minimap.expanded)
+                if(!minimapExpanded)
                 {
-                    ctx.translate(-canvas.width + 10 + minimap.width / 2, -canvas.height + 10 + minimap.height / 2);
+                    ctx.translate(-canvasWidth + 10 + minimapWidth / 2, -canvasHeight + 10 + minimapHeight / 2);
                     ctx.restore();
                 }
                 
-                if(minimap.expanded)
+                if(minimapExpanded)
                 {
-                    ctx.translate(-canvas.width / 2, -canvas.height / 2);
+                    ctx.translate(-canvasHalfWidth, -canvasHalfHeight);
                 }
                 
-                previousTime = currentTime;
-                currentTime = new Date();
-                fps = 1000 / (currentTime - previousTime);
-                
-                ctx.font = "30px Verdana";
-                ctx.fillStyle = "#00ff00";
-                ctx.shadowBlur = 0;
-                ctx.globalAlpha = 1;
-                ctx.fillText(Math.round(fps), 10, 30);
-                
-                window.requestAnimationFrame(render);
+                requestAnimationFrame(render);
             }
             
             //----------------------------
