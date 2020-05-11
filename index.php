@@ -102,6 +102,12 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     this.happinessCounter = 0;
                     this.happinessDirection = -1;
                     this.addNode(Math.round(Math.random() * 50 + 5));
+                    
+                    if(!this.controllable)
+                    {
+                        this.botWait = Math.round(Math.random() * 20 + 10);
+                        this.botDesiredDirection = this.nodes[0].r;
+                    }
                 }
                 
                 setHue(hue)
@@ -350,9 +356,11 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 
                 inCanvas(camera)
                 {
+                    var tempPadding = 80 + 20;
+                    
                     for(var n = 0; n < this.nodes.length; n++)
                     {
-                        if(this.nodes[n].x - camera.x > -canvasHalfWidth && this.nodes[n].x - camera.x < canvasHalfWidth && this.nodes[n].y - camera.y > -canvasHalfHeight && this.nodes[n].y - camera.y < canvasHalfHeight)
+                        if(this.nodes[n].x - camera.x > -(canvasHalfWidth + tempPadding) && this.nodes[n].x - camera.x < canvasHalfWidth + tempPadding && this.nodes[n].y - camera.y > -(canvasHalfHeight + tempPadding) && this.nodes[n].y - camera.y < canvasHalfHeight + tempPadding)
                         {
                             return true;
                         }
@@ -363,9 +371,11 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 
                 inMinimap(camera)
                 {
+                    var tempPadding = 80 * minimapZoom + 20;
+                    
                     for(var n = 0; n < this.nodes.length; n++)
                     {
-                        if(minimapZoom * (this.nodes[n].x - camera.x) > -minimapHalfWidth && minimapZoom * (this.nodes[n].x - camera.x) < minimapHalfWidth && minimapZoom * (this.nodes[n].y - camera.y) > -minimapHalfHeight && minimapZoom * (this.nodes[n].y - camera.y) < minimapHalfHeight)
+                        if(minimapZoom * (this.nodes[n].x - camera.x) + tempPadding > -minimapHalfWidth && minimapZoom * (this.nodes[n].x - camera.x) - tempPadding < minimapHalfWidth && minimapZoom * (this.nodes[n].y - camera.y) + tempPadding > -minimapHalfHeight && minimapZoom * (this.nodes[n].y - camera.y) - tempPadding < minimapHalfHeight)
                         {
                             return true;
                         }
@@ -408,7 +418,9 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 
                 inCanvas(camera)
                 {
-                    if(this.x - camera.x > -canvasHalfWidth && this.x - camera.x < canvasHalfWidth && this.y - camera.y > -canvasHalfHeight && this.y - camera.y < canvasHalfHeight)
+                    var tempPadding = 80 + 20;
+                    
+                    if(this.x - camera.x > -(canvasHalfWidth + tempPadding) && this.x - camera.x < canvasHalfWidth + tempPadding && this.y - camera.y > -(canvasHalfHeight + tempPadding) && this.y - camera.y < canvasHalfHeight + tempPadding)
                     {
                         return true;
                     }
@@ -418,7 +430,9 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 
                 inMinimap(camera)
                 {
-                    if(minimapZoom * (this.x - camera.x) > -minimapHalfWidth && minimapZoom * (this.x - camera.x) < minimapHalfWidth && minimapZoom * (this.y - camera.y) > -minimapHalfHeight && minimapZoom * (this.y - camera.y) < minimapHalfHeight)
+                    var tempPadding = 80 * minimapZoom + 20;
+                    
+                    if(minimapZoom * (this.x - camera.x) + tempPadding > -minimapHalfWidth && minimapZoom * (this.x - camera.x) - tempPadding < minimapHalfWidth && minimapZoom * (this.y - camera.y) + tempPadding > -minimapHalfHeight && minimapZoom * (this.y - camera.y) - tempPadding < minimapHalfHeight)
                     {
                         return true;
                     }
@@ -631,10 +645,10 @@ if(isset($_SERVER['REMOTE_ADDR']))
             var timeScale = 1;
             const keys = [];
             const camera = new Camera();
-            const worldRadius = 10000;
+            const worldRadius = 1000;
             const gridSize = 100;
-            const wormBotCount = 100;
-            const energyCount = 1000;
+            const wormBotCount = 10;
+            const energyCount = 100;
             const worms = [new Worm(true, 1, Math.round(Math.random() * 50 + 5), 120, camera)];
             const deadWorms = [];
             const energies = [];
@@ -727,23 +741,25 @@ if(isset($_SERVER['REMOTE_ADDR']))
                         }
                     }
                     
-                    else
+                    else if(!worm.controllable)
                     {
-                        if(distance(worms[0].nodes[0], worm.nodes[0]) < 500)
+                        worm.botWait--;
+                        
+                        if(worm.botWait === 0)
                         {
-                            var dx = worms[0].nodes[0].x - worm.nodes[0].x;
-                            var dy = worms[0].nodes[0].y - worm.nodes[0].y;
-                            var dotProduct = dx * Math.sin(worm.nodes[0].r) + dy * Math.cos(worm.nodes[0].r);
-                            
-                            if(dotProduct < 0)
-                            {
-                                worm.turn = -1;
-                            }
-                            
-                            if(dotProduct > 0)
-                            {
-                                worm.turn = 1;
-                            }
+                            worm.botDesiredDirection += (Math.random() - 0.5) * Math.PI;
+                            worm.botWait = Math.round(Math.random() * 20 + 10);
+                        }
+                        
+                        var angleDifference = calculateAngleDifference(worm.nodes[0].r, worm.botDesiredDirection);
+                        if(angleDifference < 0)
+                        {
+                            worm.turn = 1;
+                        }
+                        
+                        else if(angleDifference > 0)
+                        {
+                            worm.turn = -1;
                         }
                     }
                     
@@ -1329,6 +1345,16 @@ if(isset($_SERVER['REMOTE_ADDR']))
             function interpolateQuadratic(startingValue, endingValue, t)
             {
                 return interpolateLinear(startingValue, endingValue, t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
+            }
+            
+            function calculateAngleDifference(a1, a2)
+            {
+                var difference = a2 - a1;
+                while(difference < -Math.PI)
+                    difference += 2 * Math.PI;
+                while(difference > Math.PI)
+                    difference -= 2 * Math.PI;
+                return difference;
             }
             
             function intersectCircleLineSegment(circle, line)
