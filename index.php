@@ -460,11 +460,12 @@ if(isset($_SERVER['REMOTE_ADDR']))
             
             class Camera
             {
-                constructor()
+                constructor(x = 0, y = 0, zoom = 1)
                 {
                     this.filmedObject = null;
-                    this.x = 0;
-                    this.y = 0;
+                    this.x = y;
+                    this.y = x;
+                    this.speed = 0;
                     this.maxSpeed = 1000;
                 }
                 
@@ -476,12 +477,15 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 
                 moveToSmooth(p)
                 {
-                    var tempActualSpeed = this.maxSpeed * deltaTimeMultiplier;
+                    var tempActualSpeed = this.maxSpeed;
                     var tempAngle = Math.atan2(p.y - this.y, p.x - this.x);
                     var tempCosine = Math.abs(tempActualSpeed * Math.cos(tempAngle));
                     var tempSine = Math.abs(tempActualSpeed * Math.sin(tempAngle));
+                    var oldX = this.x;
+                    var oldY = this.y;
                     this.x = interpolateLinear(this.x, clamp(p.x, this.x - tempCosine, this.x + tempCosine), 0.2);
                     this.y = interpolateLinear(this.y, clamp(p.y, this.y - tempSine, this.y + tempSine), 0.2);
+                    this.speed = distance(point(oldX, oldY), point(this.x, this.y));
                 }
             }
             
@@ -694,7 +698,6 @@ if(isset($_SERVER['REMOTE_ADDR']))
             const canvasHeight = canvas.height;
             const canvasHalfWidth = canvasWidth / 2;
             const canvasHalfHeight = canvasHeight / 2;
-            const canvasZoom = 1;
             const ctx = canvas.getContext("2d", {alpha: false});
             var activeWorm = 0;
             var previousTime;
@@ -718,7 +721,8 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 previousTime = currentTime;
                 currentTime = new Date();
                 fps = 1000 / (currentTime - previousTime);
-                deltaTimeMultiplier = interpolateLinear(deltaTimeMultiplier, 60 / clamp(fps, 20, 60), 0.5);
+                //deltaTimeMultiplier = interpolateLinear(deltaTimeMultiplier, 60 / clamp(fps, 20, 60), 0.5);
+                deltaTimeMultiplier = 1;
                 
                 //----------------------------
                 //-------- MOVEMENT ----------
@@ -914,7 +918,9 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 ctx.strokeStyle = "#141414";
                 ctx.lineWidth = 1;
                 
-                ctx.translate(canvasHalfWidth - camera.x, canvasHalfHeight - camera.y);
+                //ctx.translate(canvasHalfWidth - camera.x, canvasHalfHeight - camera.y);
+                ctx.translate(canvasHalfWidth, canvasHalfHeight);
+                ctx.translate(-camera.x, -camera.y);
                 
                 for(var n = 1; n < 2 * WORLD_RADIUS / GRID_SIZE; n++)
                 {
@@ -1060,6 +1066,9 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 
                 //------ WORM RENDERING ------
                 
+                ctx.lineWidth = 3;
+                ctx.shadowBlur = 20;
+                
                 for(var n = 0; n < worms.length; n++)
                 {
                     const worm = worms[n];
@@ -1067,10 +1076,8 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     
                     if(worm.inCanvas(camera))
                     {
-                        ctx.lineWidth = 3;
                         ctx.strokeStyle = color;
                         ctx.fillStyle = color;
-                        ctx.shadowBlur = 20;
                         ctx.shadowColor = color;
                         
                         switch(worm.type)
@@ -1080,26 +1087,27 @@ if(isset($_SERVER['REMOTE_ADDR']))
                                 ctx.arc(worm.nodes[0].x, worm.nodes[0].y, 25, -(worm.nodes[0].r + Math.PI / 2), -(worm.nodes[0].r - Math.PI / 2));
                                 for(var m = 1; m < worm.nodes.length - 1; m += 1)
                                 {
+                                    ctx.save();
                                     ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
                                     ctx.rotate(-worm.nodes[m].r);
                                     ctx.lineTo(0, 25);
-                                    ctx.rotate(worm.nodes[m].r);
-                                    ctx.translate(-worm.nodes[m].x, -worm.nodes[m].y);
+                                    ctx.restore();
                                 }
                                 ctx.arc(worm.nodes[worm.nodes.length - 1].x, worm.nodes[worm.nodes.length - 1].y, 25, -(worm.nodes[worm.nodes.length - 1].r - Math.PI / 2), -(worm.nodes[worm.nodes.length - 1].r + Math.PI / 2));
                                 for(var m = worm.nodes.length - 2; m > 0; m -= 1)
                                 {
+                                    ctx.save();
                                     ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
                                     ctx.rotate(-worm.nodes[m].r);
                                     ctx.lineTo(0, -25);
-                                    ctx.rotate(worm.nodes[m].r);
-                                    ctx.translate(-worm.nodes[m].x, -worm.nodes[m].y);
+                                    ctx.restore();
                                 }
                                 ctx.closePath();
                                 ctx.stroke();
                                 var interpolation1 = interpolateQuadratic(12, 6, worm.happiness);
                                 var interpolation2 = interpolateQuadratic(-11, -15, worm.happiness);
                                 var interpolation3 = interpolateQuadratic(4, 19, worm.happiness);
+                                ctx.save();
                                 ctx.translate(worm.nodes[0].x, worm.nodes[0].y);
                                 ctx.rotate(-worm.nodes[0].r);
                                 ctx.lineWidth = 2;
@@ -1113,14 +1121,14 @@ if(isset($_SERVER['REMOTE_ADDR']))
                                 ctx.beginPath();
                                 ctx.arc(0, 5, 2, 0, 2 * Math.PI);
                                 ctx.fill();
-                                ctx.rotate(worm.nodes[0].r);
-                                ctx.translate(-worm.nodes[0].x, -worm.nodes[0].y);
+                                ctx.restore();
                                 break;
                             case 1:
                                 ctx.beginPath();
                                 ctx.arc(worm.nodes[0].x, worm.nodes[0].y, 25, -(worm.nodes[0].r + Math.PI / 2), -(worm.nodes[0].r - Math.PI / 2));
                                 for(var m = 1; m < worm.nodes.length - 1; m += 1)
                                 {
+                                    ctx.save();
                                     ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
                                     ctx.rotate(-worm.nodes[m].r);
                                     
@@ -1137,12 +1145,12 @@ if(isset($_SERVER['REMOTE_ADDR']))
                                             break;
                                     }
                                     
-                                    ctx.rotate(worm.nodes[m].r);
-                                    ctx.translate(-worm.nodes[m].x, -worm.nodes[m].y);
+                                    ctx.restore();
                                 }
                                 ctx.arc(worm.nodes[worm.nodes.length - 1].x, worm.nodes[worm.nodes.length - 1].y, 25, -(worm.nodes[worm.nodes.length - 1].r - Math.PI / 2), -(worm.nodes[worm.nodes.length - 1].r + Math.PI / 2));
                                 for(var m = worm.nodes.length - 2; m > 0; m -= 1)
                                 {
+                                    ctx.save();
                                     ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
                                     ctx.rotate(-worm.nodes[m].r);
                                     
@@ -1159,14 +1167,14 @@ if(isset($_SERVER['REMOTE_ADDR']))
                                             break;
                                     }
                                     
-                                    ctx.rotate(worm.nodes[m].r);
-                                    ctx.translate(-worm.nodes[m].x, -worm.nodes[m].y);
+                                    ctx.restore();
                                 }
                                 ctx.closePath();
                                 ctx.stroke();
                                 var interpolation1 = interpolateQuadratic(12, 6, worm.happiness);
                                 var interpolation2 = interpolateQuadratic(-11, -15, worm.happiness);
                                 var interpolation3 = interpolateQuadratic(4, 19, worm.happiness);
+                                ctx.save();
                                 ctx.translate(worm.nodes[0].x, worm.nodes[0].y);
                                 ctx.rotate(-worm.nodes[0].r);
                                 ctx.lineWidth = 2;
@@ -1180,33 +1188,33 @@ if(isset($_SERVER['REMOTE_ADDR']))
                                 ctx.beginPath();
                                 ctx.arc(0, 5, 2, 0, 2 * Math.PI);
                                 ctx.fill();
-                                ctx.rotate(worm.nodes[0].r);
-                                ctx.translate(-worm.nodes[0].x, -worm.nodes[0].y);
+                                ctx.restore();
                                 break;
                             case 2:
                                 ctx.beginPath();
                                 ctx.arc(worm.nodes[0].x, worm.nodes[0].y, 25, -(worm.nodes[0].r + Math.PI / 2), -(worm.nodes[0].r - Math.PI / 2));
                                 for(var m = 1; m < worm.nodes.length - 1; m += 1)
                                 {
+                                    ctx.save();
                                     ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
                                     ctx.rotate(-worm.nodes[m].r);
                                     ctx.lineTo(0, 25);
-                                    ctx.rotate(worm.nodes[m].r);
-                                    ctx.translate(-worm.nodes[m].x, -worm.nodes[m].y);
+                                    ctx.restore();
                                 }
                                 ctx.arc(worm.nodes[worm.nodes.length - 1].x, worm.nodes[worm.nodes.length - 1].y, 25, -(worm.nodes[worm.nodes.length - 1].r - Math.PI / 2), -(worm.nodes[worm.nodes.length - 1].r + Math.PI / 2));
                                 for(var m = worm.nodes.length - 2; m > 0; m -= 1)
                                 {
+                                    ctx.save();
                                     ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
                                     ctx.rotate(-worm.nodes[m].r);
                                     ctx.lineTo(0, -25);
-                                    ctx.rotate(worm.nodes[m].r);
-                                    ctx.translate(-worm.nodes[m].x, -worm.nodes[m].y);
+                                    ctx.restore();
                                 }
                                 ctx.closePath();
                                 ctx.stroke();
                                 
                                 var interpolation = interpolateQuadratic(Math.PI / 4, Math.PI / 6, worm.happiness);
+                                ctx.save();
                                 ctx.translate(worm.nodes[0].x, worm.nodes[0].y);
                                 ctx.rotate(-worm.nodes[0].r);
                                 ctx.beginPath();
@@ -1223,8 +1231,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                                 ctx.beginPath();
                                 ctx.arc(50 * Math.cos(interpolation), 50 * Math.sin(interpolation), 5, 0, 2 * Math.PI);
                                 ctx.fill();
-                                ctx.rotate(worm.nodes[0].r);
-                                ctx.translate(-worm.nodes[0].x, -worm.nodes[0].y);
+                                ctx.restore();
                                 break;
                         }
                     }
