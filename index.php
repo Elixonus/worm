@@ -77,6 +77,44 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     height: height
                 };
             }
+            
+            class Pen
+            {
+                constructor()
+                {
+                    this.direction = "ltr";
+                    this.fillStyle = "#ff0000";
+                    this.filter = "none";
+                    this.font = "10px sans-serif";
+                    this.globalAlpha = 1;
+                    this.globalCompositeOperation = "source-over";
+                    this.imageSmoothingEnabled = true;
+                    this.imageSmoothingQuality = "low";
+                    this.lineCap = "butt";
+                    this.lineDashOffset = 0;
+                    this.lineJoin = "miter";
+                    this.lineWidth = 1;
+                    this.miterLimit = 10;
+                    this.shadowBlur = 0;
+                    this.shadowColor = "rgba(0, 0, 0, 0)";
+                    this.shadowOffsetX = 0;
+                    this.shadowOffsetY = 0;
+                    this.strokeStyle = "#000000";
+                    this.textAlign = "start";
+                    this.textBaseline = "alphabetic";
+                    
+                }
+                
+                set(context)
+                {
+                    var entries = Object.entries(this);
+                    
+                    for(var n = 0; n < keys.length; n++)
+                    {
+                        context[entries[n][0]] = entries[n][1];
+                    }
+                }
+            }
         
             class Filmable
             {
@@ -758,7 +796,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
             window.onwheel = wheel;
             window.onkeydown = keydown;
             window.onkeyup = keyup;
-            window.onload = function() { requestAnimationFrame(render); };
+            window.onload = start;
             window.oncontextmenu = function(event) { event.preventDefault(); };
             
             //-----------------------------------
@@ -802,6 +840,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
             const canvasHalfWidth = canvasWidth / 2;
             const canvasHalfHeight = canvasHeight / 2;
             const ctx = canvas.getContext("2d", {alpha: false});
+            var pen1 = new Pen();
             var activeWorm = 0;
             var previousTime;
             var currentTime = new Date();
@@ -816,6 +855,16 @@ if(isset($_SERVER['REMOTE_ADDR']))
             
             const pointOrigin = point(0, 0), pointCanvasCenter = point(canvasHalfWidth, canvasHalfHeight);
             const distanceOriginCenter = distance(pointOrigin, pointCanvasCenter);
+
+            function start()
+            {
+                pen1.set();
+                console.log(ctx.fillStyle);
+                
+                //FIX THIS PEN NOT BEING APPLIED
+                
+                window.requestAnimationFrame(render);
+            }
 
             function render()
             {
@@ -968,7 +1017,6 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 ctx.strokeStyle = "#141414";
                 ctx.lineWidth = 1;
                 
-                //ctx.translate(canvasHalfWidth - camera.x, canvasHalfHeight - camera.y);
                 ctx.translate(canvasHalfWidth, canvasHalfHeight);
                 ctx.scale(camera.zoom, camera.zoom);
                 ctx.translate(-camera.x, -camera.y);
