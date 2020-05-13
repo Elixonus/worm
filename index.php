@@ -1315,7 +1315,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 
                 //----- MINIMAP RENDERING ----
                 
-                ctx.resetTransform();
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
                 ctx.reset();
                 ctx.globalAlpha = 0.5;
                 
@@ -1410,7 +1410,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 
                 else
                 {
-                    ctx.resetTransform();
+                    ctx.setTransform(1, 0, 0, 1, 0, 0);
                 }
                 
                 requestAnimationFrame(render);
