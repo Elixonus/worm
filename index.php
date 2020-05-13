@@ -78,42 +78,28 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 };
             }
             
-            class Pen
+            CanvasRenderingContext2D.prototype.reset = function()
             {
-                constructor()
-                {
-                    this.direction = "ltr";
-                    this.fillStyle = "#ff0000";
-                    this.filter = "none";
-                    this.font = "10px sans-serif";
-                    this.globalAlpha = 1;
-                    this.globalCompositeOperation = "source-over";
-                    this.imageSmoothingEnabled = true;
-                    this.imageSmoothingQuality = "low";
-                    this.lineCap = "butt";
-                    this.lineDashOffset = 0;
-                    this.lineJoin = "miter";
-                    this.lineWidth = 1;
-                    this.miterLimit = 10;
-                    this.shadowBlur = 0;
-                    this.shadowColor = "rgba(0, 0, 0, 0)";
-                    this.shadowOffsetX = 0;
-                    this.shadowOffsetY = 0;
-                    this.strokeStyle = "#000000";
-                    this.textAlign = "start";
-                    this.textBaseline = "alphabetic";
-                    
-                }
-                
-                set(context)
-                {
-                    var entries = Object.entries(this);
-                    
-                    for(var n = 0; n < keys.length; n++)
-                    {
-                        context[entries[n][0]] = entries[n][1];
-                    }
-                }
+                this.direction = "ltr";
+                this.fillStyle = "#000000";
+                this.filter = "none";
+                this.font = "10px sans-serif";
+                this.globalAlpha = 1;
+                this.globalCompositeOperation = "source-over";
+                this.imageSmoothingEnabled = true;
+                this.imageSmoothingQuality = "low";
+                this.lineCap = "butt";
+                this.lineDashOffset = 0;
+                this.lineJoin = "miter";
+                this.lineWidth = 1;
+                this.miterLimit = 10;
+                this.shadowBlur = 0;
+                this.shadowColor = "rgba(0, 0, 0, 0)";
+                this.shadowOffsetX = 0;
+                this.shadowOffsetY = 0;
+                this.strokeStyle = "#000000";
+                this.textAlign = "start";
+                this.textBaseline = "alphabetic";
             }
         
             class Filmable
@@ -464,12 +450,12 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 inCanvas(camera)
                 {
                     var tempShapePadding = 80;
-                    var tempGlowPadding = clampMin(20 * camera.zoom, 20);
-                    var tempPadding = tempShapePadding * camera.zoom + tempGlowPadding;
+                    var tempGlowPadding = clampMin(20 * camera.zoom * 1.2, 20);
+                    var tempPadding = tempShapePadding * camera.zoom * 1.2 + tempGlowPadding;
                     
                     for(var n = 0; n < this.nodes.length; n++)
                     {
-                        if(pointInRectangle(point(this.nodes[n].x - camera.x, this.nodes[n].y - camera.y), rectangle(pointOrigin, canvasWidth / camera.zoom, canvasHeight / camera.zoom), tempPadding))
+                        if(pointInRectangle(point(this.nodes[n].x - camera.x, this.nodes[n].y - camera.y), rectangle(pointOrigin, canvasWidth / (camera.zoom * 1.2), canvasHeight / (camera.zoom * 1.2)), tempPadding))
                         {
                             return true;
                         }
@@ -538,10 +524,10 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 inCanvas(camera)
                 {
                     var tempShapePadding = 80;
-                    var tempGlowPadding = clampMin(20 * camera.zoom, 20);
-                    var tempPadding = tempShapePadding * camera.zoom + tempGlowPadding;
+                    var tempGlowPadding = clampMin(20 * camera.zoom * 1.2, 20);
+                    var tempPadding = tempShapePadding * camera.zoom * 1.2 + tempGlowPadding;
                     
-                    if(pointInRectangle(point(this.x - camera.x, this.y - camera.y), rectangle(pointOrigin, canvasWidth / camera.zoom, canvasHeight / camera.zoom), tempPadding))
+                    if(pointInRectangle(point(this.x - camera.x, this.y - camera.y), rectangle(pointOrigin, canvasWidth / (camera.zoom * 1.2), canvasHeight / (camera.zoom * 1.2)), tempPadding))
                     {
                         return true;
                     }
@@ -840,7 +826,6 @@ if(isset($_SERVER['REMOTE_ADDR']))
             const canvasHalfWidth = canvasWidth / 2;
             const canvasHalfHeight = canvasHeight / 2;
             const ctx = canvas.getContext("2d", {alpha: false});
-            var pen1 = new Pen();
             var activeWorm = 0;
             var previousTime;
             var currentTime = new Date();
@@ -858,11 +843,6 @@ if(isset($_SERVER['REMOTE_ADDR']))
 
             function start()
             {
-                pen1.set();
-                console.log(ctx.fillStyle);
-                
-                //FIX THIS PEN NOT BEING APPLIED
-                
                 window.requestAnimationFrame(render);
             }
 
@@ -917,9 +897,9 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     {
                         //--------- AI CODE ----------
                         
-                        worm.botWait--;
+                        worm.botWait -= timeScale;
                         
-                        if(worm.botWait === 0)
+                        if(worm.botWait <= 0)
                         {
                             worm.botDesiredDirection += (Math.random() - 0.5) * Math.PI;
                             worm.botWait = Math.round(Math.random() * 20 + 10);
@@ -1009,12 +989,9 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 
                 //------ WORLD RENDERING -----
                 
-                ctx.fillStyle = "#000000";
-                ctx.lineCap = "butt";
-                ctx.shadowBlur = 0;
-                ctx.globalAlpha = 1;
-                ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+                ctx.reset();
                 ctx.strokeStyle = "#141414";
+                ctx.fillRect(0, 0, canvasWidth, canvasHeight);
                 ctx.lineWidth = 1;
                 
                 ctx.translate(canvasHalfWidth, canvasHalfHeight);
@@ -1051,7 +1028,8 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 
                 //----- ENERGY RENDERING -----
                 
-                ctx.lineCap = "round";
+                ctx.reset();
+                ctx.lineWidth = 3;
                 ctx.shadowBlur = clampMin(20 * camera.zoom, 20);
                 for(var n = 0; n < energies.length; n++)
                 {
@@ -1065,8 +1043,8 @@ if(isset($_SERVER['REMOTE_ADDR']))
                         if(energy.type === 0)
                         {
                             ctx.strokeStyle = "#ff0000";
-                            ctx.beginPath();
                             ctx.shadowColor = ctx.strokeStyle;
+                            ctx.beginPath();
                             ctx.moveTo(25 * Math.cos(energy.r), 0 - 25 * Math.sin(energy.r));
                             ctx.lineTo(25 * Math.cos(energy.r + 2 * Math.PI / 3), 0 - 25 * Math.sin(energy.r + 2 * Math.PI / 3));
                             ctx.lineTo(25 * Math.cos(energy.r + 4 * Math.PI / 3), 0 - 25 * Math.sin(energy.r + 4 * Math.PI / 3));
@@ -1077,8 +1055,8 @@ if(isset($_SERVER['REMOTE_ADDR']))
                         if(energy.type === 1)
                         {
                             ctx.strokeStyle = "#00e5ff";
-                            ctx.beginPath();
                             ctx.shadowColor = ctx.strokeStyle;
+                            ctx.beginPath();
                             ctx.moveTo(25 * Math.cos(energy.r), 0 - 25 * Math.sin(energy.r));
                             ctx.lineTo(25 * Math.cos(energy.r + Math.PI / 2), 0 - 25 * Math.sin(energy.r + Math.PI / 2));
                             ctx.lineTo(25 * Math.cos(energy.r + Math.PI), 0 - 25 * Math.sin(energy.r + Math.PI));
@@ -1091,7 +1069,6 @@ if(isset($_SERVER['REMOTE_ADDR']))
                         {
                             ctx.strokeStyle = "#ff9100";
                             ctx.shadowColor = ctx.strokeStyle;
-                            
                             ctx.beginPath();
                             ctx.arc(0, 0, 25, energy.r - Math.PI / 2, energy.r + Math.PI / 2);
                             ctx.closePath();
@@ -1104,8 +1081,8 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 
                 //--- DEAD WORMS RENDERING ---
                 
-                ctx.shadowBlur = 0;
-                ctx.globalAlpha = 1;
+                ctx.reset();
+                ctx.strokeStyle = "#171717";
                 
                 for(var n = 0; n < deadWorms.length; n++)
                 {
@@ -1114,8 +1091,6 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     if(deadWorm.inCanvas(camera))
                     {
                         ctx.lineWidth = 3;
-                        ctx.strokeStyle = "#171717";
-                        
                         ctx.beginPath();
                         ctx.arc(deadWorm.nodes[0].x, deadWorm.nodes[0].y, 25, -(deadWorm.nodes[0].r + Math.PI / 2), -(deadWorm.nodes[0].r - Math.PI / 2));
                         for(var m = 1; m < deadWorm.nodes.length - 1; m++)
@@ -1166,6 +1141,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 
                 //------ WORM RENDERING ------
                 
+                ctx.reset();
                 ctx.lineWidth = 3;
                 ctx.shadowBlur = clampMin(20 * camera.zoom, 20);
                 
@@ -1340,7 +1316,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 //----- MINIMAP RENDERING ----
                 
                 ctx.resetTransform();
-                ctx.shadowBlur = 0;
+                ctx.reset();
                 ctx.globalAlpha = 0.5;
                 
                 if(!minimapExpanded)
@@ -1357,7 +1333,6 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 if(minimapExpanded)
                 {
                     ctx.fillStyle = "#000000";
-                    ctx.shadowColor = "#000000";
                     ctx.globalAlpha = 0.8;
                     ctx.fillRect(0, 0, canvasWidth, canvasHeight);
                     ctx.translate(canvasHalfWidth, canvasHalfHeight);
@@ -1375,7 +1350,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 {
                     const energy = energies[n];
                     
-                    if(minimapExpanded || energy.inMinimap(camera))
+                    if(energy.inMinimap(camera, minimapExpanded))
                     {
                         ctx.globalAlpha = energy.opacity;
                         
@@ -1412,7 +1387,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     const worm = worms[n];
                     var color = hueString(worm.hue);
                     
-                    if((!minimapExpanded && worm.inMinimap(camera, false)) || (minimapExpanded && worm.inMinimap(camera, true)))
+                    if(worm.inMinimap(camera, minimapExpanded))
                     {
                         ctx.strokeStyle = color;
                         ctx.shadowColor = color;
