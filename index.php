@@ -31,7 +31,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
             
             #canvas
             {
-                position: absolute;
+                position: fixed;
                 top: 50%;
                 left: 50%;
                 transform: translate(-50%, -50%);
@@ -450,12 +450,12 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 inCanvas(camera)
                 {
                     var tempShapePadding = 80;
-                    var tempGlowPadding = clampMin(20 * camera.zoom * 1.2, 20);
-                    var tempPadding = tempShapePadding * camera.zoom * 1.2 + tempGlowPadding;
+                    var tempGlowPadding = clampMin(20 * camera.zoom, 20);
+                    var tempPadding = tempShapePadding * camera.zoom + tempGlowPadding;
                     
                     for(var n = 0; n < this.nodes.length; n++)
                     {
-                        if(pointInRectangle(point(this.nodes[n].x - camera.x, this.nodes[n].y - camera.y), rectangle(pointOrigin, canvasWidth / (camera.zoom * 1.2), canvasHeight / (camera.zoom * 1.2)), tempPadding))
+                        if(pointInRectangle(point(this.nodes[n].x - camera.x, this.nodes[n].y - camera.y), rectangle(pointOrigin, canvasWidth / camera.zoom, canvasHeight / camera.zoom), tempPadding))
                         {
                             return true;
                         }
@@ -524,10 +524,10 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 inCanvas(camera)
                 {
                     var tempShapePadding = 80;
-                    var tempGlowPadding = clampMin(20 * camera.zoom * 1.2, 20);
-                    var tempPadding = tempShapePadding * camera.zoom * 1.2 + tempGlowPadding;
+                    var tempGlowPadding = clampMin(20 * camera.zoom, 20);
+                    var tempPadding = tempShapePadding * camera.zoom + tempGlowPadding;
                     
-                    if(pointInRectangle(point(this.x - camera.x, this.y - camera.y), rectangle(pointOrigin, canvasWidth / (camera.zoom * 1.2), canvasHeight / (camera.zoom * 1.2)), tempPadding))
+                    if(pointInRectangle(point(this.x - camera.x, this.y - camera.y), rectangle(pointOrigin, canvasWidth / camera.zoom, canvasHeight / camera.zoom), tempPadding))
                     {
                         return true;
                     }
@@ -735,9 +735,9 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 
                 var eventKey = event.key;
                 
-                if(keys.includes(eventKey) === false)
+                if(keysPressed.includes(eventKey) === false)
                 {
-                    keys.push(eventKey);
+                    keysPressed.push(eventKey);
                     
                     if(eventKey.toUpperCase() === "M" && !minimapFired)
                     {
@@ -765,7 +765,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 
                 var eventKey = event.key;
                 
-                keys.splice(keys.indexOf(eventKey), 1);
+                keysPressed.splice(keysPressed.indexOf(eventKey), 1);
                 
                 if(eventKey.toUpperCase() === "M")
                 {
@@ -789,11 +789,19 @@ if(isset($_SERVER['REMOTE_ADDR']))
             //--- GLOBAL VARIABLE DEFINITIONS ---
             //-----------------------------------
             
-            var time = [];
+            const canvas = document.getElementById("canvas");
+            const canvasWidth = canvas.width;
+            const canvasHeight = canvas.height;
+            const canvasHalfWidth = canvasWidth / 2;
+            const canvasHalfHeight = canvasHeight / 2;
+            const ctx = canvas.getContext("2d", {alpha: false});
+            const pointOrigin = point(0, 0), pointCanvasCenter = point(canvasHalfWidth, canvasHalfHeight);
+            const distanceOriginCenter = distance(pointOrigin, pointCanvasCenter);
             var timeScale = 1;
-            const keys = [];
+            const keysPressed = [];
             const camera = new Camera();
             const WORLD_RADIUS = 10000;
+            const WORLD_CIRCLE = circle(pointOrigin, WORLD_RADIUS);
             const GRID_SIZE = 100;
             const WORM_BOT_COUNT = 100;
             const ENERGY_COUNT = 500;
@@ -807,7 +815,19 @@ if(isset($_SERVER['REMOTE_ADDR']))
             var minimapZoom = 0.1;
             var minimapFired = false;
             var minimapExpanded = false;
+            var activeWorm = 0;
+            var previousTime;
+            var currentTime = new Date();
+            var fps;
+            var deltaTimeMultiplier = 1;
             
+            // STATS.JS CODE
+            var stats = new Stats();
+            stats.showPanel(0);
+            document.body.appendChild(stats.dom);
+            // STATS.JS CODE
+            
+            resize();
             worms[0].follow();
             
             for(var n = 0; n < WORM_BOT_COUNT; n++)
@@ -819,27 +839,6 @@ if(isset($_SERVER['REMOTE_ADDR']))
             {
                 energies.push(new Energy(camera));
             }
-            
-            const canvas = document.getElementById("canvas");
-            const canvasWidth = canvas.width;
-            const canvasHeight = canvas.height;
-            const canvasHalfWidth = canvasWidth / 2;
-            const canvasHalfHeight = canvasHeight / 2;
-            const ctx = canvas.getContext("2d", {alpha: false});
-            var activeWorm = 0;
-            var previousTime;
-            var currentTime = new Date();
-            var fps;
-            var deltaTimeMultiplier = 1;
-            
-            var stats = new Stats();
-            stats.showPanel(0);
-            document.body.appendChild(stats.dom);
-            
-            resize();
-            
-            const pointOrigin = point(0, 0), pointCanvasCenter = point(canvasHalfWidth, canvasHalfHeight);
-            const distanceOriginCenter = distance(pointOrigin, pointCanvasCenter);
 
             function start()
             {
@@ -853,14 +852,13 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 previousTime = currentTime;
                 currentTime = new Date();
                 fps = 1000 / (currentTime - previousTime);
-                //deltaTimeMultiplier = interpolateLinear(deltaTimeMultiplier, 60 / clamp(fps, 20, 60), 0.5);
-                deltaTimeMultiplier = 1;
+                deltaTimeMultiplier = 60 / clamp(fps, 20, 60);
                 
                 //----------------------------
                 //-------- MOVEMENT ----------
                 //----------------------------
                 
-                if(keys.includes("-") || keys.includes(","))
+                if(keysPressed.includes("-") || keysPressed.includes(","))
                 {
                     timeScale -= 0.01;
                     
@@ -870,7 +868,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     }
                 }
                 
-                if(keys.includes("+") || keys.includes("."))
+                if(keysPressed.includes("+") || keysPressed.includes("."))
                 {
                     timeScale += 0.01;
                 }
@@ -882,12 +880,12 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     
                     if(worm.controllable)
                     {
-                        if(keys.includes("ArrowLeft") || keys.includes("a") || keys.includes("A"))
+                        if(keysPressed.includes("ArrowLeft") || keysPressed.includes("a") || keysPressed.includes("A"))
                         {
                             worm.turn -= 1;
                         }
                         
-                        if(keys.includes("ArrowRight") || keys.includes("d") || keys.includes("D"))
+                        if(keysPressed.includes("ArrowRight") || keysPressed.includes("d") || keysPressed.includes("D"))
                         {
                             worm.turn += 1;
                         }
@@ -922,7 +920,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     
                     worm.tick(worms);
                     
-                    if(distance(pointOrigin, worm.nodes[0]) > WORLD_RADIUS)
+                    if(!pointInCircle(worm.nodes[0], WORLD_CIRCLE))
                     {
                         var newX = worm.nodes[0].x;
                         var newY = worm.nodes[0].y;
@@ -981,8 +979,6 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 
                 camera.tick();
                 
-                //time.push(_.cloneDeep(worms));
-                
                 //----------------------------
                 //-------- RENDERING ---------
                 //----------------------------
@@ -991,7 +987,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 
                 ctx.reset();
                 ctx.strokeStyle = "#141414";
-                ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+                ctx.clearRect(0, 0, canvasWidth, canvasHeight);
                 ctx.lineWidth = 1;
                 
                 ctx.translate(canvasHalfWidth, canvasHalfHeight);
@@ -1317,7 +1313,6 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 
                 ctx.setTransform(1, 0, 0, 1, 0, 0);
                 ctx.reset();
-                ctx.globalAlpha = 0.5;
                 
                 if(!minimapExpanded)
                 {
@@ -1326,6 +1321,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     ctx.save();
                     ctx.clip(region, "nonzero");
                     ctx.fillStyle = "#020202";
+                    ctx.globalAlpha = 0.5;
                     ctx.fillRect(canvasWidth - minimapWidth - 10, canvasHeight - minimapHeight - 10, minimapWidth, minimapHeight);
                     ctx.translate(canvasWidth - 10 - minimapWidth / 2, canvasHeight - 10 - minimapHeight / 2);
                 }
@@ -1420,7 +1416,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
             //---------- MAFFS -----------
             //----------------------------
             
-            function distance(p1, p2)
+            function distance(p1, p2 = point(0, 0))
             {
                 return Math.hypot(p1.x - p2.x, p1.y - p2.y);
             }
@@ -1453,6 +1449,16 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 while(difference > Math.PI)
                     difference -= 2 * Math.PI;
                 return difference;
+            }
+            
+            function pointInCircle(point, circle)
+            {
+                if(distance(circle.center, point) <= circle.radius)
+                {
+                    return true;
+                }
+                
+                return false;
             }
             
             function pointInRectangle(point, rectangle, padding = 0)
