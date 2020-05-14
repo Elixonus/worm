@@ -138,7 +138,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     
                     if(!this.controllable)
                     {
-                        this.botWait = Math.round(Math.random() * 20 + 10);
+                        this.botWait = 0;
                         this.botDesiredDirection = this.nodes[0].r;
                     }
                 }
@@ -148,14 +148,8 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     this.hue = hue;
                 }
                 
-                setRandomHue(startingHue, endingHue)
+                setRandomHue(startingHue = 0, endingHue = 359)
                 {
-                    if(startingHue === undefined || endingHue === undefined)
-                    {
-                        this.hue = Math.round(Math.random() * 359);
-                        return;
-                    }
-                    
                     this.hue = Math.round(Math.random() * (endingHue - startingHue) + startingHue);
                 }
                 
@@ -279,6 +273,14 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     }
                 }
                 
+                die(wormCollection, deadWormCollection)
+                {
+                    var index = wormCollection.indexOf(this);
+                    var deadWorm = wormCollection[index];
+                    wormCollection.splice(index, 1);
+                    deadWormCollection.push(deadWorm);
+                }
+                
                 tick(wormCollection)
                 {
                     var wormIndex = wormCollection.indexOf(this);
@@ -286,7 +288,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     
                     if(this.turn === -1)
                     {
-                        tempFirstNode.r += Math.PI / 90 * deltaTimeMultiplier * timeScale;
+                        tempFirstNode.r += Math.PI / 90 * timeScale;
 
                         if(tempFirstNode.r >= 2 * Math.PI)
                         {
@@ -296,7 +298,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
 
                     if(this.turn === 1)
                     {
-                        tempFirstNode.r -= Math.PI / 90 * deltaTimeMultiplier * timeScale;
+                        tempFirstNode.r -= Math.PI / 90 * timeScale;
 
                         if(tempFirstNode.r < 0)
                         {
@@ -304,8 +306,8 @@ if(isset($_SERVER['REMOTE_ADDR']))
                         }
                     }
                     
-                    tempFirstNode.x += 3 * Math.cos(tempFirstNode.r) * deltaTimeMultiplier * timeScale;
-                    tempFirstNode.y -= 3 * Math.sin(tempFirstNode.r) * deltaTimeMultiplier * timeScale;
+                    tempFirstNode.x += 3 * Math.cos(tempFirstNode.r) * timeScale;
+                    tempFirstNode.y -= 3 * Math.sin(tempFirstNode.r) * timeScale;
                     
                     for(var n = 1; n < this.nodes.length; n++)
                     {
@@ -324,7 +326,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                         {
                             if(tempCurrentNode.activeCounter < 1)
                             {
-                                tempCurrentNode.activeCounter += 0.05 * deltaTimeMultiplier * timeScale;
+                                tempCurrentNode.activeCounter += 0.05 * timeScale;
                                 
                                 if(tempCurrentNode.activeCounter > 1)
                                 {
@@ -381,7 +383,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     {
                         if(this.happinessCounter < 1)
                         {
-                            this.happinessCounter += 1 / 50 * deltaTimeMultiplier * timeScale;
+                            this.happinessCounter += 1 / 50 * timeScale;
                             
                             if(this.happinessCounter > 1)
                             {
@@ -394,7 +396,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     {
                         if(this.happinessCounter > 0)
                         {
-                            this.happinessCounter -= 1 / 50 * deltaTimeMultiplier * timeScale;
+                            this.happinessCounter -= 1 / 50 * timeScale;
                             
                             if(this.happinessCounter < 0)
                             {
@@ -415,12 +417,12 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     
                     if(this.happinessDirection === -1)
                     {
-                        this.decreaseHappiness(1 / 10 * deltaTimeMultiplier * timeScale);
+                        this.decreaseHappiness(1 / 10 * timeScale);
                     }
                     
                     else if(this.happinessDirection === 1)
                     {
-                        this.increaseHappiness(1 / 10 * deltaTimeMultiplier * timeScale);
+                        this.increaseHappiness(1 / 10 * timeScale);
                     }
                     
                     this.updateCamera();
@@ -438,16 +440,8 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     this.nodes[0].y = p.y;
                     this.updateCamera();
                 }
-
-                updateCamera()
-                {
-                    if(this.camera.filmedObject == this)
-                    {
-                        this.camera.setTarget(this.nodes[0]);
-                    }
-                }
                 
-                inCanvas(camera)
+                inGame(camera)
                 {
                     var tempShapePadding = 80;
                     var tempGlowPadding = clampMin(20 * camera.zoom, 20);
@@ -455,7 +449,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     
                     for(var n = 0; n < this.nodes.length; n++)
                     {
-                        if(pointInRectangle(point(this.nodes[n].x - camera.x, this.nodes[n].y - camera.y), rectangle(pointOrigin, canvasWidth / camera.zoom, canvasHeight / camera.zoom), tempPadding))
+                        if(pointInRectangle(point(this.nodes[n].x - camera.x, this.nodes[n].y - camera.y), rectangle(pointOrigin, gameWidth / camera.zoom, gameHeight / camera.zoom), tempPadding))
                         {
                             return true;
                         }
@@ -474,8 +468,8 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     
                     if(expanded)
                     {
-                        tempWidth = canvasWidth;
-                        tempHeight = canvasHeight;
+                        tempWidth = gameWidth;
+                        tempHeight = gameHeight;
                     }
                     
                     for(var n = 0; n < this.nodes.length; n++)
@@ -487,6 +481,14 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     }
                     
                     return false;
+                }
+                
+                updateCamera()
+                {
+                    if(this.camera.filmedObject == this)
+                    {
+                        this.camera.setTarget(this.nodes[0]);
+                    }
                 }
             }
             
@@ -504,11 +506,34 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     this.y = tempRadius * Math.sin(tempRotation);
                     this.rStatic = 2 * Math.PI * Math.random();
                     this.r = this.rStatic + 0.2 * Math.sin(this.phase);
+                    this.isDecaying = false;
                 }
                 
-                tick()
+                decay()
                 {
-                    this.phase += 0.02 * deltaTimeMultiplier * timeScale;
+                    this.isDecaying = true;
+                }
+                
+                destroy(energyCollection)
+                {
+                    var index = energyCollection.indexOf(this);
+                    energyCollection.splice(index, 1);
+                }
+                
+                tick(energyCollection)
+                {
+                    if(this.isDecaying)
+                    {
+                        this.opacity -= 0.1 * timeScale;
+                        
+                        if(this.opacity <= 0)
+                        {
+                            this.destroy(energyCollection);
+                            return;
+                        }
+                    }
+                    
+                    this.phase += 0.02 * timeScale;
                     this.r = this.rStatic + 0.2 * Math.sin(this.phase);
                     this.updateCamera();
                 }
@@ -521,13 +546,13 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     }
                 }
                 
-                inCanvas(camera)
+                inGame(camera)
                 {
                     var tempShapePadding = 80;
                     var tempGlowPadding = clampMin(20 * camera.zoom, 20);
                     var tempPadding = tempShapePadding * camera.zoom + tempGlowPadding;
                     
-                    if(pointInRectangle(point(this.x - camera.x, this.y - camera.y), rectangle(pointOrigin, canvasWidth / camera.zoom, canvasHeight / camera.zoom), tempPadding))
+                    if(pointInRectangle(point(this.x - camera.x, this.y - camera.y), rectangle(pointOrigin, gameWidth / camera.zoom, gameHeight / camera.zoom), tempPadding))
                     {
                         return true;
                     }
@@ -545,8 +570,8 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     
                     if(expanded)
                     {
-                        tempWidth = canvasWidth;
-                        tempHeight = canvasHeight;
+                        tempWidth = gameWidth;
+                        tempHeight = gameHeight;
                     }
                     
                     if(pointInRectangle(point(this.x - camera.x, this.y - camera.y), rectangle(pointOrigin, tempWidth / minimapZoom, tempHeight / minimapZoom), tempPadding))
@@ -610,66 +635,21 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 return ("hsl(" + hue + ", 100%, 50%)");
             }
             
-            function killWorm(worm)
-            {
-                var index = worms.indexOf(worm);
-                var tempFilmed = false;
-                
-                if(worms[index].camera.filmedObject === worms[index])
-                {
-                    tempFilmed = true;
-                }
-                var deadWorm = worms[index];
-                worms.splice(index, 1);
-                deadWorms.push(deadWorm);
-                if(tempFilmed === true)
-                {
-                    if(worms.length !== 0)
-                    {
-                        worms[clampMax(index, worms.length - 1)].follow();
-                    }
-                }
-            }
-            
-            function destroyEnergy(energy)
-            {
-                var index = energies.indexOf(energy);
-                var tempFilmed = false;
-                
-                if(energies[index].camera.filmedObject === energies[index])
-                {
-                    tempFilmed = true;
-                }
-                energies.splice(index, 1);
-                if(tempFilmed === true)
-                {
-                    if(energies.length !== 0)
-                    {
-                        energies[clampMax(index, energies.length - 1)].follow();
-                    }
-                    
-                    else if(worms.length !== 0)
-                    {
-                        worms[Math.round(Math.random() * worms.length - 1)].follow();
-                    }
-                }
-            }
-            
             function resize()
             {
                 const windowWidth = window.innerWidth;
                 const windowHeight = window.innerHeight;
                 
-                if(windowWidth / windowHeight > canvasWidth / canvasHeight)
+                if(windowWidth / windowHeight > gameWidth / gameHeight)
                 {
-                    canvas.style.width = `${(windowHeight / windowWidth) * ( canvasWidth / canvasHeight) * 100}%`;
+                    canvas.style.width = `${(windowHeight / windowWidth) * ( gameWidth / gameHeight) * 100}%`;
                     canvas.style.height = "100%";
                 }
                 
                 else
                 {
                     canvas.style.width = "100%";
-                    canvas.style.height = `${(windowWidth / windowHeight) * (canvasHeight / canvasWidth) * 100}%`;
+                    canvas.style.height = `${(windowWidth / windowHeight) * (gameHeight / gameWidth) * 100}%`;
                 }
             }
 
@@ -684,7 +664,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 {
                     if(camera.filmedObject.constructor.name === "Worm")
                     {
-                        activeWorm--;
+                        filmedWormIndex--;
                     }
                 }
 
@@ -692,22 +672,22 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 {
                     if(camera.filmedObject.constructor.name === "Worm")
                     {
-                        activeWorm++;
+                        filmedWormIndex++;
                     }
                 }
                 
                 if(worms.length > 0)
                 {
-                    activeWorm = clamp(activeWorm, 0, worms.length - 1);
+                    filmedWormIndex = clamp(filmedWormIndex, 0, worms.length - 1);
                     
                     if(event.button !== 1)
                     {
-                        worms[activeWorm].follow();
+                        worms[filmedWormIndex].follow();
                     }
                     
                     else
                     {
-                        worms[activeWorm].unfollow();
+                        worms[filmedWormIndex].unfollow();
                     }
                 }
             }
@@ -789,37 +769,39 @@ if(isset($_SERVER['REMOTE_ADDR']))
             //--- GLOBAL VARIABLE DEFINITIONS ---
             //-----------------------------------
             
+            var request;
+            var requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
+            var cancelAnimationFrame = window.cancelAnimationFrame || window.mozCancelAnimationFrame || window.webkitCancelAnimationFrame || window.msCancelAnimationFrame;
             const canvas = document.getElementById("canvas");
-            const canvasWidth = canvas.width;
-            const canvasHeight = canvas.height;
-            const canvasHalfWidth = canvasWidth / 2;
-            const canvasHalfHeight = canvasHeight / 2;
             const ctx = canvas.getContext("2d", {alpha: false});
-            const pointOrigin = point(0, 0), pointCanvasCenter = point(canvasHalfWidth, canvasHalfHeight);
-            const distanceOriginCenter = distance(pointOrigin, pointCanvasCenter);
-            var timeScale = 1;
+            const gameWidth = canvas.width;
+            const gameHeight = canvas.height;
+            const gameHalfWidth = gameWidth / 2;
+            const gameHalfHeight = gameHeight / 2;
+            const minimapWidth = 250;
+            const minimapHeight = 200;
+            const minimapHalfWidth = minimapWidth / 2;
+            const minimapHalfHeight = minimapHeight / 2;
+            var minimapZoom;
+            var minimapFired;
+            var minimapExpanded;
+            const pointOrigin = point(0, 0), pointGameCenter = point(gameHalfWidth, gameHalfHeight);
+            const distanceOriginCenter = distance(pointOrigin, pointGameCenter);
+            var timeScale;
             const keysPressed = [];
-            const camera = new Camera();
+            var camera;
             const WORLD_RADIUS = 10000;
             const WORLD_CIRCLE = circle(pointOrigin, WORLD_RADIUS);
             const GRID_SIZE = 100;
             const WORM_BOT_COUNT = 100;
             const ENERGY_COUNT = 500;
-            const worms = [new Worm(true, 1, Math.round(Math.random() * 50 + 5), 120, camera)];
-            const deadWorms = [];
-            const energies = [];
-            const minimapWidth = 250;
-            const minimapHeight = 200;
-            const minimapHalfWidth = minimapWidth / 2;
-            const minimapHalfHeight = minimapHeight / 2;
-            var minimapZoom = 0.1;
-            var minimapFired = false;
-            var minimapExpanded = false;
-            var activeWorm = 0;
+            var worms;
+            var deadWorms;
+            var energies;
+            var filmedWormIndex;
             var previousTime;
             var currentTime = new Date();
             var fps;
-            var deltaTimeMultiplier = 1;
             
             // STATS.JS CODE
             var stats = new Stats();
@@ -828,21 +810,38 @@ if(isset($_SERVER['REMOTE_ADDR']))
             // STATS.JS CODE
             
             resize();
-            worms[0].follow();
-            
-            for(var n = 0; n < WORM_BOT_COUNT; n++)
-            {
-                worms.push(new Worm(false, Math.round(Math.random() * 2 + 1), Math.round(Math.random() * 50 + 5), Math.random() * 100 + 260, camera));
-            }
-            
-            for(var n = 0; n < ENERGY_COUNT; n++)
-            {
-                energies.push(new Energy(camera));
-            }
 
             function start()
             {
-                window.requestAnimationFrame(render);
+                timeScale = 1;
+                camera = new Camera();
+                worms = [new Worm(true, 1, Math.round(Math.random() * 50 + 5), 120, camera)];
+                deadWorms = [];
+                energies = [];
+                minimapZoom = 0.1;
+                minimapFired = false;
+                minimapExpanded = false;
+                filmedWormIndex = 0;
+                
+                worms[0].follow();
+                
+                for(var n = 0; n < WORM_BOT_COUNT; n++)
+                {
+                    worms.push(new Worm(false, Math.round(Math.random() * 2 + 1), Math.round(Math.random() * 50 + 5), Math.round(Math.random() * 100 + 260), camera));
+                }
+                
+                for(var n = 0; n < ENERGY_COUNT; n++)
+                {
+                    energies.push(new Energy(camera));
+                }
+                
+                request = requestAnimationFrame(render);
+            }
+            
+            function reset()
+            {
+                cancelAnimationFrame(request);
+                start();
             }
 
             function render()
@@ -852,7 +851,6 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 previousTime = currentTime;
                 currentTime = new Date();
                 fps = 1000 / (currentTime - previousTime);
-                deltaTimeMultiplier = 60 / clamp(fps, 20, 60);
                 
                 //----------------------------
                 //-------- MOVEMENT ----------
@@ -900,7 +898,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                         if(worm.botWait <= 0)
                         {
                             worm.botDesiredDirection += (Math.random() - 0.5) * Math.PI;
-                            worm.botWait = Math.round(Math.random() * 20 + 10);
+                            worm.botWait = Math.round(Math.random() * 40 + 20);
                         }
                         
                         var angleDifference = calculateAngleDifference(worm.nodes[0].r, worm.botDesiredDirection);
@@ -926,55 +924,40 @@ if(isset($_SERVER['REMOTE_ADDR']))
                         var newY = worm.nodes[0].y;
                         var intersection = intersectCircleLineSegment(circle(pointOrigin, WORLD_RADIUS), line(point(oldX, oldY), point(newX, newY)));
                         worm.moveTo(intersection[0]);
-                        killWorm(worms[n]);
+                        worms[n].die(worms, deadWorms);
                         n--;
                     }
                 }
                 
-                for(var n = 0; n < worms.length; n++)
-                {
-
-                }
-                
                 for(var n = 0; n < energies.length; n++)
                 {
-                    const energy = energies[n];
-                    energy.tick();
-                    var tempClosestWorm;
-                    var tempMinimumDistance = -1;
+                    let energy = energies[n];
+                    let closestWorm;
+                    let distanceToClosestWorm = -1;
                     
                     for(var m = 0; m < worms.length; m++)
                     {
-                        var tempDistance = distanceManhattan(energies[n], worms[m].nodes[0]);
+                        let worm = worms[m];
+                        let distanceToWorm = distanceManhattan(energy, worm.nodes[0]);
                         
-                        if(tempDistance < tempMinimumDistance || tempMinimumDistance === -1)
+                        if(distanceToWorm < distanceToClosestWorm || distanceToClosestWorm === -1)
                         {
-                            tempMinimumDistance = tempDistance;
-                            tempClosestWorm = m;
+                            distanceToClosestWorm = distanceToWorm;
+                            closestWorm = worm;
                         }
                     }
                     
-                    if(energy.opacity < 1)
+                    if(distanceToClosestWorm <= 50 && distanceToClosestWorm !== -1)
                     {
-                        energy.opacity -= 0.1 * deltaTimeMultiplier * timeScale;
-                        
-                        if(energy.opacity <= 0)
+                        if(!energy.isDecaying)
                         {
-                            destroyEnergy(energies[n]);
-                            worms[tempClosestWorm].addNodeSmooth(5);
-                            n--;
+                            closestWorm.addNodeSmooth(5);
                         }
                         
-                        continue;
+                        energy.decay();
                     }
                     
-                    if(tempMinimumDistance < 50 && tempMinimumDistance !== -1)
-                    {
-                        if(energy.opacity === 1)
-                        {
-                            energy.opacity -= 0.1 * deltaTimeMultiplier * timeScale;
-                        }
-                    }
+                    energy.tick(energies);
                 }
                 
                 camera.tick();
@@ -987,10 +970,10 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 
                 ctx.reset();
                 ctx.strokeStyle = "#141414";
-                ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+                ctx.clearRect(0, 0, gameWidth, gameHeight);
                 ctx.lineWidth = 1;
                 
-                ctx.translate(canvasHalfWidth, canvasHalfHeight);
+                ctx.translate(gameHalfWidth, gameHalfHeight);
                 ctx.scale(camera.zoom, camera.zoom);
                 ctx.translate(-camera.x, -camera.y);
                 
@@ -1031,7 +1014,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 {
                     const energy = energies[n];
                     
-                    if(energy.inCanvas(camera))
+                    if(energy.inGame(camera))
                     {
                         ctx.globalAlpha = energy.opacity;
                         ctx.translate(energy.x, energy.y);
@@ -1084,7 +1067,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 {
                     var deadWorm = deadWorms[n];
                     
-                    if(deadWorm.inCanvas(camera))
+                    if(deadWorm.inGame(camera))
                     {
                         ctx.lineWidth = 3;
                         ctx.beginPath();
@@ -1146,7 +1129,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     const worm = worms[n];
                     var color = hueString(worm.hue);
                     
-                    if(worm.inCanvas(camera))
+                    if(worm.inGame(camera))
                     {
                         ctx.strokeStyle = color;
                         ctx.fillStyle = color;
@@ -1317,21 +1300,21 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 if(!minimapExpanded)
                 {
                     var region = new Path2D();
-                    region.rect(canvasWidth - minimapWidth - 10, canvasHeight - minimapHeight - 10, minimapWidth, minimapHeight);
+                    region.rect(gameWidth - minimapWidth - 10, gameHeight - minimapHeight - 10, minimapWidth, minimapHeight);
                     ctx.save();
                     ctx.clip(region, "nonzero");
                     ctx.fillStyle = "#020202";
                     ctx.globalAlpha = 0.5;
-                    ctx.fillRect(canvasWidth - minimapWidth - 10, canvasHeight - minimapHeight - 10, minimapWidth, minimapHeight);
-                    ctx.translate(canvasWidth - 10 - minimapWidth / 2, canvasHeight - 10 - minimapHeight / 2);
+                    ctx.fillRect(gameWidth - minimapWidth - 10, gameHeight - minimapHeight - 10, minimapWidth, minimapHeight);
+                    ctx.translate(gameWidth - 10 - minimapWidth / 2, gameHeight - 10 - minimapHeight / 2);
                 }
                 
                 if(minimapExpanded)
                 {
                     ctx.fillStyle = "#000000";
                     ctx.globalAlpha = 0.8;
-                    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-                    ctx.translate(canvasHalfWidth, canvasHalfHeight);
+                    ctx.fillRect(0, 0, gameWidth, gameHeight);
+                    ctx.translate(gameHalfWidth, gameHalfHeight);
                 }
                 
                 ctx.scale(minimapZoom, minimapZoom);
@@ -1409,7 +1392,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     ctx.setTransform(1, 0, 0, 1, 0, 0);
                 }
                 
-                requestAnimationFrame(render);
+                request = requestAnimationFrame(render);
             }
             
             //----------------------------
