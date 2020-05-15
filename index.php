@@ -77,30 +77,6 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     height: height
                 };
             }
-            
-            CanvasRenderingContext2D.prototype.reset = function()
-            {
-                this.direction = "ltr";
-                this.fillStyle = "#000000";
-                this.filter = "none";
-                this.font = "10px sans-serif";
-                this.globalAlpha = 1;
-                this.globalCompositeOperation = "source-over";
-                this.imageSmoothingEnabled = true;
-                this.imageSmoothingQuality = "low";
-                this.lineCap = "butt";
-                this.lineDashOffset = 0;
-                this.lineJoin = "miter";
-                this.lineWidth = 1;
-                this.miterLimit = 10;
-                this.shadowBlur = 0;
-                this.shadowColor = "rgba(0, 0, 0, 0)";
-                this.shadowOffsetX = 0;
-                this.shadowOffsetY = 0;
-                this.strokeStyle = "#000000";
-                this.textAlign = "start";
-                this.textBaseline = "alphabetic";
-            }
         
             class Filmable
             {
@@ -160,38 +136,35 @@ if(isset($_SERVER['REMOTE_ADDR']))
                         count = 1;
                     }
                     
-                    var tempLength = this.nodes.length;
-                    
                     for(var n = 0; n < count; n++)
                     {
-                        if(tempLength === 0)
+                        if(this.nodes.length === 0)
                         {
                             var tempRotation = 2 * Math.PI * Math.random();
                             var tempRadius = WORLD_RADIUS * Math.sqrt(Math.random());
                             this.nodes.push(
                             {
                                 active: true,
-                                activeCounter: 1,
+                                activeTime: 1,
                                 x: tempRadius * Math.cos(tempRotation),
                                 y: tempRadius * Math.sin(tempRotation),
-                                r: 2 * Math.PI * Math.random()
+                                r: 2 * Math.PI * Math.random(),
+                                rs: 0
                             });
                         }
                         
                         else
                         {
-                            var tempLastNode = this.nodes[tempLength - 1];
+                            var tempLastNode = this.nodes[this.nodes.length - 1];
                             this.nodes.push(
                             {
                                 active: true,
-                                activeCounter: 1,
+                                activeTime: 1,
                                 x: tempLastNode.x - 20 * Math.cos(tempLastNode.r),
                                 y: tempLastNode.y + 20 * Math.sin(tempLastNode.r),
                                 r: tempLastNode.r
                             });
                         }
-                        
-                        tempLength++;
                     }
                 }
                 
@@ -213,7 +186,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                             this.nodes.push(
                             {
                                 active: true,
-                                activeCounter: 1,
+                                activeTime: 1,
                                 x: tempRadius * Math.cos(tempRotation),
                                 y: tempRadius * Math.sin(tempRotation),
                                 r: 2 * Math.PI * Math.random()
@@ -226,7 +199,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                             this.nodes.push(
                             {
                                 active: false,
-                                activeCounter: 0,
+                                activeTime: 0,
                                 x: tempLastNode.x,
                                 y: tempLastNode.y,
                                 r: tempLastNode.r
@@ -288,23 +261,38 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     
                     if(this.turn === -1)
                     {
-                        tempFirstNode.r += Math.PI / 90 * timeScale;
-
-                        if(tempFirstNode.r >= 2 * Math.PI)
-                        {
-                            tempFirstNode.r -= 2 * Math.PI;
-                        }
+                        tempFirstNode.rs = clampMax(tempFirstNode.rs + Math.PI / 360, Math.PI / 90);
                     }
 
-                    if(this.turn === 1)
+                    else if(this.turn === 1)
                     {
-                        tempFirstNode.r -= Math.PI / 90 * timeScale;
-
-                        if(tempFirstNode.r < 0)
+                        tempFirstNode.rs = clampMin(tempFirstNode.rs - Math.PI / 360, -Math.PI / 90);
+                    }
+                    
+                    else
+                    {
+                        if(tempFirstNode.rs < 0)
                         {
-                            tempFirstNode.r += 2 * Math.PI;
+                            tempFirstNode.rs += Math.PI / 1440;
+                            
+                            if(tempFirstNode.rs > 0)
+                            {
+                                tempFirstNode.rs = 0;
+                            }
+                        }
+                        
+                        if(tempFirstNode.rs > 0)
+                        {
+                            tempFirstNode.rs -= Math.PI / 1440;
+                            
+                            if(tempFirstNode.rs < 0)
+                            {
+                                tempFirstNode.rs = 0;
+                            }
                         }
                     }
+                    
+                    tempFirstNode.r = clamp(tempFirstNode.r + tempFirstNode.rs * timeScale, -10000, 10000);
                     
                     tempFirstNode.x += 3 * Math.cos(tempFirstNode.r) * timeScale;
                     tempFirstNode.y -= 3 * Math.sin(tempFirstNode.r) * timeScale;
@@ -314,7 +302,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                         var tempCurrentNode = this.nodes[n];
                         var tempPreviousNode = this.nodes[n - 1];
                         
-                        if(tempCurrentNode.active === false)
+                        if(!tempCurrentNode.active)
                         {
                             if(distance(tempCurrentNode, tempPreviousNode) > 5)
                             {
@@ -322,15 +310,15 @@ if(isset($_SERVER['REMOTE_ADDR']))
                             }
                         }
                         
-                        if(tempCurrentNode.active === true)
+                        else
                         {
-                            if(tempCurrentNode.activeCounter < 1)
+                            if(tempCurrentNode.activeTime < 1)
                             {
-                                tempCurrentNode.activeCounter += 0.05 * timeScale;
+                                tempCurrentNode.activeTime += 0.05 * timeScale;
                                 
-                                if(tempCurrentNode.activeCounter > 1)
+                                if(tempCurrentNode.activeTime > 1)
                                 {
-                                    tempCurrentNode.activeCounter = 1;
+                                    tempCurrentNode.activeTime = 1;
                                 }
                             }
                             
@@ -630,6 +618,30 @@ if(isset($_SERVER['REMOTE_ADDR']))
             //--- FUNCTION DEFINITIONS ---
             //----------------------------
             
+            CanvasRenderingContext2D.prototype.reset = function()
+            {
+                this.direction = "ltr";
+                this.fillStyle = "#000000";
+                this.filter = "none";
+                this.font = "10px sans-serif";
+                this.globalAlpha = 1;
+                this.globalCompositeOperation = "source-over";
+                this.imageSmoothingEnabled = true;
+                this.imageSmoothingQuality = "low";
+                this.lineCap = "butt";
+                this.lineDashOffset = 0;
+                this.lineJoin = "miter";
+                this.lineWidth = 1;
+                this.miterLimit = 10;
+                this.shadowBlur = 0;
+                this.shadowColor = "rgba(0, 0, 0, 0)";
+                this.shadowOffsetX = 0;
+                this.shadowOffsetY = 0;
+                this.strokeStyle = "#000000";
+                this.textAlign = "start";
+                this.textBaseline = "alphabetic";
+            }
+            
             function hueString(hue)
             {
                 return ("hsl(" + hue + ", 100%, 50%)");
@@ -889,7 +901,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                         }
                     }
                     
-                    else if(!worm.controllable)
+                    else
                     {
                         //--------- AI CODE ----------
                         
@@ -898,7 +910,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                         if(worm.botWait <= 0)
                         {
                             worm.botDesiredDirection += (Math.random() - 0.5) * Math.PI;
-                            worm.botWait = Math.round(Math.random() * 40 + 20);
+                            worm.botWait = Math.round(Math.random() * 60 + 40);
                         }
                         
                         var angleDifference = calculateAngleDifference(worm.nodes[0].r, worm.botDesiredDirection);
@@ -1196,7 +1208,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                                             ctx.lineTo(-3, 25);
                                             break;
                                         case m % 4 > 1:
-                                            ctx.lineTo(0, 25 - 5 * worm.nodes[m].activeCounter);
+                                            ctx.lineTo(0, 25 - 5 * worm.nodes[m].activeTime);
                                             break;
                                     }
                                     
@@ -1218,7 +1230,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                                             ctx.lineTo(-3, -25);
                                             break;
                                         case m % 4 > 1:
-                                            ctx.lineTo(0, -25 + 5 * worm.nodes[m].activeCounter);
+                                            ctx.lineTo(0, -25 + 5 * worm.nodes[m].activeTime);
                                             break;
                                     }
                                     
