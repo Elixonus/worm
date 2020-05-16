@@ -88,6 +88,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 follow()
                 {
                     this.camera.filmedObject = this;
+                    this.updateCamera();
                 }
                 
                 unfollow()
@@ -98,25 +99,74 @@ if(isset($_SERVER['REMOTE_ADDR']))
             
             class Worm extends Filmable
             {
-                constructor(controllable, type, length, hue, camera)
+                constructor(camera)
                 {
                     super(camera);
-                    this.controllable = controllable;
+                    this.controllable;
                     this.dead = false;
-                    this.type = type;
-                    this.hue = hue;
+                    this.type = 1;
+                    this.hue = 0;
                     this.turn = 0;
                     this.nodes = [];
                     this.happiness = 0;
                     this.happinessCounter = 0;
                     this.happinessDirection = -1;
-                    this.addNode(length);
-                    
-                    if(!this.controllable)
+                    this.blink = 0;
+                    this.blinkWait = Math.round(Math.random() * 250) + 10;
+                    this.blinkDirection = 0;
+                }
+                
+                setControllable(controllable)
+                {
+                    if(controllable !== this.controllable)
                     {
-                        this.botWait = 0;
-                        this.botDesiredDirection = this.nodes[0].r;
+                        if(controllable && this.controllable === false)
+                        {
+                            if(this.hasOwnProperty("controllable"))
+                            {
+                                delete this.botWait;
+                                delete this.botDesiredDirection;
+                            }
+                        }
+                        
+                        else if(!controllable)
+                        {
+                            this.botWait = 0;
+                            this.botDesiredDirection = Math.random() * 2 * Math.PI;
+                        }
+                        
+                        this.controllable = controllable;
                     }
+                }
+                
+                setType(type)
+                {
+                    this.type = type;
+                }
+                
+                setRandomType(minimumType, maximumType)
+                {
+                    this.setType(Math.round(Math.random() * (maximumType - minimumType) + minimumType));
+                }
+                
+                setLength(length)
+                {
+                    var lengthDifference = Math.abs(length - this.nodes.length);
+                    
+                    if(length < this.nodes.length)
+                    {
+                        this.subtractNode(lengthDifference);
+                    }
+                    
+                    else if(length > this.nodes.length)
+                    {
+                        this.addNode(lengthDifference);
+                    }
+                }
+                
+                setRandomLength(minimumLength, maximumLength)
+                {
+                    this.setLength(Math.round(Math.random() * (maximumLength - minimumLength) + minimumLength));
                 }
                 
                 setHue(hue)
@@ -124,9 +174,9 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     this.hue = hue;
                 }
                 
-                setRandomHue(startingHue = 0, endingHue = 359)
+                setRandomHue(minimumHue = 0, maximumHue = 359)
                 {
-                    this.hue = Math.round(Math.random() * (endingHue - startingHue) + startingHue);
+                    this.hue = Math.random() * (maximumHue - minimumHue) + minimumHue;
                 }
                 
                 addNode(count)
@@ -256,6 +306,36 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 
                 tick(wormCollection)
                 {
+                    if(!this.controllable)
+                    {
+                        //--------- AI CODE ----------
+                        
+                        this.botWait = Math.max(this.botWait - timeScale, 0);
+                        
+                        if(this.botWait === 0)
+                        {
+                            var error = (Math.random() - 0.5) / 2;
+                            this.botDesiredDirection += (Math.random() - 0.5) * Math.PI + error;
+                            this.botWait = Math.round(Math.random() * 60 + 40);
+                        }
+                        
+                        var angleDifference = calculateAngleDifference(this.nodes[0].r, this.botDesiredDirection);
+                        if(angleDifference < -Math.PI / 4)
+                        {
+                            this.turn = 1;
+                        }
+                        
+                        else if(angleDifference > Math.PI / 4)
+                        {
+                            this.turn = -1;
+                        }
+                        
+                        else
+                        {
+                            this.turn = 0;
+                        }
+                    }
+                    
                     var wormIndex = wormCollection.indexOf(this);
                     var tempFirstNode = this.nodes[0];
                     
@@ -292,8 +372,8 @@ if(isset($_SERVER['REMOTE_ADDR']))
                         }
                     }
                     
-                    tempFirstNode.r = clamp(tempFirstNode.r + tempFirstNode.rs * timeScale, -10000, 10000);
-                    
+                    tempFirstNode.r = tempFirstNode.r + tempFirstNode.rs * timeScale;
+                    tempFirstNode.r = tempFirstNode.r % (2 * Math.PI);
                     tempFirstNode.x += 3 * Math.cos(tempFirstNode.r) * timeScale;
                     tempFirstNode.y -= 3 * Math.sin(tempFirstNode.r) * timeScale;
                     
@@ -310,7 +390,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                             }
                         }
                         
-                        else
+                        if(tempCurrentNode.active)
                         {
                             if(tempCurrentNode.activeTime < 1)
                             {
@@ -347,9 +427,9 @@ if(isset($_SERVER['REMOTE_ADDR']))
                                         tempCurrentNode.x = intersections[1].x;
                                         tempCurrentNode.y = intersections[1].y;
                                     }
+                                    
+                                    tempCurrentNode.r = Math.PI - Math.atan2(tempCurrentNode.y - tempPreviousNode.y, tempCurrentNode.x - tempPreviousNode.x);
                                 }
-                                
-                                tempCurrentNode.r = Math.PI - Math.atan2(tempCurrentNode.y - tempPreviousNode.y, tempCurrentNode.x - tempPreviousNode.x);
                             }
                         }
                     }
@@ -413,6 +493,37 @@ if(isset($_SERVER['REMOTE_ADDR']))
                         this.increaseHappiness(1 / 10 * timeScale);
                     }
                     
+                    this.blinkWait = Math.max(this.blinkWait - timeScale, 0);
+                    
+                    if(this.blinkWait === 0)
+                    {
+                        if(this.happiness < 0.5)
+                        {
+                            this.blinkWait = Math.round(Math.random() * 250) + 100;
+                        }
+                        
+                        else
+                        {
+                            this.blinkWait = Math.round(Math.random() * 100) + 10;
+                        }
+
+                        this.blinkDirection = 1;
+                    }
+                    
+                    this.blink += 1 / 10 * this.blinkDirection * timeScale;
+                    
+                    if(this.blink > 1)
+                    {
+                        this.blink = 1;
+                        this.blinkDirection = -1;
+                    }
+                    
+                    if(this.blink < 0)
+                    {
+                        this.blink = 0;
+                        this.blinkDirection = 0;
+                    }
+                    
                     this.updateCamera();
                 }
                 
@@ -426,7 +537,6 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     
                     this.nodes[0].x = p.x;
                     this.nodes[0].y = p.y;
-                    this.updateCamera();
                 }
                 
                 inGame(camera)
@@ -449,8 +559,8 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 inMinimap(camera, expanded)
                 {
                     var tempShapePadding = 80;
-                    var tempGlowPadding = 20;
-                    var tempPadding = tempShapePadding * minimapZoom + tempGlowPadding;
+                    var tempGlowPadding = clampMin(20 * camera.zoom, 20);
+                    var tempPadding = tempShapePadding * camera.zoom * minimapZoom + tempGlowPadding;
                     var tempWidth = minimapWidth;
                     var tempHeight = minimapHeight;
                     
@@ -462,7 +572,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     
                     for(var n = 0; n < this.nodes.length; n++)
                     {
-                        if(pointInRectangle(point(this.nodes[n].x - camera.x, this.nodes[n].y - camera.y), rectangle(pointOrigin, tempWidth / minimapZoom, tempHeight / minimapZoom), tempPadding))
+                        if(pointInRectangle(point(this.nodes[n].x - camera.x, this.nodes[n].y - camera.y), rectangle(pointOrigin, tempWidth / (camera.zoom * minimapZoom), tempHeight / (camera.zoom * minimapZoom)), tempPadding))
                         {
                             return true;
                         }
@@ -530,7 +640,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 {
                     if(this.camera.filmedObject === this)
                     {
-                        this.camera.moveToSmooth(this);
+                        this.camera.setTarget(this);
                     }
                 }
                 
@@ -551,8 +661,8 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 inMinimap(camera, expanded)
                 {
                     var tempShapePadding = 80;
-                    var tempGlowPadding = 20;
-                    var tempPadding = tempShapePadding * minimapZoom + tempGlowPadding;
+                    var tempGlowPadding = clampMin(20 * camera.zoom, 20);
+                    var tempPadding = tempShapePadding * camera.zoom * minimapZoom + tempGlowPadding;
                     var tempWidth = minimapWidth;
                     var tempHeight = minimapHeight;
                     
@@ -562,7 +672,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                         tempHeight = gameHeight;
                     }
                     
-                    if(pointInRectangle(point(this.x - camera.x, this.y - camera.y), rectangle(pointOrigin, tempWidth / minimapZoom, tempHeight / minimapZoom), tempPadding))
+                    if(pointInRectangle(point(this.x - camera.x, this.y - camera.y), rectangle(pointOrigin, tempWidth / (camera.zoom * minimapZoom), tempHeight / (camera.zoom * minimapZoom)), tempPadding))
                     {
                         return true;
                     }
@@ -710,11 +820,13 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 if(delta === -1)
                 {
                     camera.zoom /= 0.95;
+                    minimapZoom = camera.zoom / 10;
                 }
                 
                 if(delta === 1)
                 {
                     camera.zoom *= 0.95;
+                    minimapZoom = camera.zoom / 10;
                 }
             }
 
@@ -827,7 +939,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
             {
                 timeScale = 1;
                 camera = new Camera();
-                worms = [new Worm(true, 1, Math.round(Math.random() * 50 + 5), 120, camera)];
+                worms = [];
                 deadWorms = [];
                 energies = [];
                 minimapZoom = 0.1;
@@ -835,12 +947,28 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 minimapExpanded = false;
                 filmedWormIndex = 0;
                 
-                worms[0].follow();
-                
-                for(var n = 0; n < WORM_BOT_COUNT; n++)
+                for(var n = 0; n < WORM_BOT_COUNT + 1; n++)
                 {
-                    worms.push(new Worm(false, Math.round(Math.random() * 2 + 1), Math.round(Math.random() * 50 + 5), Math.round(Math.random() * 100 + 260), camera));
+                    let worm = new Worm(camera);
+                    
+                    if(n === 0)
+                    {
+                        worm.setControllable(true);
+                        worm.setHue(120);
+                    }
+                    
+                    else
+                    {
+                        worm.setControllable(false);
+                        worm.setRandomHue(260, 359);
+                    }
+                    
+                    worm.setRandomType(1, 1);
+                    worm.setRandomLength(5, 50);
+                    worms.push(worm);
                 }
+                
+                worms[0].follow();
                 
                 for(var n = 0; n < ENERGY_COUNT; n++)
                 {
@@ -860,6 +988,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
             {
                 stats.update();
                 
+                console.log(worms[0].happiness);
                 previousTime = currentTime;
                 currentTime = new Date();
                 fps = 1000 / (currentTime - previousTime);
@@ -886,10 +1015,11 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 for(var n = 0; n < worms.length; n++)
                 {
                     const worm = worms[n];
-                    worm.turn = 0;
                     
                     if(worm.controllable)
                     {
+                        worm.turn = 0;
+                        
                         if(keysPressed.includes("ArrowLeft") || keysPressed.includes("a") || keysPressed.includes("A"))
                         {
                             worm.turn -= 1;
@@ -898,30 +1028,6 @@ if(isset($_SERVER['REMOTE_ADDR']))
                         if(keysPressed.includes("ArrowRight") || keysPressed.includes("d") || keysPressed.includes("D"))
                         {
                             worm.turn += 1;
-                        }
-                    }
-                    
-                    else
-                    {
-                        //--------- AI CODE ----------
-                        
-                        worm.botWait -= timeScale;
-                        
-                        if(worm.botWait <= 0)
-                        {
-                            worm.botDesiredDirection += (Math.random() - 0.5) * Math.PI;
-                            worm.botWait = Math.round(Math.random() * 60 + 40);
-                        }
-                        
-                        var angleDifference = calculateAngleDifference(worm.nodes[0].r, worm.botDesiredDirection);
-                        if(angleDifference < Math.PI / 30)
-                        {
-                            worm.turn = 1;
-                        }
-                        
-                        else if(angleDifference > Math.PI / 30)
-                        {
-                            worm.turn = -1;
                         }
                     }
                     
@@ -1183,10 +1289,10 @@ if(isset($_SERVER['REMOTE_ADDR']))
                                 ctx.bezierCurveTo(interpolation3, -7, interpolation3, 7, interpolation1, -interpolation2);
                                 ctx.stroke();
                                 ctx.beginPath();
-                                ctx.arc(0, -5, 2, 0, 2 * Math.PI);
+                                ctx.ellipse(0, -5, 2 * (1 - worm.blink), 2, 0, 0, 2 * Math.PI);
                                 ctx.fill();
                                 ctx.beginPath();
-                                ctx.arc(0, 5, 2, 0, 2 * Math.PI);
+                                ctx.ellipse(0, 5, 2 * (1 - worm.blink), 2, 0, 0, 2 * Math.PI);
                                 ctx.fill();
                                 ctx.restore();
                                 break;
@@ -1300,6 +1406,73 @@ if(isset($_SERVER['REMOTE_ADDR']))
                                 ctx.fill();
                                 ctx.restore();
                                 break;
+                            case 4:
+                                ctx.beginPath();
+                                ctx.arc(worm.nodes[0].x, worm.nodes[0].y, 25, -(worm.nodes[0].r + Math.PI / 2), -(worm.nodes[0].r - Math.PI / 2));
+                                for(var m = 1; m < worm.nodes.length - 1; m++)
+                                {
+                                    ctx.save();
+                                    ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
+                                    ctx.rotate(-worm.nodes[m].r);
+                                    
+                                    switch(true)
+                                    {
+                                        case m % 4 === 0:
+                                            ctx.lineTo(3, 25);
+                                            break;
+                                        case m % 4 === 1:
+                                            ctx.lineTo(-3, 25);
+                                            break;
+                                        case m % 4 > 1:
+                                            ctx.lineTo(0, 25 - 5 * worm.nodes[m].activeTime);
+                                            break;
+                                    }
+                                    
+                                    ctx.restore();
+                                }
+                                ctx.arc(worm.nodes[worm.nodes.length - 1].x, worm.nodes[worm.nodes.length - 1].y, 25, -(worm.nodes[worm.nodes.length - 1].r - Math.PI / 2), -(worm.nodes[worm.nodes.length - 1].r + Math.PI / 2));
+                                for(var m = worm.nodes.length - 2; m > 0; m--)
+                                {
+                                    ctx.save();
+                                    ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
+                                    ctx.rotate(-worm.nodes[m].r);
+                                    
+                                    switch(true)
+                                    {
+                                        case m % 4 === 0:
+                                            ctx.lineTo(3, -25);
+                                            break;
+                                        case m % 4 === 1:
+                                            ctx.lineTo(-3, -25);
+                                            break;
+                                        case m % 4 > 1:
+                                            ctx.lineTo(0, -25 + 5 * worm.nodes[m].activeTime);
+                                            break;
+                                    }
+                                    
+                                    ctx.restore();
+                                }
+                                ctx.closePath();
+                                ctx.stroke();
+                                var interpolation1 = interpolateQuadratic(12, 6, worm.happiness);
+                                var interpolation2 = interpolateQuadratic(-11, -15, worm.happiness);
+                                var interpolation3 = interpolateQuadratic(4, 19, worm.happiness);
+                                ctx.save();
+                                ctx.translate(worm.nodes[0].x, worm.nodes[0].y);
+                                ctx.rotate(-worm.nodes[0].r);
+                                ctx.lineWidth = 2;
+                                ctx.beginPath();
+                                ctx.moveTo(interpolation1, interpolation2);
+                                ctx.bezierCurveTo(interpolation3, -7, interpolation3, 7, interpolation1, -interpolation2);
+                                ctx.stroke();
+                                ctx.beginPath();
+                                ctx.arc(0, -5, 2, 0, 2 * Math.PI);
+                                ctx.fill();
+                                ctx.beginPath();
+                                ctx.arc(0, 5, 2, 0, 2 * Math.PI);
+                                ctx.fill();
+                                ctx.restore();
+                                break;
                         }
                     }
                 }
@@ -1329,13 +1502,13 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     ctx.translate(gameHalfWidth, gameHalfHeight);
                 }
                 
-                ctx.scale(minimapZoom, minimapZoom);
+                ctx.scale(camera.zoom * minimapZoom, camera.zoom * minimapZoom);
                 ctx.strokeStyle = "#171717";
                 ctx.lineWidth = 25;
                 ctx.beginPath();
                 ctx.arc((0 - camera.x), (0 - camera.y), WORLD_RADIUS, 0, 2 * Math.PI);
                 ctx.stroke();
-                ctx.shadowBlur = 20;
+                ctx.shadowBlur = clampMin(20 * camera.zoom, 20);
                 
                 for(var n = 0; n < energies.length; n++)
                 {
