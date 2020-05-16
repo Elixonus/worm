@@ -37,6 +37,12 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 transform: translate(-50%, -50%);
             }
             
+            @font-face
+            {
+                font-family: "Noto";
+                src: url("./fonts/Noto-Sans/NotoSans-Regular.ttf");
+            }
+            
         </style>
         
         <script>
@@ -108,6 +114,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     this.hue = 0;
                     this.turn = 0;
                     this.nodes = [];
+                    this.username = "";
                     this.happiness = 0;
                     this.happinessCounter = 0;
                     this.happinessDirection = -1;
@@ -116,7 +123,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     this.blinkDirection = 0;
                 }
                 
-                setControllable(controllable)
+                setControllable(controllable = true)
                 {
                     if(controllable !== this.controllable)
                     {
@@ -177,6 +184,16 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 setRandomHue(minimumHue = 0, maximumHue = 359)
                 {
                     this.hue = Math.random() * (maximumHue - minimumHue) + minimumHue;
+                }
+                
+                setUsername(username)
+                {
+                    this.username = username;
+                }
+                
+                setRandomUsername(usernameList)
+                {
+                    this.username = usernameList[Math.round(Math.random() * (usernameList.length - 1))];
                 }
                 
                 addNode(count)
@@ -752,6 +769,19 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 this.textBaseline = "alphabetic";
             }
             
+            function getShadows()
+            {
+                if(shadows)
+                {
+                    return clampMin(20 * camera.zoom, 20);
+                }
+                
+                else
+                {
+                    return 0;
+                }
+            }
+            
             function hueString(hue)
             {
                 return ("hsl(" + hue + ", 100%, 50%)");
@@ -886,16 +916,16 @@ if(isset($_SERVER['REMOTE_ADDR']))
             window.onwheel = wheel;
             window.onkeydown = keydown;
             window.onkeyup = keyup;
-            window.onload = start;
             window.oncontextmenu = function(event) { event.preventDefault(); };
             
             //-----------------------------------
             //--- GLOBAL VARIABLE DEFINITIONS ---
             //-----------------------------------
             
+            var usernames;
             var request;
-            var requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
-            var cancelAnimationFrame = window.cancelAnimationFrame || window.mozCancelAnimationFrame || window.webkitCancelAnimationFrame || window.msCancelAnimationFrame;
+            const requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
+            const cancelAnimationFrame = window.cancelAnimationFrame || window.mozCancelAnimationFrame || window.webkitCancelAnimationFrame || window.msCancelAnimationFrame;
             const canvas = document.getElementById("canvas");
             const ctx = canvas.getContext("2d", {alpha: false});
             const gameWidth = canvas.width;
@@ -911,6 +941,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
             var minimapExpanded;
             const pointOrigin = point(0, 0), pointGameCenter = point(gameHalfWidth, gameHalfHeight);
             const distanceOriginCenter = distance(pointOrigin, pointGameCenter);
+            var shadows = true;
             var timeScale;
             const keysPressed = [];
             var camera;
@@ -926,6 +957,17 @@ if(isset($_SERVER['REMOTE_ADDR']))
             var previousTime;
             var currentTime = new Date();
             var fps;
+            var xhttp = new XMLHttpRequest();
+            xhttp.open("GET", "./usernames.txt");
+            xhttp.onreadystatechange = function()
+            {
+                if(this.readyState == 4 && this.status == 200)
+                {
+                    usernames = xhttp.responseText.split("\n");
+                    start();
+                }
+            }
+            xhttp.send();
             
             // STATS.JS CODE
             var stats = new Stats();
@@ -961,6 +1003,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     {
                         worm.setControllable(false);
                         worm.setRandomHue(260, 359);
+                        worm.setRandomUsername(usernames);
                     }
                     
                     worm.setRandomType(1, 1);
@@ -987,8 +1030,6 @@ if(isset($_SERVER['REMOTE_ADDR']))
             function render()
             {
                 stats.update();
-                
-                console.log(worms[0].happiness);
                 previousTime = currentTime;
                 currentTime = new Date();
                 fps = 1000 / (currentTime - previousTime);
@@ -1123,59 +1164,6 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 ctx.arc(0, 0, WORLD_RADIUS, 0, 2 * Math.PI);
                 ctx.stroke();
                 
-                //----- ENERGY RENDERING -----
-                
-                ctx.reset();
-                ctx.lineWidth = 3;
-                ctx.shadowBlur = clampMin(20 * camera.zoom, 20);
-                for(var n = 0; n < energies.length; n++)
-                {
-                    const energy = energies[n];
-                    
-                    if(energy.inGame(camera))
-                    {
-                        ctx.globalAlpha = energy.opacity;
-                        ctx.translate(energy.x, energy.y);
-                        
-                        if(energy.type === 0)
-                        {
-                            ctx.strokeStyle = "#ff0000";
-                            ctx.shadowColor = ctx.strokeStyle;
-                            ctx.beginPath();
-                            ctx.moveTo(25 * Math.cos(energy.r), 0 - 25 * Math.sin(energy.r));
-                            ctx.lineTo(25 * Math.cos(energy.r + 2 * Math.PI / 3), 0 - 25 * Math.sin(energy.r + 2 * Math.PI / 3));
-                            ctx.lineTo(25 * Math.cos(energy.r + 4 * Math.PI / 3), 0 - 25 * Math.sin(energy.r + 4 * Math.PI / 3));
-                            ctx.closePath();
-                            ctx.stroke();
-                        }
-                        
-                        if(energy.type === 1)
-                        {
-                            ctx.strokeStyle = "#00e5ff";
-                            ctx.shadowColor = ctx.strokeStyle;
-                            ctx.beginPath();
-                            ctx.moveTo(25 * Math.cos(energy.r), 0 - 25 * Math.sin(energy.r));
-                            ctx.lineTo(25 * Math.cos(energy.r + Math.PI / 2), 0 - 25 * Math.sin(energy.r + Math.PI / 2));
-                            ctx.lineTo(25 * Math.cos(energy.r + Math.PI), 0 - 25 * Math.sin(energy.r + Math.PI));
-                            ctx.lineTo(25 * Math.cos(energy.r + 3 * Math.PI / 2), 0 - 25 * Math.sin(energy.r + 3 * Math.PI / 2));
-                            ctx.closePath();
-                            ctx.stroke();
-                        }
-                        
-                        if(energy.type === 2)
-                        {
-                            ctx.strokeStyle = "#ff9100";
-                            ctx.shadowColor = ctx.strokeStyle;
-                            ctx.beginPath();
-                            ctx.arc(0, 0, 25, energy.r - Math.PI / 2, energy.r + Math.PI / 2);
-                            ctx.closePath();
-                            ctx.stroke();
-                        }
-                        
-                        ctx.translate(-energy.x, -energy.y);
-                    }
-                }
-                
                 //--- DEAD WORMS RENDERING ---
                 
                 ctx.reset();
@@ -1236,11 +1224,65 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     }
                 }
                 
+                //----- ENERGY RENDERING -----
+                
+                ctx.reset();
+                ctx.lineWidth = 3;
+                ctx.shadowBlur = getShadows(clampMin(20 * camera.zoom, 20));
+                for(var n = 0; n < energies.length; n++)
+                {
+                    const energy = energies[n];
+                    
+                    if(energy.inGame(camera))
+                    {
+                        ctx.globalAlpha = energy.opacity;
+                        ctx.translate(energy.x, energy.y);
+                        
+                        if(energy.type === 0)
+                        {
+                            ctx.strokeStyle = "#ff0000";
+                            ctx.shadowColor = ctx.strokeStyle;
+                            ctx.beginPath();
+                            ctx.moveTo(25 * Math.cos(energy.r), 0 - 25 * Math.sin(energy.r));
+                            ctx.lineTo(25 * Math.cos(energy.r + 2 * Math.PI / 3), 0 - 25 * Math.sin(energy.r + 2 * Math.PI / 3));
+                            ctx.lineTo(25 * Math.cos(energy.r + 4 * Math.PI / 3), 0 - 25 * Math.sin(energy.r + 4 * Math.PI / 3));
+                            ctx.closePath();
+                            ctx.stroke();
+                        }
+                        
+                        if(energy.type === 1)
+                        {
+                            ctx.strokeStyle = "#00e5ff";
+                            ctx.shadowColor = ctx.strokeStyle;
+                            ctx.beginPath();
+                            ctx.moveTo(25 * Math.cos(energy.r), 0 - 25 * Math.sin(energy.r));
+                            ctx.lineTo(25 * Math.cos(energy.r + Math.PI / 2), 0 - 25 * Math.sin(energy.r + Math.PI / 2));
+                            ctx.lineTo(25 * Math.cos(energy.r + Math.PI), 0 - 25 * Math.sin(energy.r + Math.PI));
+                            ctx.lineTo(25 * Math.cos(energy.r + 3 * Math.PI / 2), 0 - 25 * Math.sin(energy.r + 3 * Math.PI / 2));
+                            ctx.closePath();
+                            ctx.stroke();
+                        }
+                        
+                        if(energy.type === 2)
+                        {
+                            ctx.strokeStyle = "#ff9100";
+                            ctx.shadowColor = ctx.strokeStyle;
+                            ctx.beginPath();
+                            ctx.arc(0, 0, 25, energy.r - Math.PI / 2, energy.r + Math.PI / 2);
+                            ctx.closePath();
+                            ctx.stroke();
+                        }
+                        
+                        ctx.translate(-energy.x, -energy.y);
+                    }
+                }
+                
                 //------ WORM RENDERING ------
                 
                 ctx.reset();
                 ctx.lineWidth = 3;
-                ctx.shadowBlur = clampMin(20 * camera.zoom, 20);
+                ctx.shadowBlur = getShadows();
+                ctx.font = "15px Noto";
                 
                 for(var n = 0; n < worms.length; n++)
                 {
@@ -1474,6 +1516,10 @@ if(isset($_SERVER['REMOTE_ADDR']))
                                 ctx.restore();
                                 break;
                         }
+                        
+                        let username = worm.username;
+                        ctx.fillText(username, worm.nodes[0].x - ctx.measureText(username).width / 2, worm.nodes[0].y + 50);
+                        
                     }
                 }
                 
@@ -1508,7 +1554,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 ctx.beginPath();
                 ctx.arc((0 - camera.x), (0 - camera.y), WORLD_RADIUS, 0, 2 * Math.PI);
                 ctx.stroke();
-                ctx.shadowBlur = clampMin(20 * camera.zoom, 20);
+                ctx.shadowBlur = getShadows(clampMin(20 * camera.zoom, 20));
                 
                 for(var n = 0; n < energies.length; n++)
                 {
@@ -1704,17 +1750,17 @@ if(isset($_SERVER['REMOTE_ADDR']))
             
             function clampMin(num, min)
             {
-                return num < min ? min : num;
+                return Math.max(num, min)
             }
             
             function clampMax(num, max)
             {
-                return num > max ? max : num;
+                return Math.min(num, max);
             }
             
             function clamp(num, min, max)
             {
-                return num < min ? min : num > max ? max : num;
+                return Math.min(Math.max(num, min), max);
             }
             
         </script>
