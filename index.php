@@ -108,19 +108,19 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 constructor(camera)
                 {
                     super(camera);
-                    this.controllable;
-                    this.dead = false;
-                    this.type = 1;
-                    this.hue = 0;
-                    this.turn = 0;
-                    this.nodes = [];
-                    this.username = "";
-                    this.happiness = 0;
-                    this.happinessCounter = 0;
-                    this.happinessDirection = -1;
                     this.blink = 0;
                     this.blinkWait = Math.round(Math.random() * 250) + 10;
                     this.blinkDirection = 0;
+                    this.controllable;
+                    this.dead = false;
+                    this.happiness = 0;
+                    this.happinessCounter = 0;
+                    this.happinessDirection = -1;
+                    this.hue = 0;
+                    this.nodes = [];
+                    this.type = 1;
+                    this.turn = 0;
+                    this.username = "";
                 }
                 
                 setControllable(controllable = true)
@@ -313,12 +313,9 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     }
                 }
                 
-                die(wormCollection, deadWormCollection)
+                die()
                 {
-                    var index = wormCollection.indexOf(this);
-                    var deadWorm = wormCollection[index];
-                    wormCollection.splice(index, 1);
-                    deadWormCollection.push(deadWorm);
+                    this.dead = true;
                 }
                 
                 tick(wormCollection)
@@ -510,9 +507,9 @@ if(isset($_SERVER['REMOTE_ADDR']))
                         this.increaseHappiness(1 / 10 * timeScale);
                     }
                     
-                    this.blinkWait = Math.max(this.blinkWait - timeScale, 0);
+                    this.blinkWait -= timeScale;
                     
-                    if(this.blinkWait === 0)
+                    if(this.blinkWait <= 0)
                     {
                         if(this.happiness < 0.5)
                         {
@@ -1002,11 +999,11 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     else
                     {
                         worm.setControllable(false);
+                        worm.setRandomType(1, 4);
                         worm.setRandomHue(260, 359);
                         worm.setRandomUsername(usernames);
                     }
                     
-                    worm.setRandomType(1, 1);
                     worm.setRandomLength(5, 50);
                     worms.push(worm);
                 }
@@ -1083,7 +1080,10 @@ if(isset($_SERVER['REMOTE_ADDR']))
                         var newY = worm.nodes[0].y;
                         var intersection = intersectCircleLineSegment(circle(pointOrigin, WORLD_RADIUS), line(point(oldX, oldY), point(newX, newY)));
                         worm.moveTo(intersection[0]);
-                        worms[n].die(worms, deadWorms);
+                        worms[n].die();
+                        var deadWorm = worms[n];
+                        worms.splice(n, 1);
+                        deadWorms.push(deadWorm);
                         n--;
                     }
                 }
@@ -1200,23 +1200,23 @@ if(isset($_SERVER['REMOTE_ADDR']))
                         ctx.stroke();
                         
                         ctx.beginPath();
-                        ctx.moveTo(-2.5, -12.5);
-                        ctx.lineTo(2.5, -7.5);
+                        ctx.moveTo(-3, -13);
+                        ctx.lineTo(3, -7);
                         ctx.stroke();
                         
                         ctx.beginPath();
-                        ctx.moveTo(-2.5, -7.5);
-                        ctx.lineTo(2.5, -12.5);
+                        ctx.moveTo(-3, -7);
+                        ctx.lineTo(3, -13);
                         ctx.stroke();
                         
                         ctx.beginPath();
-                        ctx.moveTo(-2.5, 12.5);
-                        ctx.lineTo(2.5, 7.5);
+                        ctx.moveTo(-3, 13);
+                        ctx.lineTo(3, 7);
                         ctx.stroke();
                         
                         ctx.beginPath();
-                        ctx.moveTo(-2.5, 7.5);
-                        ctx.lineTo(2.5, 12.5);
+                        ctx.moveTo(-3, 7);
+                        ctx.lineTo(3, 13);
                         ctx.stroke();
                             
                         ctx.rotate(deadWorm.nodes[0].r);
@@ -1398,10 +1398,10 @@ if(isset($_SERVER['REMOTE_ADDR']))
                                 ctx.bezierCurveTo(interpolation3, -7, interpolation3, 7, interpolation1, -interpolation2);
                                 ctx.stroke();
                                 ctx.beginPath();
-                                ctx.arc(0, -5, 2, 0, 2 * Math.PI);
+                                ctx.ellipse(0, -5, 2 * (1 - worm.blink), 2, 0, 0, 2 * Math.PI);
                                 ctx.fill();
                                 ctx.beginPath();
-                                ctx.arc(0, 5, 2, 0, 2 * Math.PI);
+                                ctx.ellipse(0, 5, 2 * (1 - worm.blink), 2, 0, 0, 2 * Math.PI);
                                 ctx.fill();
                                 ctx.restore();
                                 break;
@@ -1508,10 +1508,10 @@ if(isset($_SERVER['REMOTE_ADDR']))
                                 ctx.bezierCurveTo(interpolation3, -7, interpolation3, 7, interpolation1, -interpolation2);
                                 ctx.stroke();
                                 ctx.beginPath();
-                                ctx.arc(0, -5, 2, 0, 2 * Math.PI);
+                                ctx.ellipse(0, -5, 2 * (1 - worm.blink), 2, 0, 0, 2 * Math.PI);
                                 ctx.fill();
                                 ctx.beginPath();
-                                ctx.arc(0, 5, 2, 0, 2 * Math.PI);
+                                ctx.ellipse(0, 5, 2 * (1 - worm.blink), 2, 0, 0, 2 * Math.PI);
                                 ctx.fill();
                                 ctx.restore();
                                 break;
