@@ -114,7 +114,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     this.controllable;
                     this.dead = false;
                     this.happiness = 0;
-                    this.happinessCounter = 0;
+                    this.happinessWait = 0;
                     this.happinessDirection = -1;
                     this.hue = 0;
                     this.nodes = [];
@@ -316,6 +316,11 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 die()
                 {
                     this.dead = true;
+                    
+                    if(this.camera.filmedObject === this)
+                    {
+                        this.camera.filmedObject = null;
+                    }
                 }
                 
                 tick(wormCollection)
@@ -324,13 +329,13 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     {
                         //--------- AI CODE ----------
                         
-                        this.botWait = Math.max(this.botWait - timeScale, 0);
+                        this.botWait -= timeScale;
                         
-                        if(this.botWait === 0)
+                        if(this.botWait <= 0)
                         {
                             var error = (Math.random() - 0.5) / 2;
                             this.botDesiredDirection += (Math.random() - 0.5) * Math.PI + error;
-                            this.botWait = Math.round(Math.random() * 60 + 40);
+                            this.botWait = Math.round(Math.random() * 30 + 20);
                         }
                         
                         var angleDifference = calculateAngleDifference(this.nodes[0].r, this.botDesiredDirection);
@@ -463,36 +468,36 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     
                     if(foundHappiness)
                     {
-                        if(this.happinessCounter < 1)
+                        if(this.happinessWait < 50)
                         {
-                            this.happinessCounter += 1 / 50 * timeScale;
+                            this.happinessWait += timeScale;
                             
-                            if(this.happinessCounter > 1)
+                            if(this.happinessWait > 50)
                             {
-                                this.happinessCounter = 1;
+                                this.happinessWait = 50;
                             }
                         }
                     }
                     
                     else
                     {
-                        if(this.happinessCounter > 0)
+                        if(this.happinessWait > 0)
                         {
-                            this.happinessCounter -= 1 / 50 * timeScale;
+                            this.happinessWait -= timeScale;
                             
-                            if(this.happinessCounter < 0)
+                            if(this.happinessWait < 0)
                             {
-                                this.happinessCounter = 0;
+                                this.happinessWait = 0;
                             }
                         }
                     }
                     
-                    if(this.happinessCounter === 0)
+                    if(this.happinessWait === 0)
                     {
                         this.happinessDirection = -1;
                     }
                     
-                    else if(this.happinessCounter === 1)
+                    else if(this.happinessWait === 50)
                     {
                         this.happinessDirection = 1;
                     }
