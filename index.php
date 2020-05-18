@@ -109,14 +109,17 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 {
                     super(camera);
                     this.blink = 0;
-                    this.blinkWait = Math.round(Math.random() * 250) + 10;
                     this.blinkDirection = 0;
+                    this.blinkWait = Math.round(Math.random() * 250) + 10;
                     this.controllable;
                     this.dead = false;
+                    this.energiesCollected = 0;
                     this.happiness = 0;
-                    this.happinessWait = 0;
+                    this.happinessAchieved = 0;
                     this.happinessDirection = -1;
+                    this.happinessWait = 0;
                     this.hue = 0;
+                    this.maxLength = 0;
                     this.nodes = [];
                     this.type = 1;
                     this.turn = 0;
@@ -196,13 +199,8 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     this.username = usernameList[Math.round(Math.random() * (usernameList.length - 1))];
                 }
                 
-                addNode(count)
+                addNode(count = 1)
                 {
-                    if(count === undefined)
-                    {
-                        count = 1;
-                    }
-                    
                     for(var n = 0; n < count; n++)
                     {
                         if(this.nodes.length === 0)
@@ -233,15 +231,12 @@ if(isset($_SERVER['REMOTE_ADDR']))
                             });
                         }
                     }
+                    
+                    this.maxLength = clampMin(this.nodes.length, this.maxLength);
                 }
                 
-                addNodeSmooth(count)
+                addNodeSmooth(count = 1)
                 {
-                    if(count === undefined)
-                    {
-                        count = 1;
-                    }
-                    
                     var tempLength = this.nodes.length;
                     
                     for(var n = 0; n < count; n++)
@@ -275,6 +270,8 @@ if(isset($_SERVER['REMOTE_ADDR']))
                         
                         tempLength++;
                     }
+                    
+                    this.maxLength = clampMin(this.nodes.length, this.maxLength);
                 }
                 
                 subtractNode(count)
@@ -499,6 +496,11 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     
                     else if(this.happinessWait === 50)
                     {
+                        if(this.happinessDirection === -1)
+                        {
+                            this.happinessAchieved++;
+                        }
+                        
                         this.happinessDirection = 1;
                     }
                     
@@ -614,7 +616,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 constructor(camera)
                 {
                     super(camera);
-                    this.type = Math.round(2 * Math.random());
+                    this.type = Math.round(2 * Math.random() + 1);
                     this.opacity = 1;
                     this.phase = 2 * Math.PI * Math.random();
                     var tempRotation = 2 * Math.PI * Math.random();
@@ -1115,6 +1117,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     {
                         if(!energy.isDecaying)
                         {
+                            closestWorm.energiesCollected++;
                             closestWorm.addNodeSmooth(5);
                         }
                         
@@ -1243,39 +1246,37 @@ if(isset($_SERVER['REMOTE_ADDR']))
                         ctx.globalAlpha = energy.opacity;
                         ctx.translate(energy.x, energy.y);
                         
-                        if(energy.type === 0)
+                        switch(energy.type)
                         {
-                            ctx.strokeStyle = "#ff0000";
-                            ctx.shadowColor = ctx.strokeStyle;
-                            ctx.beginPath();
-                            ctx.moveTo(25 * Math.cos(energy.r), 0 - 25 * Math.sin(energy.r));
-                            ctx.lineTo(25 * Math.cos(energy.r + 2 * Math.PI / 3), 0 - 25 * Math.sin(energy.r + 2 * Math.PI / 3));
-                            ctx.lineTo(25 * Math.cos(energy.r + 4 * Math.PI / 3), 0 - 25 * Math.sin(energy.r + 4 * Math.PI / 3));
-                            ctx.closePath();
-                            ctx.stroke();
-                        }
-                        
-                        if(energy.type === 1)
-                        {
-                            ctx.strokeStyle = "#00e5ff";
-                            ctx.shadowColor = ctx.strokeStyle;
-                            ctx.beginPath();
-                            ctx.moveTo(25 * Math.cos(energy.r), 0 - 25 * Math.sin(energy.r));
-                            ctx.lineTo(25 * Math.cos(energy.r + Math.PI / 2), 0 - 25 * Math.sin(energy.r + Math.PI / 2));
-                            ctx.lineTo(25 * Math.cos(energy.r + Math.PI), 0 - 25 * Math.sin(energy.r + Math.PI));
-                            ctx.lineTo(25 * Math.cos(energy.r + 3 * Math.PI / 2), 0 - 25 * Math.sin(energy.r + 3 * Math.PI / 2));
-                            ctx.closePath();
-                            ctx.stroke();
-                        }
-                        
-                        if(energy.type === 2)
-                        {
-                            ctx.strokeStyle = "#ff9100";
-                            ctx.shadowColor = ctx.strokeStyle;
-                            ctx.beginPath();
-                            ctx.arc(0, 0, 25, energy.r - Math.PI / 2, energy.r + Math.PI / 2);
-                            ctx.closePath();
-                            ctx.stroke();
+                            case 1:
+                                ctx.strokeStyle = "#ff0000";
+                                ctx.shadowColor = "#ff0000";
+                                ctx.beginPath();
+                                ctx.moveTo(25 * Math.cos(energy.r), 0 - 25 * Math.sin(energy.r));
+                                ctx.lineTo(25 * Math.cos(energy.r + 2 * Math.PI / 3), 0 - 25 * Math.sin(energy.r + 2 * Math.PI / 3));
+                                ctx.lineTo(25 * Math.cos(energy.r + 4 * Math.PI / 3), 0 - 25 * Math.sin(energy.r + 4 * Math.PI / 3));
+                                ctx.closePath();
+                                ctx.stroke();
+                                break;
+                            case 2:
+                                ctx.strokeStyle = "#00e5ff";
+                                ctx.shadowColor = "#00e5ff";
+                                ctx.beginPath();
+                                ctx.moveTo(25 * Math.cos(energy.r), 0 - 25 * Math.sin(energy.r));
+                                ctx.lineTo(25 * Math.cos(energy.r + Math.PI / 2), 0 - 25 * Math.sin(energy.r + Math.PI / 2));
+                                ctx.lineTo(25 * Math.cos(energy.r + Math.PI), 0 - 25 * Math.sin(energy.r + Math.PI));
+                                ctx.lineTo(25 * Math.cos(energy.r + 3 * Math.PI / 2), 0 - 25 * Math.sin(energy.r + 3 * Math.PI / 2));
+                                ctx.closePath();
+                                ctx.stroke();
+                                break;
+                            case 3:
+                                ctx.strokeStyle = "#ff9100";
+                                ctx.shadowColor = "#ff9100";
+                                ctx.beginPath();
+                                ctx.arc(0, 0, 25, energy.r - Math.PI / 2, energy.r + Math.PI / 2);
+                                ctx.closePath();
+                                ctx.stroke();
+                                break;
                         }
                         
                         ctx.translate(-energy.x, -energy.y);
@@ -1569,22 +1570,20 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     {
                         ctx.globalAlpha = energy.opacity;
                         
-                        if(energy.type === 0)
+                        switch(energy.type)
                         {
-                            ctx.fillStyle = "#ff0000";
-                            ctx.shadowColor = "#ff0000";
-                        }
-                        
-                        if(energy.type === 1)
-                        {
-                            ctx.fillStyle = "#00e5ff";
-                            ctx.shadowColor = "#00e5ff";
-                        }
-                        
-                        if(energy.type === 2)
-                        {
-                            ctx.fillStyle = "#ff9100";
-                            ctx.shadowColor = "#ff9100";
+                            case 1:
+                                ctx.fillStyle = "#ff0000";
+                                ctx.shadowColor = "#ff0000";
+                                break;
+                            case 2:
+                                ctx.fillStyle = "#00e5ff";
+                                ctx.shadowColor = "#00e5ff";
+                                break;
+                            case 3:
+                                ctx.fillStyle = "#ff9100";
+                                ctx.shadowColor = "#ff9100";
+                                break;
                         }
                         
                         ctx.beginPath();
