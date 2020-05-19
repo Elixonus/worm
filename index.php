@@ -926,6 +926,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
             //--- GLOBAL VARIABLE DEFINITIONS ---
             //-----------------------------------
             
+            var frameNumber = 0;
             var usernames;
             var request;
             const requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
@@ -1625,6 +1626,15 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 else
                 {
                     ctx.setTransform(1, 0, 0, 1, 0, 0);
+                }
+                
+                frameNumber++;
+                
+                if(frameNumber === 60 * 10)
+                {
+                    xhttp = new XMLHttpRequest();
+                    xhttp.open("GET", "./counter.php");
+                    xhttp.send();
                 }
                 
                 request = requestAnimationFrame(render);
