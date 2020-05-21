@@ -125,6 +125,18 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     this.type = 1;
                     this.turn = 0;
                     this.username = "";
+                    
+                    var tempRotation = 2 * Math.PI * Math.random();
+                    var tempRadius = WORLD_RADIUS * Math.sqrt(Math.random());
+                    this.nodes.push(
+                    {
+                        active: true,
+                        activeTime: 0,
+                        x: tempRadius * Math.cos(tempRotation),
+                        y: tempRadius * Math.sin(tempRotation),
+                        r: 2 * Math.PI * Math.random(),
+                        rs: 0
+                    });
                 }
                 
                 setControllable(controllable = true)
@@ -204,33 +216,15 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 {
                     for(var n = 0; n < count; n++)
                     {
-                        if(this.nodes.length === 0)
+                        let tempLastNode = this.nodes[this.nodes.length - 1];
+                        this.nodes.push(
                         {
-                            var tempRotation = 2 * Math.PI * Math.random();
-                            var tempRadius = WORLD_RADIUS * Math.sqrt(Math.random());
-                            this.nodes.push(
-                            {
-                                active: true,
-                                activeTime: 1,
-                                x: tempRadius * Math.cos(tempRotation),
-                                y: tempRadius * Math.sin(tempRotation),
-                                r: 2 * Math.PI * Math.random(),
-                                rs: 0
-                            });
-                        }
-                        
-                        else
-                        {
-                            var tempLastNode = this.nodes[this.nodes.length - 1];
-                            this.nodes.push(
-                            {
-                                active: true,
-                                activeTime: 1,
-                                x: tempLastNode.x - 20 * Math.cos(tempLastNode.r),
-                                y: tempLastNode.y + 20 * Math.sin(tempLastNode.r),
-                                r: tempLastNode.r
-                            });
-                        }
+                            active: true,
+                            activeTime: 1,
+                            x: tempLastNode.x - 20 * Math.cos(tempLastNode.r),
+                            y: tempLastNode.y + 20 * Math.sin(tempLastNode.r),
+                            r: tempLastNode.r
+                        });
                     }
                     
                     this.maxLength = clampMin(this.nodes.length, this.maxLength);
@@ -238,38 +232,17 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 
                 addNodeSmooth(count = 1)
                 {
-                    var tempLength = this.nodes.length;
-                    
                     for(var n = 0; n < count; n++)
                     {
-                        if(tempLength === 0)
+                        let tempLastNode = this.nodes[this.nodes.length - 1];
+                        this.nodes.push(
                         {
-                            var tempRotation = 2 * Math.PI * Math.random();
-                            var tempRadius = WORLD_RADIUS * Math.sqrt(Math.random());
-                            this.nodes.push(
-                            {
-                                active: true,
-                                activeTime: 1,
-                                x: tempRadius * Math.cos(tempRotation),
-                                y: tempRadius * Math.sin(tempRotation),
-                                r: 2 * Math.PI * Math.random()
-                            });
-                        }
-                        
-                        else
-                        {
-                            var tempLastNode = this.nodes[tempLength - 1];
-                            this.nodes.push(
-                            {
-                                active: false,
-                                activeTime: 0,
-                                x: tempLastNode.x,
-                                y: tempLastNode.y,
-                                r: tempLastNode.r
-                            });
-                        }
-                        
-                        tempLength++;
+                            active: false,
+                            activeTime: 0,
+                            x: tempLastNode.x,
+                            y: tempLastNode.y,
+                            r: tempLastNode.r
+                        });
                     }
                     
                     this.maxLength = clampMin(this.nodes.length, this.maxLength);
@@ -411,7 +384,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                         
                         if(!tempCurrentNode.active)
                         {
-                            if(distance(tempCurrentNode, tempPreviousNode) > 5)
+                            if(distance(tempCurrentNode, tempPreviousNode) >= 5)
                             {
                                 tempCurrentNode.active = true;
                             }
@@ -640,6 +613,12 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     this.type = Math.round(2 * Math.random() + 1);
                     this.x = tempRadius * Math.cos(tempRotation);
                     this.y = tempRadius * Math.sin(tempRotation);
+                }
+                
+                moveTo(p)
+                {
+                    this.x = p.x;
+                    this.y = p.y;
                 }
                 
                 decay()
@@ -1038,7 +1017,6 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     if(n === 0)
                     {
                         worm.setControllable();
-                        worm.setType(4);
                         worm.setHue(120);
                         worm.setRandomLength(5, 50);
                         wormDieFunction = function()
@@ -1230,6 +1208,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 ctx.translate(gameHalfWidth, gameHalfHeight);
                 ctx.scale(camera.zoom, camera.zoom);
                 ctx.translate(-camera.x, -camera.y);
+                // GAME SPACE
                 
                 for(var n = 1; n < 2 * WORLD_RADIUS / GRID_SIZE; n++)
                 {
@@ -1442,14 +1421,14 @@ if(isset($_SERVER['REMOTE_ADDR']))
                                     
                                     switch(true)
                                     {
-                                        case m % 4 === 0:
-                                            ctx.lineTo(3, 25);
-                                            break;
-                                        case m % 4 === 1:
+                                        case (m - 1) % 4 === 0:
                                             ctx.lineTo(-3, 25);
                                             break;
-                                        case m % 4 > 1:
-                                            ctx.lineTo(0, 25 - 5 * worm.nodes[m].activeTime);
+                                        case ((m - 1) % 4 === 1 || (m - 1) % 4 === 2):
+                                            ctx.lineTo(0, 25 - 5 * worm.nodes[m + 1].activeTime);
+                                            break;
+                                        case (m - 1) % 4 === 3:
+                                            ctx.lineTo(3, 25);
                                             break;
                                     }
                                     
@@ -1464,14 +1443,14 @@ if(isset($_SERVER['REMOTE_ADDR']))
                                     
                                     switch(true)
                                     {
-                                        case m % 4 === 0:
-                                            ctx.lineTo(3, -25);
-                                            break;
-                                        case m % 4 === 1:
+                                        case (m - 1) % 4 === 0:
                                             ctx.lineTo(-3, -25);
                                             break;
-                                        case m % 4 > 1:
+                                        case ((m - 1) % 4 === 1 || (m - 1) % 4 === 2):
                                             ctx.lineTo(0, -25 + 5 * worm.nodes[m].activeTime);
+                                            break;
+                                        case (m - 1) % 4 === 3:
+                                            ctx.lineTo(3, -25);
                                             break;
                                     }
                                     
@@ -1552,14 +1531,14 @@ if(isset($_SERVER['REMOTE_ADDR']))
                                     
                                     switch(true)
                                     {
-                                        case m % 10 < 9:
+                                        case (m - 1) % 20 < 19:
                                             ctx.lineTo(0, 25);
                                             break;
-                                        case m % 10 === 9:
+                                        case (m - 1) % 20 === 19:
                                             ctx.lineTo(0, 25);
-                                            ctx.lineTo(0, 25 + 40 * worm.nodes[m].activeTime);
-                                            ctx.lineTo(20 * worm.nodes[m].activeTime, 25 + 30 * worm.nodes[m].activeTime);
-                                            ctx.lineTo(0, 25 + 20 * worm.nodes[m].activeTime);
+                                            ctx.lineTo(0, 25 + 40 * worm.nodes[m + 1].activeTime);
+                                            ctx.lineTo(20 * worm.nodes[m + 1].activeTime, 25 + 30 * worm.nodes[m + 1].activeTime);
+                                            ctx.lineTo(0, 25 + 20 * worm.nodes[m + 1].activeTime);
                                             ctx.lineTo(0, 25);
                                             break;
                                     }
@@ -1628,6 +1607,8 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     ctx.fillRect(0, 0, gameWidth, gameHeight);
                     ctx.translate(gameHalfWidth, gameHalfHeight);
                 }
+                
+                // MINIMAP SPACE
                 
                 ctx.scale(camera.zoom * minimapZoom, camera.zoom * minimapZoom);
                 ctx.strokeStyle = "#171717";
