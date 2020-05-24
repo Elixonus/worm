@@ -716,7 +716,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
             
             class Camera
             {
-                constructor(p = point(0, 0), zoom = 1)
+                constructor(p = pointOrigin, zoom = 1)
                 {
                     this.filmedObject = null;
                     this.x = p.y;
@@ -754,6 +754,9 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 tick()
                 {
                     this.moveToSmooth(point(this.targetX, this.targetY));
+                    this.x += 25 * mouseCoordinatesNormalizedSmoothed.x;
+                    this.y += 25 * mouseCoordinatesNormalizedSmoothed.y;
+                    this.zoom = 1 - 0.2 * distance(point(mouseCoordinatesNormalizedSmoothed.x, mouseCoordinatesNormalizedSmoothed.y));
                 }
             }
             
@@ -819,6 +822,8 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     canvas.style.width = "100%";
                     canvas.style.height = `${(windowWidth / windowHeight) * (gameHeight / gameWidth) * 100}%`;
                 }
+                
+                updateMouseCoordinates();
             }
 
             function mousedown(event)
@@ -860,20 +865,25 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 }
             }
             
-            function wheel(event)
+            function mousemove(event)
             {
-                var delta = Math.sign(event.deltaY);
-                if(delta === -1)
+                if(!event)
                 {
-                    camera.zoom /= 0.95;
-                    minimapZoom = camera.zoom / 10;
+                    event = window.event;
                 }
                 
-                if(delta === 1)
+                mouseCoordinates = point(event.clientX, event.clientY);
+                updateMouseCoordinates();
+            }
+            
+            function wheel(event)
+            {
+                if(!event)
                 {
-                    camera.zoom *= 0.95;
-                    minimapZoom = camera.zoom / 10;
+                    event = window.event;
                 }
+                
+                var delta = Math.sign(event.deltaY);
             }
 
             function keydown(event)
@@ -923,12 +933,22 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 }
             }
             
+            function updateMouseCoordinates()
+            {
+                if(mouseCoordinates !== undefined)
+                {
+                    mouseCoordinatesIdleTime = 0;
+                    mouseCoordinatesNormalized = point(2 * (mouseCoordinates.x / window.innerWidth - 0.5), 2 * (mouseCoordinates.y / window.innerHeight - 0.5));
+                }
+            }
+            
             //----------------------------
             //---------- EVENTS ----------
             //----------------------------
             
             window.onresize = resize;
             window.onmousedown = mousedown;
+            window.onmousemove = mousemove;
             window.onwheel = wheel;
             window.onkeydown = keydown;
             window.onkeyup = keyup;
@@ -963,6 +983,10 @@ if(isset($_SERVER['REMOTE_ADDR']))
             var blackScreenOpacityWait = 0;
             var shadows = true;
             var timeScale;
+            var mouseCoordinates;
+            var mouseCoordinatesNormalized = {x: 0, y: 0};
+            var mouseCoordinatesNormalizedSmoothed = {x: 0, y: 0};
+            var mouseCoordinatesIdleTime = 0;
             const keysPressed = [];
             var camera;
             const WORLD_RADIUS = 10000;
@@ -1081,6 +1105,15 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 //----------------------------
                 //-------- MOVEMENT ----------
                 //----------------------------
+                
+                mouseCoordinatesIdleTime++;
+                
+                if(mouseCoordinatesIdleTime >= 120)
+                {
+                    mouseCoordinatesNormalized = pointOrigin;
+                }
+                
+                mouseCoordinatesNormalizedSmoothed = point(interpolateLinear(mouseCoordinatesNormalizedSmoothed.x, mouseCoordinatesNormalized.x, 0.02), interpolateLinear(mouseCoordinatesNormalizedSmoothed.y, mouseCoordinatesNormalized.y, 0.02));
                 
                 if(keysPressed.includes("-") || keysPressed.includes(","))
                 {
@@ -1704,7 +1737,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
             //---------- MAFFS -----------
             //----------------------------
             
-            function distance(p1, p2 = point(0, 0))
+            function distance(p1, p2 = pointOrigin)
             {
                 return Math.hypot(p1.x - p2.x, p1.y - p2.y);
             }
