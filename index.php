@@ -94,7 +94,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 follow()
                 {
                     this.camera.filmedObject = this;
-                    this.updateCamera();
+                    this.updateCameraTarget();
                 }
                 
                 unfollow()
@@ -529,7 +529,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                         this.blinkDirection = 0;
                     }
                     
-                    this.updateCamera();
+                    this.updateCameraTarget();
                 }
                 
                 moveTo(p)
@@ -586,7 +586,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     return false;
                 }
                 
-                updateCamera()
+                updateCameraTarget()
                 {
                     if(this.camera.filmedObject == this)
                     {
@@ -666,10 +666,10 @@ if(isset($_SERVER['REMOTE_ADDR']))
                     
                     this.phase += 0.02 * timeScale;
                     this.r = this.rStatic + 0.2 * Math.sin(this.phase);
-                    this.updateCamera();
+                    this.updateCameraTarget();
                 }
                 
-                updateCamera()
+                updateCameraTarget()
                 {
                     if(this.camera.filmedObject === this)
                     {
@@ -912,6 +912,11 @@ if(isset($_SERVER['REMOTE_ADDR']))
                         {
                             minimapExpanded = false;
                         }
+                    }
+                    
+                    if(eventKey.toUpperCase() === "G")
+                    {
+                        shadows = !shadows;
                     }
                 }
             }
@@ -1742,12 +1747,12 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 return Math.hypot(p1.x - p2.x, p1.y - p2.y);
             }
             
-            function distanceSquared(p1, p2)
+            function distanceSquared(p1, p2 = pointOrigin)
             {
                 return Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2);
             }
             
-            function distanceManhattan(p1, p2)
+            function distanceManhattan(p1, p2 = pointOrigin)
             {
                 return Math.abs(p1.x - p2.x) + Math.abs(p1.y - p2.y);
             }
