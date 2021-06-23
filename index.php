@@ -12,8 +12,7 @@ if(isset($_SERVER['REMOTE_ADDR']))
     <head>
         <title>Worm</title>
         <link rel="shortcut icon" type="image/png" href="/favicon.ico"/>
-        <script src="/libraries/lodash/lodash.js"></script>
-        <script src="/libraries/stats/stats.js"></script>
+        <script src="/libraries/lodash.js"></script>
     </head>
     
     <body>
@@ -1018,12 +1017,6 @@ if(isset($_SERVER['REMOTE_ADDR']))
             }
             xhttp.send();
             
-            // STATS.JS CODE
-            var stats = new Stats();
-            stats.showPanel(0);
-            document.body.appendChild(stats.dom);
-            // STATS.JS CODE
-            
             resize();
 
             function start()
@@ -1102,7 +1095,6 @@ if(isset($_SERVER['REMOTE_ADDR']))
 
             function render()
             {
-                stats.update();
                 previousTime = currentTime;
                 currentTime = new Date();
                 fps = 1000 / (currentTime - previousTime);
@@ -1239,14 +1231,16 @@ if(isset($_SERVER['REMOTE_ADDR']))
                 //------ WORLD RENDERING -----
                 
                 ctx.reset();
-                ctx.strokeStyle = "#141414";
-                ctx.clearRect(0, 0, gameWidth, gameHeight);
-                ctx.lineWidth = 1;
+                ctx.fillStyle = "#000000"
+                ctx.fillRect(0, 0, gameWidth, gameHeight);
                 
                 ctx.translate(gameHalfWidth, gameHalfHeight);
                 ctx.scale(camera.zoom, camera.zoom);
                 ctx.translate(-camera.x, -camera.y);
                 // GAME SPACE
+                
+                ctx.strokeStyle = "#141414";
+                ctx.lineWidth = 1;
                 
                 for(var n = 1; n < 2 * WORLD_RADIUS / GRID_SIZE; n++)
                 {
