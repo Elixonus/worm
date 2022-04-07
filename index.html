@@ -1,18 +1,8 @@
-<?php
-
-if(isset($_SERVER['REMOTE_ADDR']))
-{
-    file_put_contents('./ips.txt', $_SERVER['REMOTE_ADDR']."\n", FILE_APPEND | LOCK_EX);
-}
-
-?>
-
 <!DOCTYPE HTML>
 <html>
     <head>
         <title>Worm</title>
         <link rel="shortcut icon" type="image/png" href="/favicon.ico"/>
-        <script src="/libraries/lodash.js"></script>
     </head>
     
     <body>
