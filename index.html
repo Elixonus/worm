@@ -2,7 +2,6 @@
 <html>
     <head>
         <title>Worm</title>
-        <link rel="shortcut icon" type="image/png" href="/favicon.ico"/>
     </head>
     
     <body>
@@ -113,7 +112,6 @@
                     this.nodes = [];
                     this.type = 1;
                     this.turn = 0;
-                    this.username = "";
                     
                     var tempRotation = 2 * Math.PI * Math.random();
                     var tempRadius = WORLD_RADIUS * Math.sqrt(Math.random());
@@ -189,16 +187,6 @@
                 setRandomHue(minimumHue = 0, maximumHue = 359)
                 {
                     this.hue = Math.random() * (maximumHue - minimumHue) + minimumHue;
-                }
-                
-                setUsername(username)
-                {
-                    this.username = username;
-                }
-                
-                setRandomUsername(usernameList)
-                {
-                    this.username = usernameList[Math.round(Math.random() * (usernameList.length - 1))];
                 }
                 
                 addNode(count = 1)
@@ -953,7 +941,6 @@
             //-----------------------------------
             
             var frameNumber = 0;
-            var usernames;
             var request;
             const requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
             const cancelAnimationFrame = window.cancelAnimationFrame || window.mozCancelAnimationFrame || window.webkitCancelAnimationFrame || window.msCancelAnimationFrame;
@@ -995,18 +982,6 @@
             var previousTime;
             var currentTime = new Date();
             var fps;
-            var xhttp = new XMLHttpRequest();
-            xhttp.open("GET", "./usernames.txt");
-            xhttp.onreadystatechange = function()
-            {
-                if(this.readyState == 4 && this.status == 200)
-                {
-                    usernames = xhttp.responseText.split("\n");
-                    start();
-                }
-            }
-            xhttp.send();
-            
             resize();
 
             function start()
@@ -1048,7 +1023,6 @@
                         worm.setControllable(false);
                         worm.setRandomType(1, 4);
                         worm.setRandomHue(260, 359);
-                        worm.setRandomUsername(usernames);
                         worm.setRandomLength(5, 50);
                         wormDieFunction = function()
                         {
@@ -1597,11 +1571,7 @@
                                 ctx.fill();
                                 ctx.restore();
                                 break;
-                        }
-                        
-                        let username = worm.username;
-                        ctx.fillText(username, worm.nodes[0].x - ctx.measureText(username).width / 2, worm.nodes[0].y + 50);
-                        
+                        }                        
                     }
                 }
                 
