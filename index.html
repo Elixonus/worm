@@ -25,12 +25,6 @@
                 transform: translate(-50%, -50%);
             }
             
-            @font-face
-            {
-                font-family: "Noto";
-                src: url("./fonts/Noto-Sans/NotoSans-Regular.ttf");
-            }
-            
         </style>
         
         <script>
@@ -746,7 +740,6 @@
                 this.direction = "ltr";
                 this.fillStyle = "#000000";
                 this.filter = "none";
-                this.font = "10px sans-serif";
                 this.globalAlpha = 1;
                 this.globalCompositeOperation = "source-over";
                 this.imageSmoothingEnabled = true;
@@ -761,8 +754,6 @@
                 this.shadowOffsetX = 0;
                 this.shadowOffsetY = 0;
                 this.strokeStyle = "#000000";
-                this.textAlign = "start";
-                this.textBaseline = "alphabetic";
             }
             
             function getShadows()
@@ -1351,7 +1342,6 @@
                 ctx.reset();
                 ctx.lineWidth = 3;
                 ctx.shadowBlur = getShadows();
-                ctx.font = "15px Noto";
                 
                 for(var n = 0; n < worms.length; n++)
                 {
