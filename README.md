@@ -20,10 +20,28 @@ G - to toggle graphics performance mode.
 
 ## Designed features
 
-When a worm eats a food particle, the tail slowly grows in length.
+When a worm eats a food particle, the tail grows slowly in length.
 
 The worms blink randomly from time to time.
 
 When worms are closer to each other, they become happier.
 
 When worms pass over the end of the map, they die and change appearance.
+
+## Algorithm
+
+| Node Number | Node Order | Node Significance |
+| ----------- | ---------- | ----------------- |
+| 0           | First      | Head              |
+| 1           | Second     | Body              |
+| 2           | Third      | Body              |
+| 3           | Fourth     | Body              |
+| 4           | Fifth      | Body              |
+
+The direction of node ```0``` is either controlled by the player input or simple AI algorithm.
+
+Node ```0``` moves by a certain speed into the direction that is going.
+
+For each node except the head node in ascending order, the movement is as follows:
+
+Node ```n + 1``` moves into the direction of node ```n``` while keeping a constant distance.
