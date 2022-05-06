@@ -1,4 +1,4 @@
-# wormJS
+# wormJS :snake:
 A slither.io-like game made in javascript with the canvas API.
 
 ## Controls
@@ -44,4 +44,10 @@ Node ```0``` moves by a certain speed into the direction that is going.
 
 For each node except the head node in ascending order, the movement is as follows:
 
-Node ```n + 1``` moves into the direction of node ```n``` while keeping a constant distance.
+Node ```n + 1``` moves in the relative direction of node ```n``` while keeping a constant distance.
+
+## Challenges
+
+Preventing the nodes from getting too close together and forming a knot after turning for a while.
+
+Maintaining a playable framerate solved by rendering objects only that are close to the camera.
