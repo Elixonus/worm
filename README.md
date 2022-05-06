@@ -38,11 +38,11 @@ When worms pass over the end of the map, they die and change appearance.
 | 3           | Fourth     | Body              |
 | 4           | Fifth      | Body              |
 
-The direction of node ```0``` is either controlled by the player input or simple AI algorithm.
+The direction of node ```0``` is either controlled by player input or an AI algorithm.
 
-Node ```0``` moves by a certain speed into the direction that is going.
+Node ```0``` moves with a certain speed in the direction of the worm.
 
-For each node except the head node in ascending order, the movement is as follows:
+For each node except the head node, in ascending order, the movement is as follows:
 
 Node ```n + 1``` moves in the relative direction of node ```n``` while keeping a constant distance.
 
