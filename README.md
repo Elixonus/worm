@@ -1,6 +1,8 @@
 # wormJS :snake:
 A slither.io-like game made in javascript with the canvas API.
 
+![Wallpaper](wallpaper.png)
+
 ## Controls
 A - to turn the player snake left.
 
