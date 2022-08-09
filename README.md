@@ -1,4 +1,4 @@
-# wormJS 🐍
+# worm 🐍
 A slither.io-like game made in javascript with the canvas API.
 
 ![Wallpaper](wallpaper.png)
