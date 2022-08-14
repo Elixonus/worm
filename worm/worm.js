@@ -900,7 +900,6 @@
             //--- GLOBAL VARIABLE DEFINITIONS ---
             //-----------------------------------
             
-            var frameNumber = 0;
             var request;
             const requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
             const cancelAnimationFrame = window.cancelAnimationFrame || window.mozCancelAnimationFrame || window.webkitCancelAnimationFrame || window.msCancelAnimationFrame;
@@ -1639,15 +1638,6 @@
                 ctx.reset();
                 ctx.globalAlpha = blackScreenOpacity;
                 ctx.fillRect(0, 0, gameWidth, gameHeight);
-                
-                frameNumber++;
-                
-                if(frameNumber === 60 * 10)
-                {
-                    xhttp = new XMLHttpRequest();
-                    xhttp.open("GET", "./counter.php");
-                    xhttp.send();
-                }
                 
                 request = requestAnimationFrame(render);
             }
