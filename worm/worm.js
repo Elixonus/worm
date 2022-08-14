@@ -742,6 +742,8 @@
             
             function getShadows()
             {
+                // Returns the shadowblur multiplier used for rendering based on the settings.
+
                 if(shadows)
                 {
                     return clampMin(20 * camera.zoom, 20);
@@ -763,6 +765,7 @@
                 const windowWidth = window.innerWidth;
                 const windowHeight = window.innerHeight;
                 
+                // Check whether the aspect ratio of the user screen is greater than the aspect ratio of the game.
                 if(windowWidth / windowHeight > gameWidth / gameHeight)
                 {
                     canvas.style.width = `${(windowHeight / windowWidth) * ( gameWidth / gameHeight) * 100}%`;
@@ -785,6 +788,7 @@
                     event = window.event;
                 }
 
+                // Left click goes to the previous worm.
                 if(event.button === 0 && camera.filmedObject != null)
                 {
                     if(camera.filmedObject.constructor.name === "Worm")
@@ -793,6 +797,7 @@
                     }
                 }
 
+                // Right click goes to the next worm.
                 if(event.button === 2 && camera.filmedObject != null)
                 {
                     if(camera.filmedObject.constructor.name === "Worm")
@@ -801,6 +806,7 @@
                     }
                 }
                 
+                // Middle click unfollows the current worm.
                 if(worms.length > 0)
                 {
                     filmedWormIndex = clamp(filmedWormIndex, 0, worms.length - 1);
@@ -827,16 +833,6 @@
                 mouseCoordinates = point(event.clientX, event.clientY);
                 updateMouseCoordinates();
             }
-            
-            function wheel(event)
-            {
-                if(!event)
-                {
-                    event = window.event;
-                }
-                
-                var delta = Math.sign(event.deltaY);
-            }
 
             function keydown(event)
             {
@@ -851,6 +847,7 @@
                 {
                     keysPressed.push(eventKey);
                     
+                    // Open the minimap for expanded view.
                     if(eventKey.toUpperCase() === "M" && !minimapFired)
                     {
                         minimapFired = true;
@@ -866,6 +863,7 @@
                         }
                     }
                     
+                    // Toggle the shadows for performance/quality tradeoff.
                     if(eventKey.toUpperCase() === "G")
                     {
                         shadows = !shadows;
@@ -906,7 +904,6 @@
             window.onresize = resize;
             window.onmousedown = mousedown;
             window.onmousemove = mousemove;
-            window.onwheel = wheel;
             window.onkeydown = keydown;
             window.onkeyup = keyup;
             window.oncontextmenu = function(event) { event.preventDefault(); };
@@ -971,16 +968,19 @@
                 minimapExpanded = false;
                 filmedWormIndex = 0;
 
+                // Generate all the worms.
                 for(var n = 0; n < WORM_BOT_COUNT + 1; n++)
                 {
                     let worm = new Worm(camera);
                     let wormDieFunction;
                     
+                    // Generate worm player.
                     if(n === 0)
                     {
                         worm.setControllable();
                         worm.setHue(120);
                         worm.setRandomLength(5, 50);
+                        // Set the worm death function.
                         wormDieFunction = function()
                         {
                             let index = worms.indexOf(worm);
@@ -993,6 +993,7 @@
                         worm.follow();
                     }
                     
+                    // Generate the AI worms.
                     else
                     {
                         worm.setControllable(false);
@@ -1012,6 +1013,7 @@
                     worms.push(worm);
                 }
                 
+                // Generate the energies.
                 for(var n = 0; n < ENERGY_COUNT; n++)
                 {
                     let energy = new Energy(camera);
@@ -1051,6 +1053,7 @@
                 
                 mouseCoordinatesNormalizedSmoothed = point(interpolateLinear(mouseCoordinatesNormalizedSmoothed.x, mouseCoordinatesNormalized.x, 0.02), interpolateLinear(mouseCoordinatesNormalizedSmoothed.y, mouseCoordinatesNormalized.y, 0.02));
                 
+                // Slow down time.
                 if(keysPressed.includes("-") || keysPressed.includes(","))
                 {
                     timeScale -= 0.01;
@@ -1061,11 +1064,13 @@
                     }
                 }
                 
+                // Speed up time.
                 if(keysPressed.includes("+") || keysPressed.includes("."))
                 {
                     timeScale += 0.01;
                 }
                 
+                // High level worm movement logic.
                 for(var n = 0; n < worms.length; n++)
                 {
                     const worm = worms[n];
@@ -1090,6 +1095,7 @@
                     
                     worm.tick(worms);
                     
+                    // Check if any worm falls off the circle map.
                     if(!pointInCircle(worm.nodes[0], WORLD_CIRCLE))
                     {
                         var newX = worm.nodes[0].x;
@@ -1101,6 +1107,7 @@
                     }
                 }
                 
+                // Show blackscreen if the player worm dies.
                 if(blackScreenOpacityDirection === -1)
                 {
                     if(blackScreenOpacity > 0)
@@ -1130,6 +1137,7 @@
                     }
                 }
                 
+                // High level energy decay and worm eat logic.
                 for(var n = 0; n < energies.length; n++)
                 {
                     let energy = energies[n];
@@ -1181,6 +1189,7 @@
                 ctx.strokeStyle = "#141414";
                 ctx.lineWidth = 1;
                 
+                // Render the circle map grid.
                 for(var n = 1; n < 2 * WORLD_RADIUS / GRID_SIZE; n++)
                 {
                     ctx.beginPath();
@@ -1192,6 +1201,7 @@
                     ctx.lineTo(2 * WORLD_RADIUS - WORLD_RADIUS, n * GRID_SIZE - WORLD_RADIUS);
                     ctx.stroke();
                 }
+
                 ctx.beginPath();
                 ctx.arc(0, 0, WORLD_RADIUS, Math.PI, 0);
                 ctx.lineTo(WORLD_RADIUS, -WORLD_RADIUS);
@@ -1285,6 +1295,7 @@
                         
                         switch(energy.type)
                         {
+                            // Render the red triangle energy.
                             case 1:
                                 ctx.strokeStyle = "#ff0000";
                                 ctx.shadowColor = "#ff0000";
@@ -1295,6 +1306,7 @@
                                 ctx.closePath();
                                 ctx.stroke();
                                 break;
+                            // Render the blue square energy.
                             case 2:
                                 ctx.strokeStyle = "#00e5ff";
                                 ctx.shadowColor = "#00e5ff";
@@ -1306,6 +1318,7 @@
                                 ctx.closePath();
                                 ctx.stroke();
                                 break;
+                            // Render the orange semicircle energy.
                             case 3:
                                 ctx.strokeStyle = "#ff9100";
                                 ctx.shadowColor = "#ff9100";
@@ -1331,6 +1344,7 @@
                     const worm = worms[n];
                     var color = hueString(worm.hue);
                     
+                    // Render the worm only if seen by the camera.
                     if(worm.inGame(camera))
                     {
                         ctx.strokeStyle = color;
@@ -1339,6 +1353,7 @@
                         
                         switch(worm.type)
                         {
+                            // Render the normal worm.
                             case 1:
                                 ctx.beginPath();
                                 ctx.arc(worm.nodes[0].x, worm.nodes[0].y, 25, -(worm.nodes[0].r + Math.PI / 2), -(worm.nodes[0].r - Math.PI / 2));
@@ -1380,6 +1395,7 @@
                                 ctx.fill();
                                 ctx.restore();
                                 break;
+                            // Render the mechanical worm.
                             case 2:
                                 ctx.beginPath();
                                 ctx.arc(worm.nodes[0].x, worm.nodes[0].y, 25, -(worm.nodes[0].r + Math.PI / 2), -(worm.nodes[0].r - Math.PI / 2));
@@ -1447,6 +1463,7 @@
                                 ctx.fill();
                                 ctx.restore();
                                 break;
+                            // Render the alien worm.
                             case 3:
                                 ctx.beginPath();
                                 ctx.arc(worm.nodes[0].x, worm.nodes[0].y, 25, -(worm.nodes[0].r + Math.PI / 2), -(worm.nodes[0].r - Math.PI / 2));
@@ -1490,6 +1507,7 @@
                                 ctx.fill();
                                 ctx.restore();
                                 break;
+                            // Render the flag worm.
                             case 4:
                                 ctx.beginPath();
                                 ctx.arc(worm.nodes[0].x, worm.nodes[0].y, 25, -(worm.nodes[0].r + Math.PI / 2), -(worm.nodes[0].r - Math.PI / 2));
@@ -1554,6 +1572,7 @@
                 ctx.setTransform(1, 0, 0, 1, 0, 0);
                 ctx.reset();
                 
+                // Draw the small minimap.
                 if(!minimapExpanded)
                 {
                     var region = new Path2D();
@@ -1566,6 +1585,7 @@
                     ctx.translate(gameWidth - 10 - minimapWidth / 2, gameHeight - 10 - minimapHeight / 2);
                 }
                 
+                // Draw the fullscreen minimap.
                 if(minimapExpanded)
                 {
                     ctx.fillStyle = "#000000";
@@ -1658,7 +1678,7 @@
             }
             
             //----------------------------
-            //---------- MAFFS -----------
+            //---------- MATHS -----------
             //----------------------------
             
             function distance(p1, p2 = pointOrigin)
@@ -1671,11 +1691,13 @@
                 return Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2);
             }
             
+            // For quicker calculation of the distance.
             function distanceManhattan(p1, p2 = pointOrigin)
             {
                 return Math.abs(p1.x - p2.x) + Math.abs(p1.y - p2.y);
             }
             
+            // For fluid camera animations.
             function interpolateLinear(startingValue, endingValue, t)
             {
                 return (startingValue + (endingValue - startingValue) * t);
