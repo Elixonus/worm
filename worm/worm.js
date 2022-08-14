@@ -312,11 +312,13 @@
                         }
                     }
                     
-                    tempFirstNode.r = tempFirstNode.r + tempFirstNode.rs * timeScale;
+                    // Move the first node in its direction.
+                    tempFirstNode.r += tempFirstNode.rs * timeScale;
                     tempFirstNode.r = tempFirstNode.r % (2 * Math.PI);
                     tempFirstNode.x += 3 * Math.cos(tempFirstNode.r) * timeScale;
                     tempFirstNode.y -= 3 * Math.sin(tempFirstNode.r) * timeScale;
                     
+                    // Move the rest of the nodes.
                     for(var n = 1; n < this.nodes.length; n++)
                     {
                         var tempCurrentNode = this.nodes[n];
@@ -341,11 +343,13 @@
                                     tempCurrentNode.activeTime = 1;
                                 }
                             }
-                            
+
+                            // Keep the rest of the nodes close to the node in front.
                             tempCurrentNode.r = Math.PI - Math.atan2(tempCurrentNode.y - tempPreviousNode.y, tempCurrentNode.x - tempPreviousNode.x);
                             tempCurrentNode.x = tempPreviousNode.x - 5 * Math.cos(tempCurrentNode.r);
                             tempCurrentNode.y = tempPreviousNode.y + 5 * Math.sin(tempCurrentNode.r);
                             
+                            // Measure to keep the nodes far apart to not collide with each other.
                             if(n > 1)
                             {
                                 var tempPreviousPreviousNode = this.nodes[n - 2];
@@ -357,6 +361,7 @@
                                     var circle2 = circle(tempPreviousPreviousNode, 9.993);
                                     var intersections = intersectCircleCircle(circle1, circle2);
                                     
+                                    // Actual preventive action.
                                     if(distance(tempCurrentNode, intersections[0]) < distance(tempCurrentNode, intersections[1]))
                                     {
                                         tempCurrentNode.x = intersections[0].x;
@@ -374,6 +379,7 @@
                         }
                     }
                     
+                    // Change the smile of the worm based on surrounding worms.
                     var foundHappiness = false;
                     
                     for(var n = 0; n < wormCollection.length; n++)
@@ -438,6 +444,7 @@
                         this.increaseHappiness(1 / 10 * timeScale);
                     }
                     
+                    // Blink control loop.
                     this.blinkWait -= timeScale;
                     
                     if(this.blinkWait <= 0)
@@ -486,6 +493,7 @@
                 
                 inGame(camera)
                 {
+                    // Returns whether the worm should be rendered on the main view.
                     var tempShapePadding = 80;
                     var tempGlowPadding = clampMin(20 * camera.zoom, 20);
                     var tempPadding = tempShapePadding * camera.zoom + tempGlowPadding;
@@ -503,6 +511,7 @@
                 
                 inMinimap(camera, expanded)
                 {
+                    // Returns whether the worm should be rendered on the minimap.
                     var tempShapePadding = 80;
                     var tempGlowPadding = clampMin(20 * camera.zoom, 20);
                     var tempPadding = tempShapePadding * camera.zoom * minimapZoom + tempGlowPadding;
@@ -593,6 +602,8 @@
                 
                 tick(energyCollection)
                 {
+                    // Energy decay logic.
+
                     if(this.isDecaying)
                     {
                         this.opacity -= 0.1 * timeScale;
@@ -619,6 +630,7 @@
                 
                 inGame(camera)
                 {
+                    // Returns whether the energy should be rendered on the main view.
                     var tempShapePadding = 80;
                     var tempGlowPadding = clampMin(20 * camera.zoom, 20);
                     var tempPadding = tempShapePadding * camera.zoom + tempGlowPadding;
@@ -633,6 +645,7 @@
                 
                 inMinimap(camera, expanded)
                 {
+                    // Returns whether the energy should be rendered on the minimap.
                     var tempShapePadding = 80;
                     var tempGlowPadding = clampMin(20 * camera.zoom, 20);
                     var tempPadding = tempShapePadding * camera.zoom * minimapZoom + tempGlowPadding;
@@ -681,6 +694,7 @@
                 
                 moveToSmooth(p)
                 {
+                    // Perform continuous linear interpolation from current point to target.
                     var tempActualSpeed = this.MAX_SPEED;
                     var tempAngle = Math.atan2(p.y - this.y, p.x - this.x);
                     var tempCosine = Math.abs(tempActualSpeed * Math.cos(tempAngle));
@@ -693,6 +707,7 @@
                 
                 tick()
                 {
+                    // Camera movement and zoom logic.
                     this.moveToSmooth(point(this.targetX, this.targetY));
                     this.x += 25 * mouseCoordinatesNormalizedSmoothed.x;
                     this.y += 25 * mouseCoordinatesNormalizedSmoothed.y;
@@ -1638,7 +1653,7 @@
                 ctx.reset();
                 ctx.globalAlpha = blackScreenOpacity;
                 ctx.fillRect(0, 0, gameWidth, gameHeight);
-                
+
                 request = requestAnimationFrame(render);
             }
             
