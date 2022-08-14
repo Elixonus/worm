@@ -249,7 +249,6 @@ class Worm extends Filmable
         if(!this.controllable)
         {
             //--------- AI CODE ----------
-            
             this.botWait -= timeScale;
             
             if(this.botWait <= 0)
@@ -603,7 +602,6 @@ class Energy extends Filmable
     tick(energyCollection)
     {
         // Energy decay logic.
-
         if(this.isDecaying)
         {
             this.opacity -= 0.1 * timeScale;
@@ -743,7 +741,6 @@ CanvasRenderingContext2D.prototype.reset = function()
 function getShadows()
 {
     // Returns the shadowblur multiplier used for rendering based on the settings.
-
     if(shadows)
     {
         return clampMin(20 * camera.zoom, 20);
@@ -1186,8 +1183,8 @@ function render()
     ctx.translate(-camera.x, -camera.y);
     // GAME SPACE
     
-    ctx.strokeStyle = "#141414";
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = "#333333";
+    ctx.lineWidth = 2;
     
     // Render the circle map grid.
     for(var n = 1; n < 2 * WORLD_RADIUS / GRID_SIZE; n++)
@@ -1595,9 +1592,8 @@ function render()
     }
     
     // MINIMAP SPACE
-    
     ctx.scale(camera.zoom * minimapZoom, camera.zoom * minimapZoom);
-    ctx.strokeStyle = "#171717";
+    ctx.strokeStyle = "#333333";
     ctx.lineWidth = 25;
     ctx.beginPath();
     ctx.arc((0 - camera.x), (0 - camera.y), WORLD_RADIUS, 0, 2 * Math.PI);
