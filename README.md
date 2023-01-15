@@ -4,21 +4,22 @@ A slither.io-like game made in javascript with the canvas API.
 ![Wallpaper](wallpaper.png)
 
 ## Controls
-```A``` - to turn the player snake left.
 
-```D``` - to turn the player snake right.
+```A``` - Turn the player snake left.
 
-```M``` - to toggle minimap overlay.
+```D``` - Turn the player snake right.
 
-```G``` - to toggle graphics performance mode.
+```M``` - Toggle minimap overlay.
 
-```(minus)``` - to slow down the global time scale of the game.
+```G``` - Toggle graphics performance mode.
 
-```(plus)``` - to speed up the global time scale of the game.
+```(MINUS)``` - Slow down the global time scale of the game.
 
-```(left click)``` - to cycle the camera to the previous worm.
+```(PLUS)``` - Speed up the global time scale of the game.
 
-```(right click)``` - to cycle the camera to the next worm.
+```(LEFT CLICK)``` - Cycle the camera to the previous worm.
+
+```(RIGHT CLICK)``` - Cycle the camera to the next worm.
 
 ## Designed features
 
