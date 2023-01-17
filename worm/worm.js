@@ -904,14 +904,14 @@ const requestAnimationFrame = window.requestAnimationFrame || window.mozRequestA
 const cancelAnimationFrame = window.cancelAnimationFrame || window.mozCancelAnimationFrame || window.webkitCancelAnimationFrame || window.msCancelAnimationFrame;
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d", {alpha: false});
-const gameWidth = canvas.width;
-const gameHeight = canvas.height;
-const gameHalfWidth = gameWidth / 2;
-const gameHalfHeight = gameHeight / 2;
+const gameWidth = 1920;
+const gameHeight = 1080;
+const gameHalfWidth = 960;
+const gameHalfHeight = 540;
 const minimapWidth = 250;
 const minimapHeight = 200;
-const minimapHalfWidth = minimapWidth / 2;
-const minimapHalfHeight = minimapHeight / 2;
+const minimapHalfWidth = 125;
+const minimapHalfHeight = 100;
 let minimapZoom;
 let minimapFired;
 let minimapExpanded;
@@ -1574,12 +1574,13 @@ function render()
         ctx.translate(gameHalfWidth, gameHalfHeight);
     }
     
-    // MINIMAP SPACE
     ctx.scale(camera.zoom * minimapZoom, camera.zoom * minimapZoom);
+    ctx.translate(-camera.x, -camera.y);
+    // MINIMAP SPACE
     ctx.strokeStyle = "#333333";
     ctx.lineWidth = 25;
     ctx.beginPath();
-    ctx.arc((0 - camera.x), (0 - camera.y), WORLD_RADIUS, 0, 2 * Math.PI);
+    ctx.arc(0, 0, WORLD_RADIUS, 0, 2 * Math.PI);
     ctx.stroke();
     ctx.shadowBlur = getShadows(clampMin(20 * camera.zoom, 20));
     
@@ -1608,7 +1609,7 @@ function render()
             }
             
             ctx.beginPath();
-            ctx.arc((energy.x - camera.x), (energy.y - camera.y), 25, 0, 2 * Math.PI);
+            ctx.arc(energy.x, energy.y, 25, 0, 2 * Math.PI);
             ctx.fill();
         }
     }
@@ -1627,11 +1628,11 @@ function render()
             ctx.strokeStyle = color;
             ctx.shadowColor = color;
             ctx.beginPath();
-            ctx.moveTo((worm.nodes[0].x - camera.x), (worm.nodes[0].y - camera.y));
+            ctx.moveTo(worm.nodes[0].x, worm.nodes[0].y);
             
             for(var m = 1; m < worm.nodes.length; m++)
             {
-                ctx.lineTo((worm.nodes[m].x - camera.x), (worm.nodes[m].y - camera.y));
+                ctx.lineTo(worm.nodes[m].x, worm.nodes[m].y);
             }
             
             ctx.stroke();
