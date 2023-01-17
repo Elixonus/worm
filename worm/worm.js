@@ -4,35 +4,22 @@
 
 function point(x, y)
 {
-    return {
-        x: x,
-        y: y
-    };
+    return {x: x, y: y};
 }
 
 function line(p1, p2)
 {
-    return {
-        p1: p1,
-        p2: p2
-    };
+    return {p1: p1, p2: p2};
 }
 
 function circle(center, radius)
 {
-    return {
-        center: center,
-        radius: radius
-    };
+    return {center: center, radius: radius};
 }
 
 function rectangle(center, width, height)
 {
-    return {
-        center: center,
-        width: width,
-        height: height
-    };
+    return {center: center, width: width, height: height};
 }
 
 class Filmable
@@ -313,7 +300,7 @@ class Worm extends Filmable
         
         // Move the first node in its direction.
         tempFirstNode.r += tempFirstNode.rs * timeScale;
-        tempFirstNode.r = tempFirstNode.r % (2 * Math.PI);
+        tempFirstNode.r %= (2 * Math.PI);
         tempFirstNode.x += 3 * Math.cos(tempFirstNode.r) * timeScale;
         tempFirstNode.y -= 3 * Math.sin(tempFirstNode.r) * timeScale;
         
@@ -348,7 +335,7 @@ class Worm extends Filmable
                 tempCurrentNode.x = tempPreviousNode.x - 5 * Math.cos(tempCurrentNode.r);
                 tempCurrentNode.y = tempPreviousNode.y + 5 * Math.sin(tempCurrentNode.r);
                 
-                // Measure to keep the nodes far apart to not collide with each other.
+                // Measure the distance between nodes in order to avoid crowding.
                 if(n > 1)
                 {
                     var tempPreviousPreviousNode = this.nodes[n - 2];
@@ -360,7 +347,7 @@ class Worm extends Filmable
                         var circle2 = circle(tempPreviousPreviousNode, 9.993);
                         var intersections = intersectCircleCircle(circle1, circle2);
                         
-                        // Actual preventive action.
+                        // Separate nodes by a certain threshold distance (smoothly).
                         if(distance(tempCurrentNode, intersections[0]) < distance(tempCurrentNode, intersections[1]))
                         {
                             tempCurrentNode.x = intersections[0].x;
@@ -499,7 +486,7 @@ class Worm extends Filmable
         
         for(var n = 0; n < this.nodes.length; n++)
         {
-            if(pointInRectangle(point(this.nodes[n].x - camera.x, this.nodes[n].y - camera.y), rectangle(pointOrigin, gameWidth / camera.zoom, gameHeight / camera.zoom), tempPadding))
+            if(pointInRectangle(point(this.nodes[n].x - camera.x, this.nodes[n].y - camera.y), rectangle(point(0, 0), gameWidth / camera.zoom, gameHeight / camera.zoom), tempPadding))
             {
                 return true;
             }
@@ -525,7 +512,7 @@ class Worm extends Filmable
         
         for(var n = 0; n < this.nodes.length; n++)
         {
-            if(pointInRectangle(point(this.nodes[n].x - camera.x, this.nodes[n].y - camera.y), rectangle(pointOrigin, tempWidth / (camera.zoom * minimapZoom), tempHeight / (camera.zoom * minimapZoom)), tempPadding))
+            if(pointInRectangle(point(this.nodes[n].x - camera.x, this.nodes[n].y - camera.y), rectangle(point(0, 0), tempWidth / (camera.zoom * minimapZoom), tempHeight / (camera.zoom * minimapZoom)), tempPadding))
             {
                 return true;
             }
@@ -633,7 +620,7 @@ class Energy extends Filmable
         var tempGlowPadding = clampMin(20 * camera.zoom, 20);
         var tempPadding = tempShapePadding * camera.zoom + tempGlowPadding;
         
-        if(pointInRectangle(point(this.x - camera.x, this.y - camera.y), rectangle(pointOrigin, gameWidth / camera.zoom, gameHeight / camera.zoom), tempPadding))
+        if(pointInRectangle(point(this.x - camera.x, this.y - camera.y), rectangle(point(0, 0), gameWidth / camera.zoom, gameHeight / camera.zoom), tempPadding))
         {
             return true;
         }
@@ -656,7 +643,7 @@ class Energy extends Filmable
             tempHeight = gameHeight;
         }
         
-        if(pointInRectangle(point(this.x - camera.x, this.y - camera.y), rectangle(pointOrigin, tempWidth / (camera.zoom * minimapZoom), tempHeight / (camera.zoom * minimapZoom)), tempPadding))
+        if(pointInRectangle(point(this.x - camera.x, this.y - camera.y), rectangle(point(0, 0), tempWidth / (camera.zoom * minimapZoom), tempHeight / (camera.zoom * minimapZoom)), tempPadding))
         {
             return true;
         }
@@ -667,7 +654,7 @@ class Energy extends Filmable
 
 class Camera
 {
-    constructor(p = pointOrigin, zoom = 1)
+    constructor(p = point(0, 0), zoom = 1)
     {
         this.filmedObject = null;
         this.x = p.y;
@@ -709,7 +696,7 @@ class Camera
         this.moveToSmooth(point(this.targetX, this.targetY));
         this.x += 25 * mouseCoordinatesNormalizedSmoothed.x;
         this.y += 25 * mouseCoordinatesNormalizedSmoothed.y;
-        this.zoom = 1 - 0.2 * distance(point(mouseCoordinatesNormalizedSmoothed.x, mouseCoordinatesNormalizedSmoothed.y));
+        this.zoom = 1 - 0.2 * distance(mouseCoordinatesNormalizedSmoothed);
     }
 }
 
@@ -785,7 +772,7 @@ function mousedown(event)
         event = window.event;
     }
 
-    // Left click goes to the previous worm.
+    // Left click pans the camera to the previous worm.
     if(event.button === 0 && camera.filmedObject != null)
     {
         if(camera.filmedObject.constructor.name === "Worm")
@@ -794,7 +781,7 @@ function mousedown(event)
         }
     }
 
-    // Right click goes to the next worm.
+    // Right click pans the camera to the next worm.
     if(event.button === 2 && camera.filmedObject != null)
     {
         if(camera.filmedObject.constructor.name === "Worm")
@@ -827,7 +814,8 @@ function mousemove(event)
         event = window.event;
     }
     
-    mouseCoordinates = point(event.clientX, event.clientY);
+    mouseCoordinates.x = event.clientX;
+    mouseCoordinates.y = event.clientY;
     updateMouseCoordinates();
 }
 
@@ -842,6 +830,7 @@ function keydown(event)
     
     if(keysPressed.includes(eventKey) === false)
     {
+        // Keep a record of all the keys that are pressed down.
         keysPressed.push(eventKey);
         
         // Open the minimap for expanded view.
@@ -860,7 +849,7 @@ function keydown(event)
             }
         }
         
-        // Toggle the shadows for performance/quality tradeoff.
+        // Toggle the shadows for performance and quality tradeoff.
         if(eventKey.toUpperCase() === "G")
         {
             shadows = !shadows;
@@ -890,7 +879,8 @@ function updateMouseCoordinates()
     if(mouseCoordinates !== undefined)
     {
         mouseCoordinatesIdleTime = 0;
-        mouseCoordinatesNormalized = point(2 * (mouseCoordinates.x / window.innerWidth - 0.5), 2 * (mouseCoordinates.y / window.innerHeight - 0.5));
+        mouseCoordinatesNormalized.x = 2 * (mouseCoordinates.x / window.innerWidth - 0.5);
+        mouseCoordinatesNormalized.y = 2 * (mouseCoordinates.y / window.innerHeight - 0.5);
     }
 }
 
@@ -909,7 +899,7 @@ window.oncontextmenu = function(event) { event.preventDefault(); };
 //--- GLOBAL VARIABLE DEFINITIONS ---
 //-----------------------------------
 
-var request;
+let request;
 const requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
 const cancelAnimationFrame = window.cancelAnimationFrame || window.mozCancelAnimationFrame || window.webkitCancelAnimationFrame || window.msCancelAnimationFrame;
 const canvas = document.getElementById("canvas");
@@ -922,34 +912,29 @@ const minimapWidth = 250;
 const minimapHeight = 200;
 const minimapHalfWidth = minimapWidth / 2;
 const minimapHalfHeight = minimapHeight / 2;
-var minimapZoom;
-var minimapFired;
-var minimapExpanded;
-const pointOrigin = point(0, 0), pointGameCenter = point(gameHalfWidth, gameHalfHeight);
-const distanceOriginCenter = distance(pointOrigin, pointGameCenter);
-var blackScreenOpacityDirection = 0;
-var blackScreenOpacity = 0;
-var blackScreenOpacityWait = 0;
-var shadows = true;
-var timeScale;
-var mouseCoordinates;
-var mouseCoordinatesNormalized = {x: 0, y: 0};
-var mouseCoordinatesNormalizedSmoothed = {x: 0, y: 0};
-var mouseCoordinatesIdleTime = 0;
+let minimapZoom;
+let minimapFired;
+let minimapExpanded;
+let blackScreenOpacityDirection = 0;
+let blackScreenOpacity = 0;
+let blackScreenOpacityWait = 0;
+let shadows = true;
+let timeScale;
+const mouseCoordinates = point(0, 0);
+const mouseCoordinatesNormalized = point(0, 0);
+const mouseCoordinatesNormalizedSmoothed = point(0, 0);
+let mouseCoordinatesIdleTime = 0;
 const keysPressed = [];
-var camera;
+let camera;
 const WORLD_RADIUS = 10000;
-const WORLD_CIRCLE = circle(pointOrigin, WORLD_RADIUS);
+const WORLD_CIRCLE = circle(point(0, 0), WORLD_RADIUS);
 const GRID_SIZE = 100;
 const WORM_BOT_COUNT = 100;
 const ENERGY_COUNT = 500;
-var worms;
-var deadWorms;
-var energies;
-var filmedWormIndex;
-var previousTime;
-var currentTime = new Date();
-var fps;
+const worms = [];
+const deadWorms = [];
+const energies = [];
+let filmedWormIndex;
 resize();
 start();
 
@@ -957,9 +942,9 @@ function start()
 {
     timeScale = 1;
     camera = new Camera();
-    worms = [];
-    deadWorms = [];
-    energies = [];
+    worms.length = 0;
+    deadWorms.length = 0;
+    energies.length = 0;
     minimapZoom = 0.1;
     minimapFired = false;
     minimapExpanded = false;
@@ -1032,11 +1017,7 @@ function reset()
 }
 
 function render()
-{
-    previousTime = currentTime;
-    currentTime = new Date();
-    fps = 1000 / (currentTime - previousTime);
-    
+{    
     //----------------------------
     //-------- MOVEMENT ----------
     //----------------------------
@@ -1045,10 +1026,12 @@ function render()
     
     if(mouseCoordinatesIdleTime >= 120)
     {
-        mouseCoordinatesNormalized = pointOrigin;
+        mouseCoordinatesNormalized.x = 0;
+        mouseCoordinatesNormalized.y = 0;
     }
     
-    mouseCoordinatesNormalizedSmoothed = point(interpolateLinear(mouseCoordinatesNormalizedSmoothed.x, mouseCoordinatesNormalized.x, 0.02), interpolateLinear(mouseCoordinatesNormalizedSmoothed.y, mouseCoordinatesNormalized.y, 0.02));
+    mouseCoordinatesNormalizedSmoothed.x = interpolateLinear(mouseCoordinatesNormalizedSmoothed.x, mouseCoordinatesNormalized.x, 0.02);
+    mouseCoordinatesNormalizedSmoothed.y = interpolateLinear(mouseCoordinatesNormalizedSmoothed.y, mouseCoordinatesNormalized.y, 0.02);
     
     // Slow down time.
     if(keysPressed.includes("-") || keysPressed.includes(","))
@@ -1097,7 +1080,7 @@ function render()
         {
             var newX = worm.nodes[0].x;
             var newY = worm.nodes[0].y;
-            var intersection = intersectCircleLineSegment(circle(pointOrigin, WORLD_RADIUS), line(point(oldX, oldY), point(newX, newY)));
+            var intersection = intersectCircleLineSegment(circle(point(0, 0), WORLD_RADIUS), line(point(oldX, oldY), point(newX, newY)));
             worm.moveTo(intersection[0]);
             worm.die();
             n--;
@@ -1139,21 +1122,21 @@ function render()
     {
         let energy = energies[n];
         let closestWorm;
-        let distanceToClosestWorm = -1;
+        let distanceManhattanToClosestWorm = undefined;
         
         for(var m = 0; m < worms.length; m++)
         {
             let worm = worms[m];
-            let distanceToWorm = distanceManhattan(energy, worm.nodes[0]);
+            let distanceManhattanToWorm = distanceManhattan(energy, worm.nodes[0]);
             
-            if(distanceToWorm < distanceToClosestWorm || distanceToClosestWorm === -1)
+            if(distanceManhattanToWorm < distanceManhattanToClosestWorm || distanceManhattanToClosestWorm === undefined)
             {
-                distanceToClosestWorm = distanceToWorm;
+                distanceManhattanToClosestWorm = distanceManhattanToWorm;
                 closestWorm = worm;
             }
         }
         
-        if(distanceToClosestWorm <= 50 && distanceToClosestWorm !== -1)
+        if(distanceManhattanToClosestWorm <= 50 && distanceManhattanToClosestWorm !== undefined)
         {
             if(!energy.isDecaying)
             {
@@ -1677,23 +1660,23 @@ function render()
 //---------- MATHS -----------
 //----------------------------
 
-function distance(p1, p2 = pointOrigin)
+function distance(p1, p2 = point(0, 0))
 {
     return Math.hypot(p1.x - p2.x, p1.y - p2.y);
 }
 
-function distanceSquared(p1, p2 = pointOrigin)
+function distanceSquared(p1, p2 = point(0, 0))
 {
     return Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2);
 }
 
 // For quicker calculation of the distance.
-function distanceManhattan(p1, p2 = pointOrigin)
+function distanceManhattan(p1, p2 = point(0, 0))
 {
     return Math.abs(p1.x - p2.x) + Math.abs(p1.y - p2.y);
 }
 
-// For fluid camera animations.
+// For fluid worm movement and camera animation.
 function interpolateLinear(startingValue, endingValue, t)
 {
     return (startingValue + (endingValue - startingValue) * t);
