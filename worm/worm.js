@@ -51,7 +51,6 @@ class Worm extends Filmable
         this.blinkWait = Math.round(Math.random() * 250) + 10;
         this.controllable;
         this.dead = false;
-        this.dieFunc = null;
         this.energiesCollected = 0;
         this.happiness = 0;
         this.happinessAchieved = 0;
@@ -219,18 +218,8 @@ class Worm extends Filmable
         {
             this.camera.filmedObject = null;
         }
+    }
         
-        if(this.dieFunc !== null)
-        {
-            this.dieFunc();
-        }
-    }
-    
-    onDie(func)
-    {
-        this.dieFunc = func;
-    }
-    
     tick(wormCollection)
     {
         if(!this.controllable)
@@ -932,7 +921,6 @@ const GRID_SIZE = 100;
 const WORM_BOT_COUNT = 100;
 const ENERGY_COUNT = 500;
 const worms = [];
-const deadWorms = [];
 const energies = [];
 let filmedWormIndex;
 resize();
@@ -943,7 +931,6 @@ function start()
     timeScale = 1;
     camera = new Camera();
     worms.length = 0;
-    deadWorms.length = 0;
     energies.length = 0;
     minimapZoom = 0.1;
     minimapFired = false;
@@ -954,27 +941,16 @@ function start()
     for(var n = 0; n < WORM_BOT_COUNT + 1; n++)
     {
         let worm = new Worm(camera);
-        let wormDieFunction;
-        
-        // Generate worm player.
+        // Generate the worm player.
         if(n === 0)
         {
-            worm.setControllable();
-            worm.setHue(120);
-            worm.setRandomLength(5, 50);
-            // Set the worm death function.
-            wormDieFunction = function()
-            {
-                let index = worms.indexOf(worm);
-                let deadWorm = worms[index];
-                worms.splice(index, 1);
-                deadWorms.push(deadWorm);
-                blackScreenOpacityDirection = 1;
-            };
             camera.moveTo(worm.nodes[0]);
             worm.follow();
+            worm.setControllable();
+            worm.setType(1);
+            worm.setHue(120);
+            worm.setRandomLength(5, 50);
         }
-        
         // Generate the AI worms.
         else
         {
@@ -982,16 +958,8 @@ function start()
             worm.setRandomType(1, 4);
             worm.setRandomHue(260, 359);
             worm.setRandomLength(5, 50);
-            wormDieFunction = function()
-            {
-                let index = worms.indexOf(worm);
-                let deadWorm = worms[index];
-                worms.splice(index, 1);
-                deadWorms.push(deadWorm);
-            }
         }
         
-        worm.onDie(wormDieFunction);
         worms.push(worm);
     }
     
@@ -1055,35 +1023,37 @@ function render()
     {
         const worm = worms[n];
         
-        if(worm.controllable)
+        if(!worm.dead)
         {
-            worm.turn = 0;
-            
-            if(keysPressed.includes("ArrowLeft") || keysPressed.includes("a") || keysPressed.includes("A"))
+            if(worm.controllable)
             {
-                worm.turn -= 1;
+                worm.turn = 0;
+                
+                if(keysPressed.includes("ArrowLeft") || keysPressed.includes("a") || keysPressed.includes("A"))
+                {
+                    worm.turn -= 1;
+                }
+                
+                if(keysPressed.includes("ArrowRight") || keysPressed.includes("d") || keysPressed.includes("D"))
+                {
+                    worm.turn += 1;
+                }
             }
             
-            if(keysPressed.includes("ArrowRight") || keysPressed.includes("d") || keysPressed.includes("D"))
+            var oldX = worm.nodes[0].x;
+            var oldY = worm.nodes[0].y;
+            
+            worm.tick(worms);
+            
+            // Check if any worm falls off the circle map.
+            if(!pointInCircle(worm.nodes[0], WORLD_CIRCLE))
             {
-                worm.turn += 1;
+                var newX = worm.nodes[0].x;
+                var newY = worm.nodes[0].y;
+                var intersection = intersectCircleLineSegment(circle(point(0, 0), WORLD_RADIUS), line(point(oldX, oldY), point(newX, newY)));
+                worm.moveTo(intersection[0]);
+                worm.die();
             }
-        }
-        
-        var oldX = worm.nodes[0].x;
-        var oldY = worm.nodes[0].y;
-        
-        worm.tick(worms);
-        
-        // Check if any worm falls off the circle map.
-        if(!pointInCircle(worm.nodes[0], WORLD_CIRCLE))
-        {
-            var newX = worm.nodes[0].x;
-            var newY = worm.nodes[0].y;
-            var intersection = intersectCircleLineSegment(circle(point(0, 0), WORLD_RADIUS), line(point(oldX, oldY), point(newX, newY)));
-            worm.moveTo(intersection[0]);
-            worm.die();
-            n--;
         }
     }
     
@@ -1127,12 +1097,16 @@ function render()
         for(var m = 0; m < worms.length; m++)
         {
             let worm = worms[m];
-            let distanceManhattanToWorm = distanceManhattan(energy, worm.nodes[0]);
-            
-            if(distanceManhattanToWorm < distanceManhattanToClosestWorm || distanceManhattanToClosestWorm === undefined)
+
+            if(!worm.dead)
             {
-                distanceManhattanToClosestWorm = distanceManhattanToWorm;
-                closestWorm = worm;
+                let distanceManhattanToWorm = distanceManhattan(energy, worm.nodes[0]);
+            
+                if(distanceManhattanToWorm < distanceManhattanToClosestWorm || distanceManhattanToClosestWorm === undefined)
+                {
+                    distanceManhattanToClosestWorm = distanceManhattanToWorm;
+                    closestWorm = worm;
+                }
             }
         }
         
@@ -1202,67 +1176,78 @@ function render()
     //--- DEAD WORMS RENDERING ---
     
     ctx.reset();
-    ctx.strokeStyle = "#171717";
     
-    for(var n = 0; n < deadWorms.length; n++)
+    for(var n = 0; n < worms.length; n++)
     {
-        var deadWorm = deadWorms[n];
-        
-        if(deadWorm.inGame(camera))
+        var worm = worms[n];
+
+        if(worm.dead)
         {
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            ctx.arc(deadWorm.nodes[0].x, deadWorm.nodes[0].y, 25, -(deadWorm.nodes[0].r + Math.PI / 2), -(deadWorm.nodes[0].r - Math.PI / 2));
-            for(var m = 1; m < deadWorm.nodes.length - 1; m++)
+            if(worm.inGame(camera))
             {
-                ctx.lineTo(deadWorm.nodes[m].x + 25 * Math.cos(deadWorm.nodes[m].r - Math.PI / 2), deadWorm.nodes[m].y - 25 * Math.sin(deadWorm.nodes[m].r - Math.PI / 2));
-            }
-            ctx.arc(deadWorm.nodes[deadWorm.nodes.length - 1].x, deadWorm.nodes[deadWorm.nodes.length - 1].y, 25, -(deadWorm.nodes[deadWorm.nodes.length - 1].r - Math.PI / 2), -(deadWorm.nodes[deadWorm.nodes.length - 1].r + Math.PI / 2));
-            for(var m = deadWorm.nodes.length - 2; m > 0; m--)
-            {
-                ctx.lineTo(deadWorm.nodes[m].x + 25 * Math.cos(deadWorm.nodes[m].r + Math.PI / 2), deadWorm.nodes[m].y - 25 * Math.sin(deadWorm.nodes[m].r + Math.PI / 2));
-            }
-            ctx.closePath();
-            ctx.stroke();
-            
-            ctx.translate(deadWorm.nodes[0].x, deadWorm.nodes[0].y);
-            ctx.rotate(-deadWorm.nodes[0].r);
-            
-            ctx.lineWidth = 2;
-            
-            ctx.beginPath();
-            ctx.arc(19, 0, 13, Math.PI - Math.PI / 3, Math.PI + Math.PI / 3);
-            ctx.stroke();
-            
-            ctx.beginPath();
-            ctx.moveTo(-3, -13);
-            ctx.lineTo(3, -7);
-            ctx.stroke();
-            
-            ctx.beginPath();
-            ctx.moveTo(-3, -7);
-            ctx.lineTo(3, -13);
-            ctx.stroke();
-            
-            ctx.beginPath();
-            ctx.moveTo(-3, 13);
-            ctx.lineTo(3, 7);
-            ctx.stroke();
-            
-            ctx.beginPath();
-            ctx.moveTo(-3, 7);
-            ctx.lineTo(3, 13);
-            ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(worm.nodes[0].x, worm.nodes[0].y, 25, -(worm.nodes[0].r + Math.PI / 2), -(worm.nodes[0].r - Math.PI / 2));
                 
-            ctx.rotate(deadWorm.nodes[0].r);
-            ctx.translate(-deadWorm.nodes[0].x, -deadWorm.nodes[0].y);
+                for(var m = 1; m < worm.nodes.length - 1; m++)
+                {
+                    ctx.lineTo(worm.nodes[m].x + 25 * Math.cos(worm.nodes[m].r - Math.PI / 2), worm.nodes[m].y - 25 * Math.sin(worm.nodes[m].r - Math.PI / 2));
+                }
+
+                ctx.arc(worm.nodes[worm.nodes.length - 1].x, worm.nodes[worm.nodes.length - 1].y, 25, -(worm.nodes[worm.nodes.length - 1].r - Math.PI / 2), -(worm.nodes[worm.nodes.length - 1].r + Math.PI / 2));
+                
+                for(var m = worm.nodes.length - 2; m > 0; m--)
+                {
+                    ctx.lineTo(worm.nodes[m].x + 25 * Math.cos(worm.nodes[m].r + Math.PI / 2), worm.nodes[m].y - 25 * Math.sin(worm.nodes[m].r + Math.PI / 2));
+                }
+                
+                ctx.closePath();
+                ctx.fillStyle = "#000000";
+                ctx.fill();
+                ctx.lineWidth = 30;
+                ctx.strokeStyle = "#000000";
+                ctx.stroke();
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = "#575757";
+                ctx.stroke();
+
+                ctx.save();
+                ctx.translate(worm.nodes[0].x, worm.nodes[0].y);
+                ctx.rotate(-worm.nodes[0].r);
+                
+                ctx.lineWidth = 2;
+                
+                ctx.beginPath();
+                ctx.arc(19, 0, 13, Math.PI - Math.PI / 3, Math.PI + Math.PI / 3);
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.moveTo(-3, -13);
+                ctx.lineTo(3, -7);
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.moveTo(-3, -7);
+                ctx.lineTo(3, -13);
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.moveTo(-3, 13);
+                ctx.lineTo(3, 7);
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.moveTo(-3, 7);
+                ctx.lineTo(3, 13);
+                ctx.stroke();
+
+                ctx.restore();
+            }
         }
     }
     
     //----- ENERGY RENDERING -----
     
     ctx.reset();
-    ctx.lineWidth = 3;
     ctx.shadowBlur = getShadows(clampMin(20 * camera.zoom, 20));
     for(var n = 0; n < energies.length; n++)
     {
@@ -1271,279 +1256,328 @@ function render()
         if(energy.inGame(camera))
         {
             ctx.globalAlpha = energy.opacity;
+            ctx.save();
             ctx.translate(energy.x, energy.y);
-            
+            ctx.rotate(energy.r);
+
             switch(energy.type)
             {
                 // Render the red triangle energy.
                 case 1:
+                    ctx.beginPath();
+                    ctx.moveTo(0, 25);
+                    ctx.lineTo(-21.65, -12.5);
+                    ctx.lineTo(21.65, -12.5);
+                    ctx.closePath();
+                    ctx.lineWidth = 3;
                     ctx.strokeStyle = "#ff0000";
                     ctx.shadowColor = "#ff0000";
-                    ctx.beginPath();
-                    ctx.moveTo(25 * Math.cos(energy.r), 0 - 25 * Math.sin(energy.r));
-                    ctx.lineTo(25 * Math.cos(energy.r + 2 * Math.PI / 3), 0 - 25 * Math.sin(energy.r + 2 * Math.PI / 3));
-                    ctx.lineTo(25 * Math.cos(energy.r + 4 * Math.PI / 3), 0 - 25 * Math.sin(energy.r + 4 * Math.PI / 3));
-                    ctx.closePath();
                     ctx.stroke();
                     break;
                 // Render the blue square energy.
                 case 2:
+                    ctx.beginPath();
+                    ctx.moveTo(20, 20);
+                    ctx.lineTo(20, -20);
+                    ctx.lineTo(-20, -20);
+                    ctx.lineTo(-20, 20);
+                    ctx.closePath();
+                    ctx.lineWidth = 3;
                     ctx.strokeStyle = "#00e5ff";
                     ctx.shadowColor = "#00e5ff";
-                    ctx.beginPath();
-                    ctx.moveTo(25 * Math.cos(energy.r), 0 - 25 * Math.sin(energy.r));
-                    ctx.lineTo(25 * Math.cos(energy.r + Math.PI / 2), 0 - 25 * Math.sin(energy.r + Math.PI / 2));
-                    ctx.lineTo(25 * Math.cos(energy.r + Math.PI), 0 - 25 * Math.sin(energy.r + Math.PI));
-                    ctx.lineTo(25 * Math.cos(energy.r + 3 * Math.PI / 2), 0 - 25 * Math.sin(energy.r + 3 * Math.PI / 2));
-                    ctx.closePath();
                     ctx.stroke();
                     break;
                 // Render the orange semicircle energy.
                 case 3:
+                    ctx.beginPath();
+                    ctx.arc(0, 0, 25, 0, Math.PI);
+                    ctx.closePath();
+                    ctx.lineWidth = 3;
                     ctx.strokeStyle = "#ff9100";
                     ctx.shadowColor = "#ff9100";
-                    ctx.beginPath();
-                    ctx.arc(0, 0, 25, energy.r - Math.PI / 2, energy.r + Math.PI / 2);
-                    ctx.closePath();
                     ctx.stroke();
                     break;
             }
             
-            ctx.translate(-energy.x, -energy.y);
+            ctx.restore();
         }
     }
     
     //------ WORM RENDERING ------
     
     ctx.reset();
-    ctx.lineWidth = 3;
     ctx.shadowBlur = getShadows();
     
     for(var n = 0; n < worms.length; n++)
     {
         const worm = worms[n];
-        var color = hueString(worm.hue);
-        
-        // Render the worm only if seen by the camera.
-        if(worm.inGame(camera))
+
+        if(!worm.dead)
         {
-            ctx.strokeStyle = color;
-            ctx.fillStyle = color;
-            ctx.shadowColor = color;
-            
-            switch(worm.type)
+            var color = hueString(worm.hue);
+        
+            // Render the worm only if seen by the camera.
+            if(worm.inGame(camera))
             {
-                // Render the normal worm.
-                case 1:
-                    ctx.beginPath();
-                    ctx.arc(worm.nodes[0].x, worm.nodes[0].y, 25, -(worm.nodes[0].r + Math.PI / 2), -(worm.nodes[0].r - Math.PI / 2));
-                    for(var m = 1; m < worm.nodes.length - 1; m++)
-                    {
-                        ctx.save();
-                        ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
-                        ctx.rotate(-worm.nodes[m].r);
-                        ctx.lineTo(0, 25);
-                        ctx.restore();
-                    }
-                    ctx.arc(worm.nodes[worm.nodes.length - 1].x, worm.nodes[worm.nodes.length - 1].y, 25, -(worm.nodes[worm.nodes.length - 1].r - Math.PI / 2), -(worm.nodes[worm.nodes.length - 1].r + Math.PI / 2));
-                    for(var m = worm.nodes.length - 2; m > 0; m--)
-                    {
-                        ctx.save();
-                        ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
-                        ctx.rotate(-worm.nodes[m].r);
-                        ctx.lineTo(0, -25);
-                        ctx.restore();
-                    }
-                    ctx.closePath();
-                    ctx.stroke();
-                    var interpolation1 = interpolateQuadratic(12, 6, worm.happiness);
-                    var interpolation2 = interpolateQuadratic(-11, -15, worm.happiness);
-                    var interpolation3 = interpolateQuadratic(4, 19, worm.happiness);
-                    ctx.save();
-                    ctx.translate(worm.nodes[0].x, worm.nodes[0].y);
-                    ctx.rotate(-worm.nodes[0].r);
-                    ctx.lineWidth = 2;
-                    ctx.beginPath();
-                    ctx.moveTo(interpolation1, interpolation2);
-                    ctx.bezierCurveTo(interpolation3, -7, interpolation3, 7, interpolation1, -interpolation2);
-                    ctx.stroke();
-                    ctx.beginPath();
-                    ctx.ellipse(0, -5, 2 * (1 - worm.blink), 2, 0, 0, 2 * Math.PI);
-                    ctx.fill();
-                    ctx.beginPath();
-                    ctx.ellipse(0, 5, 2 * (1 - worm.blink), 2, 0, 0, 2 * Math.PI);
-                    ctx.fill();
-                    ctx.restore();
-                    break;
-                // Render the mechanical worm.
-                case 2:
-                    ctx.beginPath();
-                    ctx.arc(worm.nodes[0].x, worm.nodes[0].y, 25, -(worm.nodes[0].r + Math.PI / 2), -(worm.nodes[0].r - Math.PI / 2));
-                    for(var m = 1; m < worm.nodes.length - 1; m++)
-                    {
-                        ctx.save();
-                        ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
-                        ctx.rotate(-worm.nodes[m].r);
-                        
-                        switch(true)
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = color;
+                ctx.fillStyle = color;
+                ctx.shadowColor = color;
+                
+                switch(worm.type)
+                {
+                    // Render the normal worm.
+                    case 1:
+                        ctx.beginPath();
+                        ctx.arc(worm.nodes[0].x, worm.nodes[0].y, 25, -(worm.nodes[0].r + Math.PI / 2), -(worm.nodes[0].r - Math.PI / 2));
+                        for(var m = 1; m < worm.nodes.length - 1; m++)
                         {
-                            case (m - 1) % 4 === 0:
-                                ctx.lineTo(-3, 25);
-                                break;
-                            case ((m - 1) % 4 === 1 || (m - 1) % 4 === 2):
-                                ctx.lineTo(0, 25 - 5 * worm.nodes[m + 1].activeTime);
-                                break;
-                            case (m - 1) % 4 === 3:
-                                ctx.lineTo(3, 25);
-                                break;
+                            ctx.save();
+                            ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
+                            ctx.rotate(-worm.nodes[m].r);
+                            ctx.lineTo(0, 25);
+                            ctx.restore();
                         }
-                        
-                        ctx.restore();
-                    }
-                    ctx.arc(worm.nodes[worm.nodes.length - 1].x, worm.nodes[worm.nodes.length - 1].y, 25, -(worm.nodes[worm.nodes.length - 1].r - Math.PI / 2), -(worm.nodes[worm.nodes.length - 1].r + Math.PI / 2));
-                    for(var m = worm.nodes.length - 2; m > 0; m--)
-                    {
-                        ctx.save();
-                        ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
-                        ctx.rotate(-worm.nodes[m].r);
-                        
-                        switch(true)
+                        ctx.arc(worm.nodes[worm.nodes.length - 1].x, worm.nodes[worm.nodes.length - 1].y, 25, -(worm.nodes[worm.nodes.length - 1].r - Math.PI / 2), -(worm.nodes[worm.nodes.length - 1].r + Math.PI / 2));
+                        for(var m = worm.nodes.length - 2; m > 0; m--)
                         {
-                            case (m - 1) % 4 === 0:
-                                ctx.lineTo(-3, -25);
-                                break;
-                            case ((m - 1) % 4 === 1 || (m - 1) % 4 === 2):
-                                ctx.lineTo(0, -25 + 5 * worm.nodes[m].activeTime);
-                                break;
-                            case (m - 1) % 4 === 3:
-                                ctx.lineTo(3, -25);
-                                break;
+                            ctx.save();
+                            ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
+                            ctx.rotate(-worm.nodes[m].r);
+                            ctx.lineTo(0, -25);
+                            ctx.restore();
                         }
-                        
-                        ctx.restore();
-                    }
-                    ctx.closePath();
-                    ctx.stroke();
-                    var interpolation1 = interpolateQuadratic(12, 6, worm.happiness);
-                    var interpolation2 = interpolateQuadratic(-11, -15, worm.happiness);
-                    var interpolation3 = interpolateQuadratic(4, 19, worm.happiness);
-                    ctx.save();
-                    ctx.translate(worm.nodes[0].x, worm.nodes[0].y);
-                    ctx.rotate(-worm.nodes[0].r);
-                    ctx.lineWidth = 2;
-                    ctx.beginPath();
-                    ctx.moveTo(interpolation1, interpolation2);
-                    ctx.bezierCurveTo(interpolation3, -7, interpolation3, 7, interpolation1, -interpolation2);
-                    ctx.stroke();
-                    ctx.beginPath();
-                    ctx.ellipse(0, -5, 2 * (1 - worm.blink), 2, 0, 0, 2 * Math.PI);
-                    ctx.fill();
-                    ctx.beginPath();
-                    ctx.ellipse(0, 5, 2 * (1 - worm.blink), 2, 0, 0, 2 * Math.PI);
-                    ctx.fill();
-                    ctx.restore();
-                    break;
-                // Render the alien worm.
-                case 3:
-                    ctx.beginPath();
-                    ctx.arc(worm.nodes[0].x, worm.nodes[0].y, 25, -(worm.nodes[0].r + Math.PI / 2), -(worm.nodes[0].r - Math.PI / 2));
-                    for(var m = 1; m < worm.nodes.length - 1; m++)
-                    {
+                        ctx.closePath();
+                        ctx.fillStyle = "#000000";
+                        ctx.shadowBlur = 0;
+                        ctx.fill();
+                        ctx.lineWidth = 20;
+                        ctx.strokeStyle = "#000000";
+                        ctx.shadowBlur = 0;
+                        ctx.stroke();
+                        ctx.lineWidth = 3;
+                        ctx.strokeStyle = color;
+                        ctx.shadowBlur = getShadows();
+                        ctx.shadowColor = color;
+                        ctx.stroke();
+                        var interpolation1 = interpolateQuadratic(12, 6, worm.happiness);
+                        var interpolation2 = interpolateQuadratic(-11, -15, worm.happiness);
+                        var interpolation3 = interpolateQuadratic(4, 19, worm.happiness);
                         ctx.save();
-                        ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
-                        ctx.rotate(-worm.nodes[m].r);
-                        ctx.lineTo(0, 25);
+                        ctx.translate(worm.nodes[0].x, worm.nodes[0].y);
+                        ctx.rotate(-worm.nodes[0].r);
+                        ctx.beginPath();
+                        ctx.moveTo(interpolation1, interpolation2);
+                        ctx.bezierCurveTo(interpolation3, -7, interpolation3, 7, interpolation1, -interpolation2);
+                        ctx.lineWidth = 2;
+                        ctx.strokeStyle = color;
+                        ctx.shadowBlur = getShadows();
+                        ctx.shadowColor = color;
+                        ctx.stroke();
+                        ctx.beginPath();
+                        ctx.ellipse(0, -5, 2 * (1 - worm.blink), 2, 0, 0, 2 * Math.PI);
+                        ctx.fillStyle = color;
+                        ctx.shadowBlur = getShadows();
+                        ctx.shadowColor = color;
+                        ctx.fill();
+                        ctx.beginPath();
+                        ctx.ellipse(0, 5, 2 * (1 - worm.blink), 2, 0, 0, 2 * Math.PI);
+                        ctx.fillStyle = color;
+                        ctx.shadowBlur = getShadows();
+                        ctx.shadowColor = color;
+                        ctx.fill();
                         ctx.restore();
-                    }
-                    ctx.arc(worm.nodes[worm.nodes.length - 1].x, worm.nodes[worm.nodes.length - 1].y, 25, -(worm.nodes[worm.nodes.length - 1].r - Math.PI / 2), -(worm.nodes[worm.nodes.length - 1].r + Math.PI / 2));
-                    for(var m = worm.nodes.length - 2; m > 0; m--)
-                    {
-                        ctx.save();
-                        ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
-                        ctx.rotate(-worm.nodes[m].r);
-                        ctx.lineTo(0, -25);
-                        ctx.restore();
-                    }
-                    ctx.closePath();
-                    ctx.stroke();
-                    
-                    var interpolation = interpolateQuadratic(Math.PI / 4, Math.PI / 6, worm.happiness);
-                    ctx.save();
-                    ctx.translate(worm.nodes[0].x, worm.nodes[0].y);
-                    ctx.rotate(-worm.nodes[0].r);
-                    ctx.beginPath();
-                    ctx.moveTo(25 * Math.cos(-interpolation), 25 * Math.sin(-interpolation));
-                    ctx.lineTo(50 * Math.cos(-interpolation), 50 * Math.sin(-interpolation));
-                    ctx.stroke();
-                    ctx.beginPath();
-                    ctx.moveTo(25 * Math.cos(interpolation), 25 * Math.sin(interpolation));
-                    ctx.lineTo(50 * Math.cos(interpolation), 50 * Math.sin(interpolation));
-                    ctx.stroke();
-                    ctx.beginPath();
-                    ctx.arc(50 * Math.cos(-interpolation), 50 * Math.sin(-interpolation), 5, 0, 2 * Math.PI);
-                    ctx.fill();
-                    ctx.beginPath();
-                    ctx.arc(50 * Math.cos(interpolation), 50 * Math.sin(interpolation), 5, 0, 2 * Math.PI);
-                    ctx.fill();
-                    ctx.restore();
-                    break;
-                // Render the flag worm.
-                case 4:
-                    ctx.beginPath();
-                    ctx.arc(worm.nodes[0].x, worm.nodes[0].y, 25, -(worm.nodes[0].r + Math.PI / 2), -(worm.nodes[0].r - Math.PI / 2));
-                    for(var m = 1; m < worm.nodes.length - 1; m++)
-                    {
-                        ctx.save();
-                        ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
-                        ctx.rotate(-worm.nodes[m].r);
-                        
-                        switch(true)
+                        break;
+                    // Render the mechanical worm.
+                    case 2:
+                        ctx.beginPath();
+                        ctx.arc(worm.nodes[0].x, worm.nodes[0].y, 25, -(worm.nodes[0].r + Math.PI / 2), -(worm.nodes[0].r - Math.PI / 2));
+                        for(var m = 1; m < worm.nodes.length - 1; m++)
                         {
-                            case (m - 1) % 20 < 19:
-                                ctx.lineTo(0, 25);
-                                break;
-                            case (m - 1) % 20 === 19:
-                                ctx.lineTo(0, 25);
-                                ctx.lineTo(0, 25 + 40 * worm.nodes[m + 1].activeTime);
-                                ctx.lineTo(20 * worm.nodes[m + 1].activeTime, 25 + 30 * worm.nodes[m + 1].activeTime);
-                                ctx.lineTo(0, 25 + 20 * worm.nodes[m + 1].activeTime);
-                                ctx.lineTo(0, 25);
-                                break;
+                            ctx.save();
+                            ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
+                            ctx.rotate(-worm.nodes[m].r);
+                            
+                            switch(true)
+                            {
+                                case (m - 1) % 4 === 0:
+                                    ctx.lineTo(-3, 25);
+                                    break;
+                                case (m - 1) % 4 === 1 || (m - 1) % 4 === 2:
+                                    ctx.lineTo(0, 25 - 5 * worm.nodes[m + 1].activeTime);
+                                    break;
+                                case (m - 1) % 4 === 3:
+                                    ctx.lineTo(3, 25);
+                                    break;
+                            }
+                            
+                            ctx.restore();
                         }
-                        
-                        ctx.restore();
-                    }
-                    ctx.arc(worm.nodes[worm.nodes.length - 1].x, worm.nodes[worm.nodes.length - 1].y, 25, -(worm.nodes[worm.nodes.length - 1].r - Math.PI / 2), -(worm.nodes[worm.nodes.length - 1].r + Math.PI / 2));
-                    for(var m = worm.nodes.length - 2; m > 0; m--)
-                    {
+                        ctx.arc(worm.nodes[worm.nodes.length - 1].x, worm.nodes[worm.nodes.length - 1].y, 25, -(worm.nodes[worm.nodes.length - 1].r - Math.PI / 2), -(worm.nodes[worm.nodes.length - 1].r + Math.PI / 2));
+                        for(var m = worm.nodes.length - 2; m > 0; m--)
+                        {
+                            ctx.save();
+                            ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
+                            ctx.rotate(-worm.nodes[m].r);
+                            
+                            switch(true)
+                            {
+                                case (m - 1) % 4 === 0:
+                                    ctx.lineTo(-3, -25);
+                                    break;
+                                case ((m - 1) % 4 === 1 || (m - 1) % 4 === 2):
+                                    ctx.lineTo(0, -25 + 5 * worm.nodes[m].activeTime);
+                                    break;
+                                case (m - 1) % 4 === 3:
+                                    ctx.lineTo(3, -25);
+                                    break;
+                            }
+                            
+                            ctx.restore();
+                        }
+                        ctx.closePath();
+                        ctx.fillStyle = "#000000";
+                        ctx.shadowBlur = 0;
+                        ctx.fill();
+                        ctx.lineWidth = 20;
+                        ctx.strokeStyle = "#000000";
+                        ctx.shadowBlur = 0;
+                        ctx.stroke();
+                        ctx.lineWidth = 2;
+                        ctx.strokeStyle = color;
+                        ctx.shadowBlur = getShadows();
+                        ctx.shadowColor = color;
+                        ctx.stroke();
+                        var interpolation1 = interpolateQuadratic(12, 6, worm.happiness);
+                        var interpolation2 = interpolateQuadratic(-11, -15, worm.happiness);
+                        var interpolation3 = interpolateQuadratic(4, 19, worm.happiness);
                         ctx.save();
-                        ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
-                        ctx.rotate(-worm.nodes[m].r);
-                        ctx.lineTo(0, -25);
+                        ctx.translate(worm.nodes[0].x, worm.nodes[0].y);
+                        ctx.rotate(-worm.nodes[0].r);
+                        ctx.beginPath();
+                        ctx.moveTo(interpolation1, interpolation2);
+                        ctx.bezierCurveTo(interpolation3, -7, interpolation3, 7, interpolation1, -interpolation2);
+                        ctx.lineWidth = 2;
+                        ctx.strokeStyle = color;
+                        ctx.shadowBlur = getShadows();
+                        ctx.shadowColor = color;
+                        ctx.stroke();
+                        ctx.beginPath();
+                        ctx.ellipse(0, -5, 2 * (1 - worm.blink), 2, 0, 0, 2 * Math.PI);
+                        ctx.fillStyle = color;
+                        ctx.shadowBlur = getShadows();
+                        ctx.shadowColor = color;
+                        ctx.fill();
+                        ctx.beginPath();
+                        ctx.ellipse(0, 5, 2 * (1 - worm.blink), 2, 0, 0, 2 * Math.PI);
+                        ctx.fillStyle = color;
+                        ctx.shadowBlur = getShadows();
+                        ctx.shadowColor = color;
+                        ctx.fill();
                         ctx.restore();
-                    }
-                    ctx.closePath();
-                    ctx.stroke();
-                    var interpolation1 = interpolateQuadratic(12, 6, worm.happiness);
-                    var interpolation2 = interpolateQuadratic(-11, -15, worm.happiness);
-                    var interpolation3 = interpolateQuadratic(4, 19, worm.happiness);
-                    ctx.save();
-                    ctx.translate(worm.nodes[0].x, worm.nodes[0].y);
-                    ctx.rotate(-worm.nodes[0].r);
-                    ctx.lineWidth = 2;
-                    ctx.beginPath();
-                    ctx.moveTo(interpolation1, interpolation2);
-                    ctx.bezierCurveTo(interpolation3, -7, interpolation3, 7, interpolation1, -interpolation2);
-                    ctx.stroke();
-                    ctx.beginPath();
-                    ctx.ellipse(0, -5, 2 * (1 - worm.blink), 2, 0, 0, 2 * Math.PI);
-                    ctx.fill();
-                    ctx.beginPath();
-                    ctx.ellipse(0, 5, 2 * (1 - worm.blink), 2, 0, 0, 2 * Math.PI);
-                    ctx.fill();
-                    ctx.restore();
-                    break;
-            }                        
+                        break;
+                    // Render the alien worm.
+                    case 3:
+                        ctx.beginPath();
+                        ctx.arc(worm.nodes[0].x, worm.nodes[0].y, 25, -(worm.nodes[0].r + Math.PI / 2), -(worm.nodes[0].r - Math.PI / 2));
+                        for(var m = 1; m < worm.nodes.length - 1; m++)
+                        {
+                            ctx.save();
+                            ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
+                            ctx.rotate(-worm.nodes[m].r);
+                            ctx.lineTo(0, 25);
+                            ctx.restore();
+                        }
+                        ctx.arc(worm.nodes[worm.nodes.length - 1].x, worm.nodes[worm.nodes.length - 1].y, 25, -(worm.nodes[worm.nodes.length - 1].r - Math.PI / 2), -(worm.nodes[worm.nodes.length - 1].r + Math.PI / 2));
+                        for(var m = worm.nodes.length - 2; m > 0; m--)
+                        {
+                            ctx.save();
+                            ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
+                            ctx.rotate(-worm.nodes[m].r);
+                            ctx.lineTo(0, -25);
+                            ctx.restore();
+                        }
+                        ctx.closePath();
+                        ctx.stroke();
+                        
+                        var interpolation = interpolateQuadratic(Math.PI / 4, Math.PI / 6, worm.happiness);
+                        ctx.save();
+                        ctx.translate(worm.nodes[0].x, worm.nodes[0].y);
+                        ctx.rotate(-worm.nodes[0].r);
+                        ctx.beginPath();
+                        ctx.moveTo(25 * Math.cos(-interpolation), 25 * Math.sin(-interpolation));
+                        ctx.lineTo(50 * Math.cos(-interpolation), 50 * Math.sin(-interpolation));
+                        ctx.stroke();
+                        ctx.beginPath();
+                        ctx.moveTo(25 * Math.cos(interpolation), 25 * Math.sin(interpolation));
+                        ctx.lineTo(50 * Math.cos(interpolation), 50 * Math.sin(interpolation));
+                        ctx.stroke();
+                        ctx.beginPath();
+                        ctx.arc(50 * Math.cos(-interpolation), 50 * Math.sin(-interpolation), 5, 0, 2 * Math.PI);
+                        ctx.fill();
+                        ctx.beginPath();
+                        ctx.arc(50 * Math.cos(interpolation), 50 * Math.sin(interpolation), 5, 0, 2 * Math.PI);
+                        ctx.fill();
+                        ctx.restore();
+                        break;
+                    // Render the flag worm.
+                    case 4:
+                        ctx.beginPath();
+                        ctx.arc(worm.nodes[0].x, worm.nodes[0].y, 25, -(worm.nodes[0].r + Math.PI / 2), -(worm.nodes[0].r - Math.PI / 2));
+                        for(var m = 1; m < worm.nodes.length - 1; m++)
+                        {
+                            ctx.save();
+                            ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
+                            ctx.rotate(-worm.nodes[m].r);
+                            
+                            switch(true)
+                            {
+                                case (m - 1) % 20 < 19:
+                                    ctx.lineTo(0, 25);
+                                    break;
+                                case (m - 1) % 20 === 19:
+                                    ctx.lineTo(0, 25);
+                                    ctx.lineTo(0, 25 + 40 * worm.nodes[m + 1].activeTime);
+                                    ctx.lineTo(20 * worm.nodes[m + 1].activeTime, 25 + 30 * worm.nodes[m + 1].activeTime);
+                                    ctx.lineTo(0, 25 + 20 * worm.nodes[m + 1].activeTime);
+                                    ctx.lineTo(0, 25);
+                                    break;
+                            }
+                            
+                            ctx.restore();
+                        }
+                        ctx.arc(worm.nodes[worm.nodes.length - 1].x, worm.nodes[worm.nodes.length - 1].y, 25, -(worm.nodes[worm.nodes.length - 1].r - Math.PI / 2), -(worm.nodes[worm.nodes.length - 1].r + Math.PI / 2));
+                        for(var m = worm.nodes.length - 2; m > 0; m--)
+                        {
+                            ctx.save();
+                            ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
+                            ctx.rotate(-worm.nodes[m].r);
+                            ctx.lineTo(0, -25);
+                            ctx.restore();
+                        }
+                        ctx.closePath();
+                        ctx.stroke();
+                        var interpolation1 = interpolateQuadratic(12, 6, worm.happiness);
+                        var interpolation2 = interpolateQuadratic(-11, -15, worm.happiness);
+                        var interpolation3 = interpolateQuadratic(4, 19, worm.happiness);
+                        ctx.save();
+                        ctx.translate(worm.nodes[0].x, worm.nodes[0].y);
+                        ctx.rotate(-worm.nodes[0].r);
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.moveTo(interpolation1, interpolation2);
+                        ctx.bezierCurveTo(interpolation3, -7, interpolation3, 7, interpolation1, -interpolation2);
+                        ctx.stroke();
+                        ctx.beginPath();
+                        ctx.ellipse(0, -5, 2 * (1 - worm.blink), 2, 0, 0, 2 * Math.PI);
+                        ctx.fill();
+                        ctx.beginPath();
+                        ctx.ellipse(0, 5, 2 * (1 - worm.blink), 2, 0, 0, 2 * Math.PI);
+                        ctx.fill();
+                        ctx.restore();
+                        break;
+                }                        
+            }
         }
     }
     
@@ -1551,22 +1585,24 @@ function render()
     
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.reset();
-    
+    ctx.save();
+
     // Draw the small minimap.
     if(!minimapExpanded)
     {
         var region = new Path2D();
         region.rect(gameWidth - minimapWidth - 10, gameHeight - minimapHeight - 10, minimapWidth, minimapHeight);
-        ctx.save();
         ctx.clip(region, "nonzero");
-        ctx.fillStyle = "#020202";
+        ctx.fillStyle = "#000000";
         ctx.globalAlpha = 0.5;
         ctx.fillRect(gameWidth - minimapWidth - 10, gameHeight - minimapHeight - 10, minimapWidth, minimapHeight);
-        ctx.translate(gameWidth - 10 - minimapWidth / 2, gameHeight - 10 - minimapHeight / 2);
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = "#ffffff";
+        ctx.strokeRect(gameWidth - minimapWidth - 10, gameHeight - minimapHeight - 10, minimapWidth, minimapHeight);
+        ctx.translate(gameWidth - minimapHalfWidth - 10, gameHeight - minimapHalfHeight - 10);
     }
-    
     // Draw the fullscreen minimap.
-    if(minimapExpanded)
+    else
     {
         ctx.fillStyle = "#000000";
         ctx.globalAlpha = 0.8;
@@ -1621,35 +1657,29 @@ function render()
     for(var n = 0; n < worms.length; n++)
     {
         const worm = worms[n];
-        var color = hueString(worm.hue);
-        
-        if(worm.inMinimap(camera, minimapExpanded))
+
+        if(!worm.dead)
         {
-            ctx.strokeStyle = color;
-            ctx.shadowColor = color;
-            ctx.beginPath();
-            ctx.moveTo(worm.nodes[0].x, worm.nodes[0].y);
-            
-            for(var m = 1; m < worm.nodes.length; m++)
+            var color = hueString(worm.hue);
+        
+            if(worm.inMinimap(camera, minimapExpanded))
             {
-                ctx.lineTo(worm.nodes[m].x, worm.nodes[m].y);
+                ctx.strokeStyle = color;
+                ctx.shadowColor = color;
+                ctx.beginPath();
+                ctx.moveTo(worm.nodes[0].x, worm.nodes[0].y);
+                
+                for(var m = 1; m < worm.nodes.length; m++)
+                {
+                    ctx.lineTo(worm.nodes[m].x, worm.nodes[m].y);
+                }
+                
+                ctx.stroke();
             }
-            
-            ctx.stroke();
         }
     }
     
-    if(!minimapExpanded)
-    {
-        ctx.restore();
-    }
-    
-    else
-    {
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-    }
-    
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.restore();
     ctx.reset();
     ctx.globalAlpha = blackScreenOpacity;
     ctx.fillRect(0, 0, gameWidth, gameHeight);
