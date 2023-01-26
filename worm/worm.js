@@ -1597,6 +1597,9 @@ function render()
                             ctx.restore();
                         }
                         ctx.closePath();
+                        ctx.fillStyle = "#000000";
+                        ctx.shadowBlur = 0;
+                        ctx.fill();
                         ctx.lineWidth = 20;
                         ctx.strokeStyle = "#000000";
                         ctx.shadowBlur = 0;
@@ -1606,6 +1609,7 @@ function render()
                         ctx.shadowBlur = getShadows();
                         ctx.shadowColor = color;
                         ctx.stroke();
+                        
                         var interpolation1 = interpolateQuadratic(12, 6, worm.happiness);
                         var interpolation2 = interpolateQuadratic(-11, -15, worm.happiness);
                         var interpolation3 = interpolateQuadratic(4, 19, worm.happiness);
@@ -1615,10 +1619,6 @@ function render()
                         ctx.beginPath();
                         ctx.moveTo(interpolation1, interpolation2);
                         ctx.bezierCurveTo(interpolation3, -7, interpolation3, 7, interpolation1, -interpolation2);
-                        ctx.lineWidth = 20;
-                        ctx.strokeStyle = "#000000";
-                        ctx.shadowBlur = 0;
-                        ctx.stroke();
                         ctx.lineWidth = 2;
                         ctx.strokeStyle = color;
                         ctx.shadowBlur = getShadows();
@@ -1626,9 +1626,15 @@ function render()
                         ctx.stroke();
                         ctx.beginPath();
                         ctx.ellipse(0, -5, 2 * (1 - worm.blink), 2, 0, 0, 2 * Math.PI);
+                        ctx.fillStyle = color;
+                        ctx.shadowBlur = getShadows();
+                        ctx.shadowColor = color;
                         ctx.fill();
                         ctx.beginPath();
                         ctx.ellipse(0, 5, 2 * (1 - worm.blink), 2, 0, 0, 2 * Math.PI);
+                        ctx.fillStyle = color;
+                        ctx.shadowBlur = getShadows();
+                        ctx.shadowColor = color;
                         ctx.fill();
                         ctx.restore();
                         break;
