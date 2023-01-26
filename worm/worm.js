@@ -560,10 +560,14 @@ class Energy extends Filmable
         this.decayFunc = func;
     }
     
-    destroy()
+    destroy(energyCollection)
     {
         this.isDestroyed = true;
+        this.isDecaying = false;
         
+        let index = energyCollection.indexOf(this);
+        energyCollection.splice(index, 1);
+
         if(this.destroyFunc !== null)
         {
             this.destroyFunc();
@@ -919,7 +923,7 @@ const WORLD_RADIUS = 10000;
 const WORLD_CIRCLE = circle(point(0, 0), WORLD_RADIUS);
 const GRID_SIZE = 100;
 const WORM_BOT_COUNT = 100;
-const ENERGY_COUNT = 0;
+const ENERGY_COUNT = 500;
 const worms = [];
 const energies = [];
 let filmedWormIndex;
@@ -956,7 +960,7 @@ function start()
         {
             worm.setControllable(false);
             worm.setRandomType(1, 4);
-            worm.setRandomHue(359, 359);
+            worm.setRandomHue(240, 340);
             worm.setRandomLength(5, 50);
         }
         
@@ -967,11 +971,6 @@ function start()
     for(var n = 0; n < ENERGY_COUNT; n++)
     {
         let energy = new Energy(camera);
-        energy.onDestroy(function()
-        {
-            let index = energies.indexOf(energy);
-            energies.splice(index, 1);
-        });
         energies.push(energy);
     }
     
@@ -1096,7 +1095,7 @@ function render()
     for(var n = 0; n < energies.length; n++)
     {
         let energy = energies[n];
-        let closestWorm;
+        let closestWorm = undefined;
         let distanceManhattanToClosestWorm = undefined;
         
         for(var m = 0; m < worms.length; m++)
@@ -1115,7 +1114,7 @@ function render()
             }
         }
         
-        if(distanceManhattanToClosestWorm <= 100 && distanceManhattanToClosestWorm !== undefined)
+        if(distanceManhattanToClosestWorm <= 100)
         {
             if(!energy.isDecaying)
             {
@@ -1258,7 +1257,7 @@ function render()
     for(var n = 0; n < energies.length; n++)
     {
         const energy = energies[n];
-        
+
         if(energy.inGame(camera))
         {
             ctx.globalAlpha = energy.opacity;
@@ -1659,8 +1658,8 @@ function render()
     
     //----- MINIMAP RENDERING ----
     
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.reset();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.save();
 
     // Draw the small minimap.
