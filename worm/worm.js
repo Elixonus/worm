@@ -919,7 +919,7 @@ const WORLD_RADIUS = 10000;
 const WORLD_CIRCLE = circle(point(0, 0), WORLD_RADIUS);
 const GRID_SIZE = 100;
 const WORM_BOT_COUNT = 100;
-const ENERGY_COUNT = 500;
+const ENERGY_COUNT = 0;
 const worms = [];
 const energies = [];
 let filmedWormIndex;
@@ -956,7 +956,7 @@ function start()
         {
             worm.setControllable(false);
             worm.setRandomType(1, 4);
-            worm.setRandomHue(260, 359);
+            worm.setRandomHue(359, 359);
             worm.setRandomLength(5, 50);
         }
         
@@ -1006,9 +1006,9 @@ function render()
     {
         timeScale -= 0.01;
         
-        if(timeScale < 0)
+        if(timeScale < 0.5)
         {
-            timeScale = 0;
+            timeScale = 0.5;
         }
     }
     
@@ -1016,6 +1016,11 @@ function render()
     if(keysPressed.includes("+") || keysPressed.includes("."))
     {
         timeScale += 0.01;
+
+        if(timeScale > 5)
+        {
+            timeScale = 5;
+        }
     }
     
     // High level worm movement logic.
@@ -1110,7 +1115,7 @@ function render()
             }
         }
         
-        if(distanceManhattanToClosestWorm <= 50 && distanceManhattanToClosestWorm !== undefined)
+        if(distanceManhattanToClosestWorm <= 100 && distanceManhattanToClosestWorm !== undefined)
         {
             if(!energy.isDecaying)
             {
@@ -1208,6 +1213,7 @@ function render()
                 ctx.stroke();
                 ctx.lineWidth = 3;
                 ctx.strokeStyle = "#575757";
+                ctx.shadowBlur = 0;
                 ctx.stroke();
 
                 ctx.save();
@@ -1269,6 +1275,9 @@ function render()
                     ctx.lineTo(-21.65, -12.5);
                     ctx.lineTo(21.65, -12.5);
                     ctx.closePath();
+                    ctx.fillStyle = "#000000";
+                    ctx.shadowBlur = 0;
+                    ctx.fill();
                     ctx.lineWidth = 3;
                     ctx.strokeStyle = "#ff0000";
                     ctx.shadowColor = "#ff0000";
@@ -1282,6 +1291,9 @@ function render()
                     ctx.lineTo(-20, -20);
                     ctx.lineTo(-20, 20);
                     ctx.closePath();
+                    ctx.fillStyle = "#000000";
+                    ctx.shadowBlur = 0;
+                    ctx.fill();
                     ctx.lineWidth = 3;
                     ctx.strokeStyle = "#00e5ff";
                     ctx.shadowColor = "#00e5ff";
@@ -1292,6 +1304,9 @@ function render()
                     ctx.beginPath();
                     ctx.arc(0, 0, 25, 0, Math.PI);
                     ctx.closePath();
+                    ctx.fillStyle = "#000000";
+                    ctx.shadowBlur = 0;
+                    ctx.fill();
                     ctx.lineWidth = 3;
                     ctx.strokeStyle = "#ff9100";
                     ctx.shadowColor = "#ff9100";
@@ -1609,7 +1624,6 @@ function render()
                         ctx.shadowBlur = getShadows();
                         ctx.shadowColor = color;
                         ctx.stroke();
-                        
                         var interpolation1 = interpolateQuadratic(12, 6, worm.happiness);
                         var interpolation2 = interpolateQuadratic(-11, -15, worm.happiness);
                         var interpolation3 = interpolateQuadratic(4, 19, worm.happiness);
