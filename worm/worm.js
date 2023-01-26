@@ -584,7 +584,7 @@ class Energy extends Filmable
         // Energy decay logic.
         if(this.isDecaying)
         {
-            this.opacity -= 0.1 * timeScale;
+            this.opacity -= 0.05 * timeScale;
             
             if(this.opacity <= 0)
             {
