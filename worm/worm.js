@@ -1593,21 +1593,18 @@ function render()
         var region = new Path2D();
         region.rect(gameWidth - minimapWidth - 10, gameHeight - minimapHeight - 10, minimapWidth, minimapHeight);
         ctx.clip(region, "nonzero");
-        ctx.fillStyle = "#000000";
-        ctx.globalAlpha = 0.5;
-        ctx.fillRect(gameWidth - minimapWidth - 10, gameHeight - minimapHeight - 10, minimapWidth, minimapHeight);
-        ctx.lineWidth = 5;
-        ctx.strokeStyle = "#ffffff";
-        ctx.strokeRect(gameWidth - minimapWidth - 10, gameHeight - minimapHeight - 10, minimapWidth, minimapHeight);
         ctx.translate(gameWidth - minimapHalfWidth - 10, gameHeight - minimapHalfHeight - 10);
+        ctx.fillStyle = "#000000";
+        ctx.globalAlpha = 0.8;
+        ctx.fillRect(-minimapHalfWidth, -minimapHalfHeight, minimapWidth, minimapHeight);
     }
     // Draw the fullscreen minimap.
     else
     {
+        ctx.translate(gameHalfWidth, gameHalfHeight);
         ctx.fillStyle = "#000000";
         ctx.globalAlpha = 0.8;
-        ctx.fillRect(0, 0, gameWidth, gameHeight);
-        ctx.translate(gameHalfWidth, gameHalfHeight);
+        ctx.fillRect(-gameHalfWidth, -gameHalfHeight, gameWidth, gameHeight);
     }
     
     ctx.scale(camera.zoom * minimapZoom, camera.zoom * minimapZoom);
@@ -1680,6 +1677,20 @@ function render()
     }
     
     ctx.restore();
+
+    if(!minimapExpanded)
+    {
+        ctx.lineWidth = 20;
+        ctx.strokeStyle = "#000000";
+        ctx.beginPath();
+        ctx.roundRect(gameWidth - minimapWidth - 10, gameHeight - minimapHeight - 10, minimapWidth, minimapHeight, 20);
+        ctx.stroke();
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = "#222222";
+        ctx.stroke();
+        //ctx.strokeRect(gameWidth - minimapWidth - 10, gameHeight - minimapHeight - 10, minimapWidth, minimapHeight);
+    }
+
     ctx.reset();
     ctx.globalAlpha = blackScreenOpacity;
     ctx.fillRect(0, 0, gameWidth, gameHeight);
