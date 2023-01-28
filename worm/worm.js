@@ -687,9 +687,6 @@ class Camera
     {
         // Camera movement and zoom logic.
         this.moveToSmooth(point(this.targetX, this.targetY));
-        this.x += 25 * mouseCoordinatesNormalizedSmoothed.x;
-        this.y += 25 * mouseCoordinatesNormalizedSmoothed.y;
-        this.zoom = 1 - 0.2 * distance(mouseCoordinatesNormalizedSmoothed);
     }
 }
 
@@ -754,8 +751,6 @@ function resize()
         canvas.style.width = "100%";
         canvas.style.height = `${(windowWidth / windowHeight) * (gameHeight / gameWidth) * 100}%`;
     }
-    
-    updateMouseCoordinates();
 }
 
 function mousedown(event)
@@ -798,18 +793,6 @@ function mousedown(event)
             worms[filmedWormIndex].unfollow();
         }
     }
-}
-
-function mousemove(event)
-{
-    if(!event)
-    {
-        event = window.event;
-    }
-    
-    mouseCoordinates.x = event.clientX;
-    mouseCoordinates.y = event.clientY;
-    updateMouseCoordinates();
 }
 
 function keydown(event)
@@ -867,23 +850,12 @@ function keyup(event)
     }
 }
 
-function updateMouseCoordinates()
-{
-    if(mouseCoordinates !== undefined)
-    {
-        mouseCoordinatesIdleTime = 0;
-        mouseCoordinatesNormalized.x = 2 * (mouseCoordinates.x / window.innerWidth - 0.5);
-        mouseCoordinatesNormalized.y = 2 * (mouseCoordinates.y / window.innerHeight - 0.5);
-    }
-}
-
 //----------------------------
 //---------- EVENTS ----------
 //----------------------------
 
 window.onresize = resize;
 window.onmousedown = mousedown;
-window.onmousemove = mousemove;
 window.onkeydown = keydown;
 window.onkeyup = keyup;
 window.oncontextmenu = function(event) { event.preventDefault(); };
@@ -913,10 +885,6 @@ let blackScreenOpacity = 0;
 let blackScreenOpacityWait = 0;
 let shadows = true;
 let timeScale;
-const mouseCoordinates = point(0, 0);
-const mouseCoordinatesNormalized = point(0, 0);
-const mouseCoordinatesNormalizedSmoothed = point(0, 0);
-let mouseCoordinatesIdleTime = 0;
 const keysPressed = [];
 let camera;
 const WORLD_RADIUS = 10000;
@@ -984,21 +952,10 @@ function reset()
 }
 
 function render()
-{    
+{
     //----------------------------
     //-------- MOVEMENT ----------
     //----------------------------
-    
-    mouseCoordinatesIdleTime++;
-    
-    if(mouseCoordinatesIdleTime >= 120)
-    {
-        mouseCoordinatesNormalized.x = 0;
-        mouseCoordinatesNormalized.y = 0;
-    }
-    
-    mouseCoordinatesNormalizedSmoothed.x = interpolateLinear(mouseCoordinatesNormalizedSmoothed.x, mouseCoordinatesNormalized.x, 0.02);
-    mouseCoordinatesNormalizedSmoothed.y = interpolateLinear(mouseCoordinatesNormalizedSmoothed.y, mouseCoordinatesNormalized.y, 0.02);
     
     // Slow down time.
     if(keysPressed.includes("-") || keysPressed.includes(","))
