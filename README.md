@@ -13,13 +13,13 @@ A slither.io-like game made in javascript with the canvas API.
 
 ```G``` - Toggle graphics performance mode.
 
-```(MINUS)``` - Slow down the global time scale of the game.
+```(COMMA_SIGN)``` - Slow down the global time scale of the game.
 
-```(PLUS)``` - Speed up the global time scale of the game.
+```(DOT_SIGN)``` - Speed up the global time scale of the game.
 
-```(LEFT CLICK)``` - Cycle the camera to the previous worm.
+```(LEFT_CLICK)``` - Cycle the camera to the previous worm.
 
-```(RIGHT CLICK)``` - Cycle the camera to the next worm.
+```(RIGHT_CLICK)``` - Cycle the camera to the next worm.
 
 ## Designed features
 
@@ -41,13 +41,10 @@ When worms pass over the end of the map, they die and change appearance.
 | 3           | Fourth     | Body              |
 | 4           | Fifth      | Body              |
 
-The direction of node ```0``` is either controlled by player input or an AI algorithm.
-
-Node ```0``` moves with a certain speed in the direction of the worm.
-
-For each node except the head node, in ascending order, the movement is as follows:
-
-Node ```n + 1``` moves in the relative direction of node ```n``` while keeping a constant distance.
+* Derivative (second) of rotation of ```Node Number``` ```0``` is either controlled by player input or an AI algorithm.
+* ```Node Number``` ```0``` moves with a certain speed in the direction of the worm.
+* For each node except the head node, in ascending order, the movement is as follows:
+* ```Node Number``` ```n + 1``` moves in the relative direction of Node Number ```n``` while keeping a constant distance.
 
 ## Challenges
 
