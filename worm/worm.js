@@ -1093,7 +1093,7 @@ function render()
     //------ WORLD RENDERING -----
     
     ctx.reset();
-    ctx.fillStyle = "#000000"
+    ctx.fillStyle = "#000000";
     ctx.fillRect(0, 0, gameWidth, gameHeight);
     
     ctx.translate(gameHalfWidth, gameHalfHeight);
