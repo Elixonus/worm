@@ -1622,11 +1622,10 @@ function render()
     // Draw the small minimap.
     if(!minimapExpanded)
     {
-        var region = new Path2D();
-        region.rect(gameWidth - minimapWidth - 10, gameHeight - minimapHeight - 10, minimapWidth, minimapHeight);
-        ctx.clip(region, "nonzero");
         ctx.translate(gameWidth - minimapHalfWidth - 10, gameHeight - minimapHalfHeight - 10);
-        ctx.fillStyle = "#000000";
+        ctx.rect(-minimapHalfWidth, -minimapHalfHeight, minimapWidth, minimapHeight);
+        ctx.clip();
+        ctx.fillStyle = "#000022";
         ctx.globalAlpha = 0.8;
         ctx.fillRect(-minimapHalfWidth, -minimapHalfHeight, minimapWidth, minimapHeight);
     }
@@ -1634,7 +1633,7 @@ function render()
     else
     {
         ctx.translate(gameHalfWidth, gameHalfHeight);
-        ctx.fillStyle = "#000000";
+        ctx.fillStyle = "#000022";
         ctx.globalAlpha = 0.8;
         ctx.fillRect(-gameHalfWidth, -gameHalfHeight, gameWidth, gameHeight);
     }
