@@ -1714,7 +1714,17 @@ function render()
         ctx.lineWidth = 20;
         ctx.strokeStyle = "#000000";
         ctx.beginPath();
-        ctx.roundRect(gameWidth - minimapWidth - 10, gameHeight - minimapHeight - 10, minimapWidth, minimapHeight, 20);
+        
+        if(ctx.roundRect)
+        {
+            ctx.roundRect(gameWidth - minimapWidth - 10, gameHeight - minimapHeight - 10, minimapWidth, minimapHeight, 20);
+        }
+
+        else
+        {
+            ctx.rect(gameWidth - minimapWidth - 10, gameHeight - minimapHeight - 10, minimapWidth, minimapHeight);
+        }
+
         ctx.stroke();
         ctx.lineWidth = 5;
         ctx.strokeStyle = "#222222";
