@@ -158,7 +158,7 @@ class Worm extends Filmable
     
     addNode(count = 1)
     {
-        // Add a number of nodes to the tail instantly, without breaking the space properties of the nodes.
+        // Adds a number of nodes to the tail instantly, without breaking the space properties of the nodes.
         // The algorithm works by backtracking from the last node with the separation distance a given number
         // of times.
 
@@ -178,6 +178,10 @@ class Worm extends Filmable
     
     addNodeSmooth(count = 1)
     {
+        // Adds a number of nodes to the tail smoothly, and without breaking the space properties of the nodes.
+        // The system responsible for making the growth transition smooth works by starting a node at the tail
+        // and incrementally increasing the separation distance closer to the normal separation distance.
+
         for(var n = 0; n < count; n++)
         {
             let tempLastNode = this.nodes[this.nodes.length - 1];
@@ -194,6 +198,7 @@ class Worm extends Filmable
     
     subtractNode(count)
     {
+        // Works like adding a node but instead a number of nodes is removed from the tail, instantly.
         if(count === undefined)
         {
             count = 1;
@@ -231,11 +236,6 @@ class Worm extends Filmable
     die()
     {
         this.dead = true;
-        
-        if(this.camera.filmedObject === this)
-        {
-            this.camera.filmedObject = null;
-        }
     }
         
     tick(wormCollection)
