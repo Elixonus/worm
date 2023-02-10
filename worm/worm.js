@@ -1029,18 +1029,11 @@ function render()
                 }
             }
             
-            var oldX = worm.nodes[0].x;
-            var oldY = worm.nodes[0].y;
-            
             worm.tick(worms);
             
             // Check if any worm falls off the circle map.
             if(!pointInCircle(worm.nodes[0], WORLD_CIRCLE))
             {
-                var newX = worm.nodes[0].x;
-                var newY = worm.nodes[0].y;
-                var intersection = intersectCircleLineSegment(circle(point(0, 0), WORLD_RADIUS), line(point(oldX, oldY), point(newX, newY)));
-                worm.moveTo(intersection[0]);
                 worm.die();
             }
         }
@@ -1114,7 +1107,7 @@ function render()
         ctx.lineTo(2 * WORLD_RADIUS - WORLD_RADIUS, n * GRID_SIZE - WORLD_RADIUS);
         ctx.stroke();
     }
-
+    
     ctx.fillStyle = "#000000";
     ctx.strokeStyle = "#333333";
     ctx.lineWidth = 3;
@@ -1625,6 +1618,7 @@ function render()
     if(!minimapExpanded)
     {
         ctx.translate(gameWidth - minimapHalfWidth - 10, gameHeight - minimapHalfHeight - 10);
+        ctx.beginPath();
         ctx.rect(-minimapHalfWidth, -minimapHalfHeight, minimapWidth, minimapHeight);
         ctx.clip();
         ctx.fillStyle = "#000022";
@@ -1697,9 +1691,8 @@ function render()
                 ctx.strokeStyle = color;
                 ctx.shadowColor = color;
                 ctx.beginPath();
-                ctx.moveTo(worm.nodes[0].x, worm.nodes[0].y);
                 
-                for(var m = 1; m < worm.nodes.length; m++)
+                for(var m = 0; m < worm.nodes.length; m++)
                 {
                     ctx.lineTo(worm.nodes[m].x, worm.nodes[m].y);
                 }
@@ -1731,7 +1724,6 @@ function render()
         ctx.lineWidth = 5;
         ctx.strokeStyle = "#222222";
         ctx.stroke();
-        //ctx.strokeRect(gameWidth - minimapWidth - 10, gameHeight - minimapHeight - 10, minimapWidth, minimapHeight);
     }
 
     request = requestAnimationFrame(render);
