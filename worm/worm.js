@@ -26,11 +26,13 @@ class Filmable
 {
     constructor(camera)
     {
+        // Filmable extension class should apply to any game object that may be followed by the camera.
         this.camera = camera;
     }
 
     follow()
     {
+        // Used to set the common camera instance to point to this object which extends this class.
         this.camera.filmedObject = this;
         this.updateCameraTarget();
     }
@@ -45,19 +47,23 @@ class Worm extends Filmable
 {
     constructor(camera)
     {
+        // Worm class used to create a worm object that has properties like blink used as storage for rendering a 
+        // realistic blinking effect, and happiness which increases with worm interaction is also rendered separately.
+        // The property controllable describes whether the user has keyboard input control over the worm (many worms
+        // can be set to be controlled by the player due to the nature of class). Important: the nodes array contains
+        // a list of the node objects the worm is made of. Each node object contains a position, rotation, rotation
+        // velocity, as well as additional properties to smoothen the worm growth transition.
         super(camera);
         this.blink = 0;
         this.blinkDirection = 0;
         this.blinkWait = Math.round(Math.random() * 250) + 10;
         this.controllable;
         this.dead = false;
-        this.energiesCollected = 0;
         this.happiness = 0;
         this.happinessAchieved = 0;
         this.happinessDirection = -1;
         this.happinessWait = 0;
         this.hue = 0;
-        this.maxLength = 0;
         this.nodes = [];
         this.type = 1;
         this.turn = 0;
@@ -152,8 +158,6 @@ class Worm extends Filmable
                 r: tempLastNode.r
             });
         }
-        
-        this.maxLength = clampMin(this.nodes.length, this.maxLength);
     }
     
     addNodeSmooth(count = 1)
@@ -170,8 +174,6 @@ class Worm extends Filmable
                 r: tempLastNode.r
             });
         }
-        
-        this.maxLength = clampMin(this.nodes.length, this.maxLength);
     }
     
     subtractNode(count)
@@ -673,14 +675,8 @@ class Camera
     moveToSmooth(p)
     {
         // Perform continuous linear interpolation from current point to target.
-        var tempActualSpeed = this.MAX_SPEED;
-        var tempAngle = Math.atan2(p.y - this.y, p.x - this.x);
-        var tempCosine = Math.abs(tempActualSpeed * Math.cos(tempAngle));
-        var tempSine = Math.abs(tempActualSpeed * Math.sin(tempAngle));
-        var oldX = this.x;
-        var oldY = this.y;
-        this.x = interpolateLinear(this.x, clamp(p.x, this.x - tempCosine, this.x + tempCosine), 0.2);
-        this.y = interpolateLinear(this.y, clamp(p.y, this.y - tempSine, this.y + tempSine), 0.2);
+        this.x = interpolateLinear(this.x, p.x, 0.2);
+        this.y = interpolateLinear(this.y, p.y, 0.2);
     }
     
     tick()
@@ -887,7 +883,7 @@ let shadows = true;
 let timeScale;
 const keysPressed = [];
 let camera;
-const WORLD_RADIUS = 10000;
+const WORLD_RADIUS = 2500;
 const WORLD_CIRCLE = circle(point(0, 0), WORLD_RADIUS);
 const GRID_SIZE = 100;
 const WORM_BOT_COUNT = 100;
@@ -1076,7 +1072,6 @@ function render()
             if(!energy.isDecaying)
             {
                 energy.decay();
-                closestWorm.energiesCollected++;
                 closestWorm.addNodeSmooth(5);
             }
         }
