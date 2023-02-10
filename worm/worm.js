@@ -52,7 +52,9 @@ class Worm extends Filmable
         // The property controllable describes whether the user has keyboard input control over the worm (many worms
         // can be set to be controlled by the player due to the nature of class). Important: the nodes array contains
         // a list of the node objects the worm is made of. Each node object contains a position, rotation, rotation
-        // velocity, as well as additional properties to smoothen the worm growth transition.
+        // velocity, as well as additional properties to smoothen the worm growth transition. The type property is
+        // used to distinguish worms of different appearances and the turn property is basically the normalized angular
+        // velocity of the head node.
         super(camera);
         this.blink = 0;
         this.blinkDirection = 0;
@@ -68,6 +70,7 @@ class Worm extends Filmable
         this.type = 1;
         this.turn = 0;
         
+        // The first node is initialized with a random position and rotation within the bounds of the map.
         var tempRotation = 2 * Math.PI * Math.random();
         var tempRadius = WORLD_RADIUS * Math.sqrt(Math.random());
         this.nodes.push(
@@ -83,10 +86,13 @@ class Worm extends Filmable
     
     setControllable(controllable = true)
     {
+        // Make the worm be controllable by the player with keyboard interaction.
         if(controllable !== this.controllable)
         {
             if(controllable && this.controllable === false)
             {
+                // Delete unnecessary AI properties not needed for player controlled worm if needed.
+
                 if(this.hasOwnProperty("controllable"))
                 {
                     delete this.botWait;
@@ -96,6 +102,10 @@ class Worm extends Filmable
             
             else if(!controllable)
             {
+                // Add necessary AI properties to the worm object. More specifically, the bot wait value is used to control
+                // the speed of the thinking loop; when it reaches 0, the bot makes a decision with the sensory input at that
+                // time and resets the counter, repeating the process.
+
                 this.botWait = 0;
                 this.botDesiredDirection = Math.random() * 2 * Math.PI;
             }
@@ -116,6 +126,8 @@ class Worm extends Filmable
     
     setLength(length)
     {
+        // Set the configuration length of the worm to the given parameter without breaking the space properties
+        // of the nodes. This function changes the length instantly, not smoothly.
         var lengthDifference = Math.abs(length - this.nodes.length);
         
         if(length < this.nodes.length)
@@ -146,6 +158,10 @@ class Worm extends Filmable
     
     addNode(count = 1)
     {
+        // Add a number of nodes to the tail instantly, without breaking the space properties of the nodes.
+        // The algorithm works by backtracking from the last node with the separation distance a given number
+        // of times.
+
         for(var n = 0; n < count; n++)
         {
             let tempLastNode = this.nodes[this.nodes.length - 1];
@@ -883,7 +899,7 @@ let shadows = true;
 let timeScale;
 const keysPressed = [];
 let camera;
-const WORLD_RADIUS = 2500;
+const WORLD_RADIUS = 10000;
 const WORLD_CIRCLE = circle(point(0, 0), WORLD_RADIUS);
 const GRID_SIZE = 100;
 const WORM_BOT_COUNT = 100;
