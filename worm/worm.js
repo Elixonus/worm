@@ -69,7 +69,7 @@ class Worm extends Filmable
         this.nodes = [];
         this.type = 1;
         this.turn = 0;
-        
+
         // The first node is initialized with a random position and rotation within the bounds of the map.
         var tempRotation = 2 * Math.PI * Math.random();
         var tempRadius = WORLD_RADIUS * Math.sqrt(Math.random());
@@ -92,7 +92,6 @@ class Worm extends Filmable
             if(controllable && this.controllable === false)
             {
                 // Delete unnecessary AI properties not needed for player controlled worm if needed.
-
                 if(this.hasOwnProperty("controllable"))
                 {
                     delete this.botWait;
@@ -105,7 +104,6 @@ class Worm extends Filmable
                 // Add necessary AI properties to the worm object. More specifically, the bot wait value is used to control
                 // the speed of the thinking loop; when it reaches 0, the bot makes a decision with the sensory input at that
                 // time and resets the counter, repeating the process.
-
                 this.botWait = 0;
                 this.botDesiredDirection = Math.random() * 2 * Math.PI;
             }
@@ -161,7 +159,6 @@ class Worm extends Filmable
         // Adds a number of nodes to the tail instantly, without breaking the space properties of the nodes.
         // The algorithm works by backtracking from the last node with the separation distance a given number
         // of times.
-
         for(var n = 0; n < count; n++)
         {
             let tempLastNode = this.nodes[this.nodes.length - 1];
@@ -181,7 +178,6 @@ class Worm extends Filmable
         // Adds a number of nodes to the tail smoothly, and without breaking the space properties of the nodes.
         // The system responsible for making the growth transition smooth works by starting a node at the tail
         // and incrementally increasing the separation distance closer to the normal separation distance.
-
         for(var n = 0; n < count; n++)
         {
             let tempLastNode = this.nodes[this.nodes.length - 1];
@@ -243,6 +239,7 @@ class Worm extends Filmable
         if(!this.controllable)
         {
             //--------- AI CODE ----------
+            
             this.botWait -= timeScale;
             
             if(this.botWait <= 0)
@@ -386,6 +383,7 @@ class Worm extends Filmable
             }
         }
         
+        // Happiness control loop.
         if(foundHappiness)
         {
             if(this.happinessWait < 50)
@@ -442,6 +440,7 @@ class Worm extends Filmable
         
         if(this.blinkWait <= 0)
         {
+            // Blink faster if happy.
             if(this.happiness < 0.5)
             {
                 this.blinkWait = Math.round(Math.random() * 250) + 100;
@@ -469,11 +468,13 @@ class Worm extends Filmable
             this.blinkDirection = 0;
         }
         
+        // Update shared camera instance to follow the position of current worm if following this worm instance.
         this.updateCameraTarget();
     }
     
     moveTo(p)
     {
+        // Move the worm instantly and abruptly with the head node teleporting to the given parameter point.
         for(var n = 1; n < this.nodes.length; n++)
         {
             this.nodes[n].x += (p.x - this.nodes[0].x);
@@ -486,7 +487,9 @@ class Worm extends Filmable
     
     inGame(camera)
     {
-        // Returns whether the worm should be rendered on the main view.
+        // Returns whether the worm should be rendered on the main game view. Works by checking to see
+        // if at least one node is in the viewport box. Calculation accounts for the maximum size shape
+        // of the worm and the glow radius.
         var tempShapePadding = 80;
         var tempGlowPadding = clampMin(20 * camera.zoom, 20);
         var tempPadding = tempShapePadding * camera.zoom + tempGlowPadding;
@@ -504,7 +507,9 @@ class Worm extends Filmable
     
     inMinimap(camera, expanded)
     {
-        // Returns whether the worm should be rendered on the minimap.
+        // Returns whether the worm should be rendered on the minimap view. Works the same way as the
+        // previous method except calculates within a minimap box instead of main box. If the expanded
+        // parameter is set to true the algorithm checks within an expanded minimap box.
         var tempShapePadding = 80;
         var tempGlowPadding = clampMin(20 * camera.zoom, 20);
         var tempPadding = tempShapePadding * camera.zoom * minimapZoom + tempGlowPadding;
@@ -530,6 +535,8 @@ class Worm extends Filmable
     
     updateCameraTarget()
     {
+        // Set the position of the camera to the position of the head node if this worm instance is
+        // being filmed.
         if(this.camera.filmedObject == this)
         {
             this.camera.setTarget(this.nodes[0]);
@@ -667,6 +674,9 @@ class Camera
 {
     constructor(p = point(0, 0), zoom = 1)
     {
+        // Camera instance used to store the position and zoom of the current view. Currently, one
+        // camera per game instance is allowed but abstractly, multiple camera instances can be used
+        // to create a split screen effect if the rendering code allows.
         this.filmedObject = null;
         this.x = p.y;
         this.y = p.x;
@@ -690,7 +700,8 @@ class Camera
     
     moveToSmooth(p)
     {
-        // Perform continuous linear interpolation from current point to target.
+        // Perform continuous linear interpolation from current point to target point. The outcome is that
+        // the camera movement has an exponentially decaying ease-out transition.
         this.x = interpolateLinear(this.x, p.x, 0.2);
         this.y = interpolateLinear(this.y, p.y, 0.2);
     }
