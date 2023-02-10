@@ -334,12 +334,12 @@ class Worm extends Filmable
                     }
                 }
 
-                // Keep the rest of the nodes close to the node in front.
+                // Keep the subsequent nodes close to the leading nodes.
                 tempCurrentNode.r = Math.PI - Math.atan2(tempCurrentNode.y - tempPreviousNode.y, tempCurrentNode.x - tempPreviousNode.x);
                 tempCurrentNode.x = tempPreviousNode.x - 5 * Math.cos(tempCurrentNode.r);
                 tempCurrentNode.y = tempPreviousNode.y + 5 * Math.sin(tempCurrentNode.r);
                 
-                // Measure the distance between nodes in order to avoid crowding.
+                // Measure the distance between nodes to determine if an action should be taken to prevent crowding.
                 if(n > 1)
                 {
                     var tempPreviousPreviousNode = this.nodes[n - 2];
@@ -1603,7 +1603,9 @@ function render()
                         ctx.fill();
                         ctx.restore();
                         break;
-                }                        
+
+                    // Additional worm types can be added here for rendering.
+                }
             }
         }
     }
@@ -1614,7 +1616,7 @@ function render()
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.save();
 
-    // Draw the small minimap.
+    // Switch the context to rendering the minimized minimap.
     if(!minimapExpanded)
     {
         ctx.translate(gameWidth - minimapHalfWidth - 10, gameHeight - minimapHalfHeight - 10);
@@ -1625,7 +1627,7 @@ function render()
         ctx.globalAlpha = 0.8;
         ctx.fillRect(-minimapHalfWidth, -minimapHalfHeight, minimapWidth, minimapHeight);
     }
-    // Draw the fullscreen minimap.
+    // Switch the context to rendering the maximized minimap.
     else
     {
         ctx.translate(gameHalfWidth, gameHalfHeight);
@@ -1637,11 +1639,15 @@ function render()
     ctx.scale(camera.zoom * minimapZoom, camera.zoom * minimapZoom);
     ctx.translate(-camera.x, -camera.y);
     // MINIMAP SPACE
+
+    // Rendering the world either in the minimized or maximized minimap.
     ctx.strokeStyle = "#333333";
     ctx.lineWidth = 25;
     ctx.beginPath();
     ctx.arc(0, 0, WORLD_RADIUS, 0, 2 * Math.PI);
     ctx.stroke();
+    
+    // Rendering the energies on the minimap as colored dots with their respective colors filled in.
     ctx.shadowBlur = getShadows(clampMin(20 * camera.zoom, 20));
     
     for(var n = 0; n < energies.length; n++)
@@ -1674,6 +1680,8 @@ function render()
         }
     }
     
+    // Rendering the worms on the minimap as colored paths with their respective colors used for the stroke call.
+
     ctx.lineWidth = 50;
     ctx.lineCap = "round";
     ctx.globalAlpha = 1;
@@ -1704,12 +1712,14 @@ function render()
     
     ctx.restore();
 
+    // Rendering the minimized minimap border for better styling.
     if(!minimapExpanded)
     {
         ctx.lineWidth = 20;
         ctx.strokeStyle = "#000000";
         ctx.beginPath();
         
+        // Checking whether the rounded rectangle function is supported on the client's browser.
         if(ctx.roundRect)
         {
             ctx.roundRect(gameWidth - minimapWidth - 10, gameHeight - minimapHeight - 10, minimapWidth, minimapHeight, 20);
@@ -1726,6 +1736,7 @@ function render()
         ctx.stroke();
     }
 
+    // Repeating the draw loop and storing the request.
     request = requestAnimationFrame(render);
 }
 
@@ -1749,7 +1760,6 @@ function distanceManhattan(p1, p2 = point(0, 0))
     return Math.abs(p1.x - p2.x) + Math.abs(p1.y - p2.y);
 }
 
-// For fluid worm movement and camera animation.
 function interpolateLinear(startingValue, endingValue, t)
 {
     return (startingValue + (endingValue - startingValue) * t);
@@ -1788,43 +1798,6 @@ function pointInRectangle(point, rectangle, padding = 0)
     }
     
     return false;
-}
-
-function intersectCircleLineSegment(circle, line)
-{
-    var a, b, c, d, u1, u2, ret, retP1, retP2, v1, v2;
-    v1 = {};
-    v2 = {};
-    v1.x = line.p2.x - line.p1.x;
-    v1.y = line.p2.y - line.p1.y;
-    v2.x = line.p1.x - circle.center.x;
-    v2.y = line.p1.y - circle.center.y;
-    b = (v1.x * v2.x + v1.y * v2.y);
-    c = 2 * (v1.x * v1.x + v1.y * v1.y);
-    b *= -2;
-    d = Math.sqrt(b * b - 2 * c * (v2.x * v2.x + v2.y * v2.y - circle.radius * circle.radius));
-    if(isNaN(d))
-    {
-        return [];
-    }
-    u1 = (b - d) / c;
-    u2 = (b + d) / c;    
-    retP1 = {};
-    retP2 = {}  
-    ret = [];
-    if(u1 <= 1 && u1 >= 0)
-    {
-        retP1.x = line.p1.x + v1.x * u1;
-        retP1.y = line.p1.y + v1.y * u1;
-        ret[0] = retP1;
-    }
-    if(u2 <= 1 && u2 >= 0)
-    {
-        retP2.x = line.p1.x + v1.x * u2;
-        retP2.y = line.p1.y + v1.y * u2;
-        ret[ret.length] = retP2;
-    }       
-    return ret;
 }
 
 function intersectCircleCircle(circle1, circle2)
