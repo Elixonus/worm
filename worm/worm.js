@@ -72,7 +72,7 @@ class Worm extends Filmable
 
         // The first node is initialized with a random position and rotation within the bounds of the map.
         var tempRotation = 2 * Math.PI * Math.random();
-        var tempRadius = WORLD_RADIUS * Math.sqrt(Math.random());
+        var tempRadius = 0.9 * WORLD_RADIUS * Math.sqrt(Math.random());
         this.nodes.push(
         {
             active: true,
@@ -338,34 +338,6 @@ class Worm extends Filmable
                 tempCurrentNode.r = Math.PI - Math.atan2(tempCurrentNode.y - tempPreviousNode.y, tempCurrentNode.x - tempPreviousNode.x);
                 tempCurrentNode.x = tempPreviousNode.x - 5 * Math.cos(tempCurrentNode.r);
                 tempCurrentNode.y = tempPreviousNode.y + 5 * Math.sin(tempCurrentNode.r);
-                
-                // Measure the distance between nodes to determine if an action should be taken to prevent crowding.
-                if(n > 1)
-                {
-                    var tempPreviousPreviousNode = this.nodes[n - 2];
-                    var nodeDistance = distance(tempCurrentNode, tempPreviousPreviousNode);
-                    
-                    if(nodeDistance < 9.993)
-                    {
-                        var circle1 = circle(tempPreviousNode, 5);
-                        var circle2 = circle(tempPreviousPreviousNode, 9.993);
-                        var intersections = intersectCircleCircle(circle1, circle2);
-                        
-                        // Separate nodes by a certain threshold distance (smoothly).
-                        if(distance(tempCurrentNode, intersections[0]) < distance(tempCurrentNode, intersections[1]))
-                        {
-                            tempCurrentNode.x = intersections[0].x;
-                            tempCurrentNode.y = intersections[0].y;
-                        }
-                        else
-                        {
-                            tempCurrentNode.x = intersections[1].x;
-                            tempCurrentNode.y = intersections[1].y;
-                        }
-                        
-                        tempCurrentNode.r = Math.PI - Math.atan2(tempCurrentNode.y - tempPreviousNode.y, tempCurrentNode.x - tempPreviousNode.x);
-                    }
-                }
             }
         }
         
@@ -1798,32 +1770,6 @@ function pointInRectangle(point, rectangle, padding = 0)
     }
     
     return false;
-}
-
-function intersectCircleCircle(circle1, circle2)
-{
-    var a, dx, dy, d, h, rx, ry;
-    var x0 = circle1.center.x, y0 = circle1.center.y, r0 = circle1.radius, x1 = circle2.center.x, y1 = circle2.center.y, r1 = circle2.radius, x2, y2;
-    dx = x1 - x0;
-    dy = y1 - y0;
-    d = Math.sqrt((dy*dy) + (dx*dx));
-    if (d > (r0 + r1)) {
-        return false;
-    }
-    if (d < Math.abs(r0 - r1)) {
-        return false;
-    }
-    a = ((r0*r0) - (r1*r1) + (d*d)) / (2.0 * d) ;
-    x2 = x0 + (dx * a/d);
-    y2 = y0 + (dy * a/d);
-    h = Math.sqrt((r0*r0) - (a*a));
-    rx = -dy * (h/d);
-    ry = dx * (h/d);
-    var xi = x2 + rx;
-    var xi_prime = x2 - rx;
-    var yi = y2 + ry;
-    var yi_prime = y2 - ry;
-    return [point(xi, yi), point(xi_prime, yi_prime)];
 }
 
 function clampMin(num, min)
