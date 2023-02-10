@@ -918,7 +918,7 @@ let camera;
 const WORLD_RADIUS = 10000;
 const WORLD_CIRCLE = circle(point(0, 0), WORLD_RADIUS);
 const GRID_SIZE = 100;
-const WORM_BOT_COUNT = 100;
+const WORM_BOT_COUNT = 99;
 const ENERGY_COUNT = 500;
 const worms = [];
 const energies = [];
@@ -1093,6 +1093,7 @@ function render()
     ctx.fillStyle = "#000000";
     ctx.fillRect(0, 0, gameWidth, gameHeight);
     
+    // Transform into the game space dependent on camera properties.
     ctx.translate(gameHalfWidth, gameHalfHeight);
     ctx.scale(camera.zoom, camera.zoom);
     ctx.translate(-camera.x, -camera.y);
@@ -1101,7 +1102,7 @@ function render()
     ctx.strokeStyle = "#333333";
     ctx.lineWidth = 2;
     
-    // Render the circle map grid.
+    // Render the interior grid of the circle map.
     for(var n = 1; n < 2 * WORLD_RADIUS / GRID_SIZE; n++)
     {
         ctx.beginPath();
@@ -1114,6 +1115,11 @@ function render()
         ctx.stroke();
     }
 
+    ctx.fillStyle = "#000000";
+    ctx.strokeStyle = "#333333";
+    ctx.lineWidth = 3;
+
+    // Render the outline of the circle map.
     ctx.beginPath();
     ctx.arc(0, 0, WORLD_RADIUS, Math.PI, 0);
     ctx.lineTo(WORLD_RADIUS, -WORLD_RADIUS);
@@ -1126,7 +1132,6 @@ function render()
     ctx.lineTo(WORLD_RADIUS, WORLD_RADIUS);
     ctx.closePath();
     ctx.fill();
-    ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.arc(0, 0, WORLD_RADIUS, 0, 2 * Math.PI);
     ctx.stroke();
