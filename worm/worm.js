@@ -708,7 +708,7 @@ class Camera
     
     tick()
     {
-        // Camera movement and zoom logic.
+        // Calls camera movement logic used to set the camera properties to the target.
         this.moveToSmooth(point(this.targetX, this.targetY));
     }
 }
@@ -719,6 +719,8 @@ class Camera
 
 CanvasRenderingContext2D.prototype.reset = function()
 {
+    // Canvas context override function that resets non-transformational properties of the canvas.
+    // Certain browser(s) do not have the build in reset function, this is only a safety measure.
     this.direction = "ltr";
     this.fillStyle = "#000000";
     this.filter = "none";
@@ -740,7 +742,7 @@ CanvasRenderingContext2D.prototype.reset = function()
 
 function getShadows()
 {
-    // Returns the shadowblur multiplier used for rendering based on the settings.
+    // Returns the shadow blur multiplier used for rendering based on user settings.
     if(shadows)
     {
         return clampMin(20 * camera.zoom, 20);
@@ -754,11 +756,13 @@ function getShadows()
 
 function hueString(hue)
 {
+    // Creates a color string of a given hue and maximum perceived color intensity.
     return ("hsl(" + hue + ", 100%, 50%)");
 }
 
 function resize()
 {
+    // Resize the fixed canvas dimensions with code to maximize view area while keeping aspect ratio 16:9.
     const windowWidth = window.innerWidth;
     const windowHeight = window.innerHeight;
     
@@ -778,6 +782,7 @@ function resize()
 
 function mousedown(event)
 {
+    // Register a mouse down event.
     if(!event)
     {
         event = window.event;
@@ -820,6 +825,7 @@ function mousedown(event)
 
 function keydown(event)
 {
+    // Register a key down event and add the pressed key value to a stack.
     if(!event)
     {
         event = window.event;
@@ -858,6 +864,7 @@ function keydown(event)
 
 function keyup(event)
 {
+    // Register a key up event and remove the lifted key value from the stack.
     if(!event)
     {
         event = window.event;
@@ -882,14 +889,15 @@ window.onmousedown = mousedown;
 window.onkeydown = keydown;
 window.onkeyup = keyup;
 window.oncontextmenu = function(event) { event.preventDefault(); };
+// Prevent right click showing menu.
 
 //-----------------------------------
 //--- GLOBAL VARIABLE DEFINITIONS ---
 //-----------------------------------
 
 let request;
-const requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
-const cancelAnimationFrame = window.cancelAnimationFrame || window.mozCancelAnimationFrame || window.webkitCancelAnimationFrame || window.msCancelAnimationFrame;
+const requestAnimationFrame = window.requestAnimationFrame;
+const cancelAnimationFrame = window.cancelAnimationFrame;
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d", {alpha: false});
 const gameWidth = 1920;
@@ -903,9 +911,6 @@ const minimapHalfHeight = 100;
 let minimapZoom;
 let minimapFired;
 let minimapExpanded;
-let blackScreenOpacityDirection = 0;
-let blackScreenOpacity = 0;
-let blackScreenOpacityWait = 0;
 let shadows = true;
 let timeScale;
 const keysPressed = [];
@@ -1040,37 +1045,7 @@ function render()
             }
         }
     }
-    
-    // Show blackscreen if the player worm dies.
-    if(blackScreenOpacityDirection === -1)
-    {
-        if(blackScreenOpacity > 0)
-        {
-            blackScreenOpacity -= timeScale / 60;
-            
-            if(blackScreenOpacity < 0)
-            {
-                blackScreenOpacity = 0;
-            }
-        }
-    }
-    
-    else if(blackScreenOpacityDirection === 1)
-    {
-        if(blackScreenOpacity < 1)
-        {
-            blackScreenOpacity += timeScale / 60;
-            
-            if(blackScreenOpacity >= 1)
-            {
-                blackScreenOpacity = 2 - blackScreenOpacity;
-                blackScreenOpacityDirection = -1;
-                reset();
-                return;
-            }
-        }
-    }
-    
+
     // High level energy decay and worm eat logic.
     for(var n = 0; n < energies.length; n++)
     {
@@ -1753,10 +1728,6 @@ function render()
         ctx.stroke();
         //ctx.strokeRect(gameWidth - minimapWidth - 10, gameHeight - minimapHeight - 10, minimapWidth, minimapHeight);
     }
-
-    ctx.reset();
-    ctx.globalAlpha = blackScreenOpacity;
-    ctx.fillRect(0, 0, gameWidth, gameHeight);
 
     request = requestAnimationFrame(render);
 }
