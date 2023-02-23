@@ -259,24 +259,22 @@ class Worm extends Filmable
                     }
                 }
 
-                closestEnergy = energies[0];
-
                 if(closestEnergy !== null)
                 {
                     this.botDesiredDirection = (Math.atan2(this.nodes[0].y - closestEnergy.y, this.nodes[0].x - closestEnergy.x) + 2 * Math.PI) % (2 * Math.PI);
                 }
 
-                this.botWait = Math.round(Math.random() * 0 + 1);
+                this.botWait = Math.round(Math.random() * 20 + 30);
             }
             
             var angleDifference = calculateAngleDifference(this.nodes[0].r, this.botDesiredDirection);
 
-            if(angleDifference < -Math.PI / 40)
+            if(angleDifference < -Math.PI / 4)
             {
                 this.turn = -1;
             }
             
-            else if(angleDifference > Math.PI / 40)
+            else if(angleDifference > Math.PI / 4)
             {
                 this.turn = 1;
             }
