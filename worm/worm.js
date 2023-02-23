@@ -105,7 +105,7 @@ class Worm extends Filmable
                 // the speed of the thinking loop; when it reaches 0, the bot makes a decision with the sensory input at that
                 // time and resets the counter, repeating the process.
                 this.botWait = 0;
-                this.botDesiredDirection = Math.random() * 2 * Math.PI;
+                this.botDesiredDirection = this.r;
             }
             
             this.controllable = controllable;
@@ -167,7 +167,7 @@ class Worm extends Filmable
                 active: true,
                 activeTime: 1,
                 x: tempLastNode.x - 20 * Math.cos(tempLastNode.r),
-                y: tempLastNode.y + 20 * Math.sin(tempLastNode.r),
+                y: tempLastNode.y - 20 * Math.sin(tempLastNode.r),
                 r: tempLastNode.r
             });
         }
@@ -244,20 +244,41 @@ class Worm extends Filmable
             
             if(this.botWait <= 0)
             {
-                var error = (Math.random() - 0.5) / 2;
-                this.botDesiredDirection += (Math.random() - 0.5) * Math.PI + error;
-                this.botWait = Math.round(Math.random() * 30 + 20);
+                let closestEnergy = null;
+                let closestDistance = null;
+
+                for(let n = 0; n < energies.length; n++)
+                {
+                    const energy = energies[n];
+                    let currentDistance = distance(this.nodes[0], energy);
+
+                    if(((closestEnergy === null && currentDistance < 1000) || currentDistance < 0.5 * closestDistance) && !energy.isDestroyed)
+                    {
+                        closestEnergy = energy;
+                        closestDistance = currentDistance;
+                    }
+                }
+
+                closestEnergy = energies[0];
+
+                if(closestEnergy !== null)
+                {
+                    this.botDesiredDirection = (Math.atan2(this.nodes[0].y - closestEnergy.y, this.nodes[0].x - closestEnergy.x) + 2 * Math.PI) % (2 * Math.PI);
+                }
+
+                this.botWait = Math.round(Math.random() * 0 + 1);
             }
             
             var angleDifference = calculateAngleDifference(this.nodes[0].r, this.botDesiredDirection);
-            if(angleDifference < -Math.PI / 4)
-            {
-                this.turn = 1;
-            }
-            
-            else if(angleDifference > Math.PI / 4)
+
+            if(angleDifference < -Math.PI / 40)
             {
                 this.turn = -1;
+            }
+            
+            else if(angleDifference > Math.PI / 40)
+            {
+                this.turn = 1;
             }
             
             else
@@ -306,7 +327,7 @@ class Worm extends Filmable
         tempFirstNode.r += tempFirstNode.rs * timeScale;
         tempFirstNode.r %= (2 * Math.PI);
         tempFirstNode.x += 3 * Math.cos(tempFirstNode.r) * timeScale;
-        tempFirstNode.y -= 3 * Math.sin(tempFirstNode.r) * timeScale;
+        tempFirstNode.y += 3 * Math.sin(tempFirstNode.r) * timeScale;
         
         // Move the rest of the nodes.
         for(var n = 1; n < this.nodes.length; n++)
@@ -1060,6 +1081,7 @@ function render()
     
     // Transform into the game space dependent on camera properties.
     ctx.translate(gameHalfWidth, gameHalfHeight);
+    ctx.scale(1, -1);
     ctx.scale(camera.zoom, camera.zoom);
     ctx.translate(-camera.x, -camera.y);
     // GAME SPACE
@@ -1267,7 +1289,7 @@ function render()
                     // Render the normal worm.
                     case 1:
                         ctx.beginPath();
-                        ctx.arc(worm.nodes[0].x, worm.nodes[0].y, 25, -(worm.nodes[0].r + Math.PI / 2), -(worm.nodes[0].r - Math.PI / 2));
+                        ctx.arc(worm.nodes[0].x, worm.nodes[0].y, 25, worm.nodes[0].r - Math.PI / 2, worm.nodes[0].r + Math.PI / 2);
                         for(var m = 1; m < worm.nodes.length - 1; m++)
                         {
                             ctx.save();
@@ -1276,7 +1298,7 @@ function render()
                             ctx.lineTo(0, 25);
                             ctx.restore();
                         }
-                        ctx.arc(worm.nodes[worm.nodes.length - 1].x, worm.nodes[worm.nodes.length - 1].y, 25, -(worm.nodes[worm.nodes.length - 1].r - Math.PI / 2), -(worm.nodes[worm.nodes.length - 1].r + Math.PI / 2));
+                        ctx.arc(worm.nodes[worm.nodes.length - 1].x, worm.nodes[worm.nodes.length - 1].y, 25, -worm.nodes[worm.nodes.length - 1].r + Math.PI / 2, -worm.nodes[worm.nodes.length - 1].r - Math.PI / 2);
                         for(var m = worm.nodes.length - 2; m > 0; m--)
                         {
                             ctx.save();
@@ -1303,7 +1325,7 @@ function render()
                         var interpolation3 = interpolateQuadratic(4, 19, worm.happiness);
                         ctx.save();
                         ctx.translate(worm.nodes[0].x, worm.nodes[0].y);
-                        ctx.rotate(-worm.nodes[0].r);
+                        ctx.rotate(worm.nodes[0].r);
                         ctx.beginPath();
                         ctx.moveTo(interpolation1, interpolation2);
                         ctx.bezierCurveTo(interpolation3, -7, interpolation3, 7, interpolation1, -interpolation2);
@@ -1329,7 +1351,7 @@ function render()
                     // Render the mechanical worm.
                     case 2:
                         ctx.beginPath();
-                        ctx.arc(worm.nodes[0].x, worm.nodes[0].y, 25, -(worm.nodes[0].r + Math.PI / 2), -(worm.nodes[0].r - Math.PI / 2));
+                        ctx.arc(worm.nodes[0].x, worm.nodes[0].y, 25, worm.nodes[0].r - Math.PI / 2, worm.nodes[0].r + Math.PI / 2);
                         for(var m = 1; m < worm.nodes.length - 1; m++)
                         {
                             ctx.save();
@@ -1351,7 +1373,7 @@ function render()
                             
                             ctx.restore();
                         }
-                        ctx.arc(worm.nodes[worm.nodes.length - 1].x, worm.nodes[worm.nodes.length - 1].y, 25, -(worm.nodes[worm.nodes.length - 1].r - Math.PI / 2), -(worm.nodes[worm.nodes.length - 1].r + Math.PI / 2));
+                        ctx.arc(worm.nodes[worm.nodes.length - 1].x, worm.nodes[worm.nodes.length - 1].y, 25, -worm.nodes[worm.nodes.length - 1].r + Math.PI / 2, -worm.nodes[worm.nodes.length - 1].r - Math.PI / 2);
                         for(var m = worm.nodes.length - 2; m > 0; m--)
                         {
                             ctx.save();
@@ -1391,7 +1413,7 @@ function render()
                         var interpolation3 = interpolateQuadratic(4, 19, worm.happiness);
                         ctx.save();
                         ctx.translate(worm.nodes[0].x, worm.nodes[0].y);
-                        ctx.rotate(-worm.nodes[0].r);
+                        ctx.rotate(worm.nodes[0].r);
                         ctx.beginPath();
                         ctx.moveTo(interpolation1, interpolation2);
                         ctx.bezierCurveTo(interpolation3, -7, interpolation3, 7, interpolation1, -interpolation2);
@@ -1417,7 +1439,7 @@ function render()
                     // Render the alien worm.
                     case 3:
                         ctx.beginPath();
-                        ctx.arc(worm.nodes[0].x, worm.nodes[0].y, 25, -(worm.nodes[0].r + Math.PI / 2), -(worm.nodes[0].r - Math.PI / 2));
+                        ctx.arc(worm.nodes[0].x, worm.nodes[0].y, 25, worm.nodes[0].r - Math.PI / 2, worm.nodes[0].r + Math.PI / 2);
                         for(var m = 1; m < worm.nodes.length - 1; m++)
                         {
                             ctx.save();
@@ -1426,7 +1448,7 @@ function render()
                             ctx.lineTo(0, 25);
                             ctx.restore();
                         }
-                        ctx.arc(worm.nodes[worm.nodes.length - 1].x, worm.nodes[worm.nodes.length - 1].y, 25, -(worm.nodes[worm.nodes.length - 1].r - Math.PI / 2), -(worm.nodes[worm.nodes.length - 1].r + Math.PI / 2));
+                        ctx.arc(worm.nodes[worm.nodes.length - 1].x, worm.nodes[worm.nodes.length - 1].y, 25, -worm.nodes[worm.nodes.length - 1].r + Math.PI / 2, -worm.nodes[worm.nodes.length - 1].r - Math.PI / 2);
                         for(var m = worm.nodes.length - 2; m > 0; m--)
                         {
                             ctx.save();
@@ -1452,7 +1474,7 @@ function render()
                         var interpolation = interpolateQuadratic(Math.PI / 4, Math.PI / 6, worm.happiness);
                         ctx.save();
                         ctx.translate(worm.nodes[0].x, worm.nodes[0].y);
-                        ctx.rotate(-worm.nodes[0].r);
+                        ctx.rotate(worm.nodes[0].r);
                         ctx.beginPath();
                         ctx.moveTo(25 * Math.cos(-interpolation), 25 * Math.sin(-interpolation));
                         ctx.lineTo(50 * Math.cos(-interpolation), 50 * Math.sin(-interpolation));
@@ -1502,7 +1524,7 @@ function render()
                     // Render the flag worm.
                     case 4:
                         ctx.beginPath();
-                        ctx.arc(worm.nodes[0].x, worm.nodes[0].y, 25, -(worm.nodes[0].r + Math.PI / 2), -(worm.nodes[0].r - Math.PI / 2));
+                        ctx.arc(worm.nodes[0].x, worm.nodes[0].y, 25, worm.nodes[0].r - Math.PI / 2, worm.nodes[0].r + Math.PI / 2);
                         for(var m = 1; m < worm.nodes.length - 1; m++)
                         {
                             ctx.save();
@@ -1552,7 +1574,7 @@ function render()
                         var interpolation3 = interpolateQuadratic(4, 19, worm.happiness);
                         ctx.save();
                         ctx.translate(worm.nodes[0].x, worm.nodes[0].y);
-                        ctx.rotate(-worm.nodes[0].r);
+                        ctx.rotate(worm.nodes[0].r);
                         ctx.beginPath();
                         ctx.moveTo(interpolation1, interpolation2);
                         ctx.bezierCurveTo(interpolation3, -7, interpolation3, 7, interpolation1, -interpolation2);
@@ -1592,6 +1614,7 @@ function render()
     if(!minimapExpanded)
     {
         ctx.translate(gameWidth - minimapHalfWidth - 10, gameHeight - minimapHalfHeight - 10);
+        ctx.scale(1, -1);
         ctx.beginPath();
         ctx.rect(-minimapHalfWidth, -minimapHalfHeight, minimapWidth, minimapHeight);
         ctx.clip();
@@ -1603,6 +1626,7 @@ function render()
     else
     {
         ctx.translate(gameHalfWidth, gameHalfHeight);
+        ctx.scale(1, -1);
         ctx.fillStyle = "#000022";
         ctx.globalAlpha = 0.8;
         ctx.fillRect(-gameHalfWidth, -gameHalfHeight, gameWidth, gameHeight);
