@@ -1084,7 +1084,7 @@ function render()
         
         if(distanceManhattanToClosestWorm <= 100)
         {
-            if(!energy.isDecaying)
+            if(!energy.isDecaying && !energy.isGrowing)
             {
                 energy.decay();
                 closestWorm.addNodeSmooth(5);
