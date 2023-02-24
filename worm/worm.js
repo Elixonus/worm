@@ -551,7 +551,6 @@ class Energy extends Filmable
         this.isDestroyed = false;
         this.destroyFunc = null;
         this.isDecaying = false;
-        this.isGrowing = false;
         this.opacity = 1;
         this.phase = 2 * Math.PI * Math.random();
         this.r = this.rStatic + 0.2 * Math.sin(this.phase);
@@ -613,22 +612,7 @@ class Energy extends Filmable
             if(this.opacity <= 0)
             {
                 this.destroy(energyCollection);
-                let energy = new Energy(camera);
-                energy.isGrowing = true;
-                energy.opacity = 0;
-                energies.push(energy);
                 return;
-            }
-        }
-
-        if(this.isGrowing)
-        {
-            this.opacity += 0.05 * timeScale;
-
-            if(this.opacity >= 1)
-            {
-                this.isGrowing = false;
-                this.opacity = 1;
             }
         }
         
@@ -938,7 +922,7 @@ let camera;
 const WORLD_RADIUS = 10000;
 const WORLD_CIRCLE = circle(point(0, 0), WORLD_RADIUS);
 const GRID_SIZE = 100;
-const WORM_BOT_COUNT = 99;
+const WORM_BOT_COUNT = 20;
 const ENERGY_COUNT = 500;
 const worms = [];
 const energies = [];
@@ -1084,7 +1068,7 @@ function render()
         
         if(distanceManhattanToClosestWorm <= 100)
         {
-            if(!energy.isDecaying && !energy.isGrowing)
+            if(!energy.isDecaying)
             {
                 energy.decay();
                 closestWorm.addNodeSmooth(5);
@@ -1687,9 +1671,21 @@ function render()
     {
         ctx.translate(gameWidth - minimapHalfWidth - 10, gameHeight - minimapHalfHeight - 10);
         ctx.scale(1, -1);
+
         ctx.beginPath();
-        ctx.rect(-minimapHalfWidth, -minimapHalfHeight, minimapWidth, minimapHeight);
+
+        if(!inspect)
+        {
+            ctx.rect(-minimapHalfWidth, -minimapHalfHeight, minimapWidth, minimapHeight);
+        }
+
+        else
+        {
+            ctx.rect(-minimapHalfWidth - 100, -minimapHalfHeight - 100, minimapWidth + 200, minimapHeight + 200);
+        }
+
         ctx.clip();
+
         ctx.fillStyle = "#000022";
         ctx.globalAlpha = 0.8;
         ctx.fillRect(-minimapHalfWidth, -minimapHalfHeight, minimapWidth, minimapHeight);
@@ -1746,11 +1742,28 @@ function render()
             ctx.arc(energy.x, energy.y, 25, 0, 2 * Math.PI);
             ctx.fill();
         }
+
+        else if(inspect)
+        {
+            ctx.globalAlpha = energy.opacity;
+            ctx.lineWidth = 20;
+            ctx.strokeStyle = "#ff0000";
+            ctx.shadowBlur = 0;
+            ctx.save();
+            ctx.translate(energy.x, energy.y);
+            ctx.beginPath();
+            ctx.moveTo(-50, -50);
+            ctx.lineTo(50, 50);
+            ctx.lineTo(0, 0);
+            ctx.lineTo(-50, 50);
+            ctx.lineTo(50, -50);
+            ctx.stroke();
+            ctx.restore();
+        }
     }
     
     // Rendering the worms on the minimap as colored paths with their respective colors used for the stroke call.
 
-    ctx.lineWidth = 50;
     ctx.lineCap = "round";
     ctx.globalAlpha = 1;
     
@@ -1764,6 +1777,7 @@ function render()
         
             if(worm.inMinimap(camera, minimapExpanded))
             {
+                ctx.lineWidth = 50;
                 ctx.strokeStyle = color;
                 ctx.shadowColor = color;
                 ctx.beginPath();
@@ -1774,6 +1788,21 @@ function render()
                 }
                 
                 ctx.stroke();
+
+                if(!worm.controllable)
+                {
+                    if(worm.botEnergy !== null && !worm.botEnergy.isDestroyed)
+                    {
+                        ctx.beginPath();
+                        ctx.moveTo(worm.botEnergy.x, worm.botEnergy.y);
+                        ctx.lineTo(worm.nodes[0].x, worm.nodes[0].y);
+                        ctx.lineWidth = 20;
+                        ctx.strokeStyle = "#00ff00";
+                        ctx.shadowBlur = 0;
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+                    }
+                }
             }
         }
     }
@@ -1783,8 +1812,6 @@ function render()
     // Rendering the minimized minimap border for better styling.
     if(!minimapExpanded)
     {
-        ctx.lineWidth = 20;
-        ctx.strokeStyle = "#000000";
         ctx.beginPath();
         
         // Checking whether the rounded rectangle function is supported on the client's browser.
@@ -1802,6 +1829,13 @@ function render()
         ctx.lineWidth = 5;
         ctx.strokeStyle = "#222222";
         ctx.stroke();
+
+        if(inspect)
+        {
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = "#ff0000";
+            ctx.strokeRect(gameWidth - minimapWidth - 110, gameHeight - minimapHeight - 110, minimapWidth + 200, minimapHeight + 200);
+        }
     }
 
     // Repeating the draw loop and storing the request.
