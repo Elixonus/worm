@@ -1658,7 +1658,7 @@ function render()
                             ctx.shadowBlur = 0;
                             ctx.stroke();
                             ctx.setLineDash([]);
-                            ctx.strokeRect(worm.botEnergy.x - 25, worm.botEnergy.y - 25, 50, 50);
+                            ctx.strokeRect(worm.botEnergy.x - 30, worm.botEnergy.y - 30, 60, 60);
                         }
 
                         ctx.save();
@@ -1707,7 +1707,7 @@ function render()
 
         else
         {
-            ctx.rect(-minimapHalfWidth - 100, -minimapHalfHeight - 100, minimapWidth + 200, minimapHeight + 200);
+            ctx.rect(-minimapHalfWidth - 100, -minimapHalfHeight - 10, minimapWidth + 110, minimapHeight + 110);
         }
 
         ctx.clip();
@@ -1816,7 +1816,7 @@ function render()
                 
                 ctx.stroke();
 
-                if(!worm.controllable)
+                if(inspect && !worm.controllable)
                 {
                     if(worm.botEnergy !== null && !worm.botEnergy.isDestroyed)
                     {
@@ -1827,7 +1827,6 @@ function render()
                         ctx.strokeStyle = "#00ff00";
                         ctx.shadowBlur = 0;
                         ctx.stroke();
-                        ctx.setLineDash([]);
                     }
                 }
             }
@@ -1852,17 +1851,9 @@ function render()
             ctx.rect(gameWidth - minimapWidth - 10, gameHeight - minimapHeight - 10, minimapWidth, minimapHeight);
         }
 
-        ctx.stroke();
         ctx.lineWidth = 5;
         ctx.strokeStyle = "#222222";
         ctx.stroke();
-
-        if(inspect)
-        {
-            ctx.lineWidth = 2;
-            ctx.strokeStyle = "#ff0000";
-            ctx.strokeRect(gameWidth - minimapWidth - 110, gameHeight - minimapHeight - 110, minimapWidth + 200, minimapHeight + 200);
-        }
     }
 
     // Repeating the draw loop and storing the request.
