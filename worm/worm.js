@@ -41,6 +41,10 @@ class Filmable
     {
         this.camera.filmedObject = null;
     }
+
+    updateCameraTarget() {
+
+    }
 }
 
 class Worm extends Filmable
@@ -59,7 +63,7 @@ class Worm extends Filmable
         this.blink = 0;
         this.blinkDirection = 0;
         this.blinkWait = Math.round(Math.random() * 250) + 10;
-        this.controllable;
+        this.controllable = true;
         this.dead = false;
         this.happiness = 0;
         this.happinessAchieved = 0;
@@ -71,8 +75,8 @@ class Worm extends Filmable
         this.turn = 0;
 
         // The first node is initialized with a random position and rotation within the bounds of the map.
-        var tempRotation = 2 * Math.PI * Math.random();
-        var tempRadius = 0.9 * WORLD_RADIUS * Math.sqrt(Math.random());
+        let tempRotation = 2 * Math.PI * Math.random();
+        let tempRadius = 0.9 * WORLD_RADIUS * Math.sqrt(Math.random());
         this.nodes.push(
         {
             active: true,
@@ -128,7 +132,7 @@ class Worm extends Filmable
     {
         // Set the configuration length of the worm to the given parameter without breaking the space properties
         // of the nodes. This function changes the length instantly, not smoothly.
-        var lengthDifference = Math.abs(length - this.nodes.length);
+        let lengthDifference = Math.abs(length - this.nodes.length);
         
         if(length < this.nodes.length)
         {
@@ -161,7 +165,7 @@ class Worm extends Filmable
         // Adds a number of nodes to the tail instantly, without breaking the space properties of the nodes.
         // The algorithm works by backtracking from the last node with the separation distance a given number
         // of times.
-        for(var n = 0; n < count; n++)
+        for(let n = 0; n < count; n++)
         {
             let tempLastNode = this.nodes[this.nodes.length - 1];
             this.nodes.push(
@@ -180,7 +184,7 @@ class Worm extends Filmable
         // Adds a number of nodes to the tail smoothly, and without breaking the space properties of the nodes.
         // The system responsible for making the growth transition smooth works by starting a node at the tail
         // and incrementally increasing the separation distance closer to the normal separation distance.
-        for(var n = 0; n < count; n++)
+        for(let n = 0; n < count; n++)
         {
             let tempLastNode = this.nodes[this.nodes.length - 1];
             this.nodes.push(
@@ -275,7 +279,7 @@ class Worm extends Filmable
                     this.botDesiredDirection %= 2 * Math.PI;
                 }
 
-                var angleDifference = calculateAngleDifference(this.nodes[0].r, this.botDesiredDirection);
+                let angleDifference = calculateAngleDifference(this.nodes[0].r, this.botDesiredDirection);
 
                 if(angleDifference < 0)
                 {
@@ -296,8 +300,8 @@ class Worm extends Filmable
             }
         }
         
-        var wormIndex = wormCollection.indexOf(this);
-        var tempFirstNode = this.nodes[0];
+        let wormIndex = wormCollection.indexOf(this);
+        let tempFirstNode = this.nodes[0];
         
         if(this.turn === -1)
         {
@@ -339,10 +343,10 @@ class Worm extends Filmable
         tempFirstNode.y += 3 * Math.sin(tempFirstNode.r) * timeScale;
         
         // Move the rest of the nodes.
-        for(var n = 1; n < this.nodes.length; n++)
+        for(let n = 1; n < this.nodes.length; n++)
         {
-            var tempCurrentNode = this.nodes[n];
-            var tempPreviousNode = this.nodes[n - 1];
+            let tempCurrentNode = this.nodes[n];
+            let tempPreviousNode = this.nodes[n - 1];
             
             if(!tempCurrentNode.active)
             {
@@ -372,9 +376,9 @@ class Worm extends Filmable
         }
         
         // Change the smile of the worm based on surrounding worms.
-        var foundHappiness = false;
+        let foundHappiness = false;
         
-        for(var n = 0; n < wormCollection.length; n++)
+        for(let n = 0; n < wormCollection.length; n++)
         {
             if(wormIndex !== n)
             {
@@ -477,7 +481,7 @@ class Worm extends Filmable
     moveTo(p)
     {
         // Move the worm instantly and abruptly with the head node teleporting to the given parameter point.
-        for(var n = 1; n < this.nodes.length; n++)
+        for(let n = 1; n < this.nodes.length; n++)
         {
             this.nodes[n].x += (p.x - this.nodes[0].x);
             this.nodes[n].y += (p.y - this.nodes[0].y);
@@ -492,11 +496,11 @@ class Worm extends Filmable
         // Returns whether the worm should be rendered on the main game view. Works by checking to see
         // if at least one node is in the viewport box. Calculation accounts for the maximum size shape
         // of the worm and the glow radius.
-        var tempShapePadding = 80;
-        var tempGlowPadding = clampMin(20 * camera.zoom, 20);
-        var tempPadding = tempShapePadding * camera.zoom + tempGlowPadding;
+        let tempShapePadding = 80;
+        let tempGlowPadding = clampMin(20 * camera.zoom, 20);
+        let tempPadding = tempShapePadding * camera.zoom + tempGlowPadding;
         
-        for(var n = 0; n < this.nodes.length; n++)
+        for(let n = 0; n < this.nodes.length; n++)
         {
             if(pointInRectangle(point(this.nodes[n].x - camera.x, this.nodes[n].y - camera.y), rectangle(point(0, 0), gameWidth / camera.zoom, gameHeight / camera.zoom), tempPadding))
             {
@@ -512,11 +516,11 @@ class Worm extends Filmable
         // Returns whether the worm should be rendered on the minimap view. Works the same way as the
         // previous method except calculates within a minimap box instead of main box. If the expanded
         // parameter is set to true the algorithm checks within an expanded minimap box.
-        var tempShapePadding = 80;
-        var tempGlowPadding = clampMin(20 * camera.zoom, 20);
-        var tempPadding = tempShapePadding * camera.zoom * minimapZoom + tempGlowPadding;
-        var tempWidth = minimapWidth;
-        var tempHeight = minimapHeight;
+        let tempShapePadding = 80;
+        let tempGlowPadding = clampMin(20 * camera.zoom, 20);
+        let tempPadding = tempShapePadding * camera.zoom * minimapZoom + tempGlowPadding;
+        let tempWidth = minimapWidth;
+        let tempHeight = minimapHeight;
         
         if(expanded)
         {
@@ -524,7 +528,7 @@ class Worm extends Filmable
             tempHeight = gameHeight;
         }
         
-        for(var n = 0; n < this.nodes.length; n++)
+        for(let n = 0; n < this.nodes.length; n++)
         {
             if(pointInRectangle(point(this.nodes[n].x - camera.x, this.nodes[n].y - camera.y), rectangle(point(0, 0), tempWidth / (camera.zoom * minimapZoom), tempHeight / (camera.zoom * minimapZoom)), tempPadding))
             {
@@ -539,7 +543,7 @@ class Worm extends Filmable
     {
         // Set the position of the camera to the position of the head node if this worm instance is
         // being filmed.
-        if(this.camera.filmedObject == this)
+        if(this.camera.filmedObject === this)
         {
             this.camera.setTarget(this.nodes[0]);
         }
@@ -551,8 +555,8 @@ class Energy extends Filmable
     constructor(camera)
     {
         super(camera);
-        var tempRotation = 2 * Math.PI * Math.random();
-        var tempRadius = WORLD_RADIUS * Math.sqrt(Math.random());
+        let tempRotation = 2 * Math.PI * Math.random();
+        let tempRadius = WORLD_RADIUS * Math.sqrt(Math.random());
         this.decayFunc = null;
         this.isDestroyed = false;
         this.destroyFunc = null;
@@ -638,26 +642,20 @@ class Energy extends Filmable
     inGame(camera)
     {
         // Returns whether the energy should be rendered on the main view.
-        var tempShapePadding = 80;
-        var tempGlowPadding = clampMin(20 * camera.zoom, 20);
-        var tempPadding = tempShapePadding * camera.zoom + tempGlowPadding;
-        
-        if(pointInRectangle(point(this.x - camera.x, this.y - camera.y), rectangle(point(0, 0), gameWidth / camera.zoom, gameHeight / camera.zoom), tempPadding))
-        {
-            return true;
-        }
-        
-        return false;
+        let tempShapePadding = 80;
+        let tempGlowPadding = clampMin(20 * camera.zoom, 20);
+        let tempPadding = tempShapePadding * camera.zoom + tempGlowPadding;
+        return pointInRectangle(point(this.x - camera.x, this.y - camera.y), rectangle(point(0, 0), gameWidth / camera.zoom, gameHeight / camera.zoom), tempPadding);
     }
     
     inMinimap(camera, expanded)
     {
         // Returns whether the energy should be rendered on the minimap.
-        var tempShapePadding = 80;
-        var tempGlowPadding = clampMin(20 * camera.zoom, 20);
-        var tempPadding = tempShapePadding * camera.zoom * minimapZoom + tempGlowPadding;
-        var tempWidth = minimapWidth;
-        var tempHeight = minimapHeight;
+        let tempShapePadding = 80;
+        let tempGlowPadding = clampMin(20 * camera.zoom, 20);
+        let tempPadding = tempShapePadding * camera.zoom * minimapZoom + tempGlowPadding;
+        let tempWidth = minimapWidth;
+        let tempHeight = minimapHeight;
         
         if(expanded)
         {
@@ -665,12 +663,7 @@ class Energy extends Filmable
             tempHeight = gameHeight;
         }
         
-        if(pointInRectangle(point(this.x - camera.x, this.y - camera.y), rectangle(point(0, 0), tempWidth / (camera.zoom * minimapZoom), tempHeight / (camera.zoom * minimapZoom)), tempPadding))
-        {
-            return true;
-        }
-        
-        return false;
+        return pointInRectangle(point(this.x - camera.x, this.y - camera.y), rectangle(point(0, 0), tempWidth / (camera.zoom * minimapZoom), tempHeight / (camera.zoom * minimapZoom)), tempPadding);
     }
 }
 
@@ -682,8 +675,8 @@ class Camera
         // camera per game instance is allowed but abstractly, multiple camera instances can be used
         // to create a split screen effect if the rendering code allows.
         this.filmedObject = null;
-        this.x = p.y;
-        this.y = p.x;
+        this.x = p.x;
+        this.y = p.y;
         this.targetX = this.x;
         this.targetY = this.y;
         this.zoom = zoom;
@@ -830,12 +823,7 @@ function mousedown(event)
 function keydown(event)
 {
     // Register a key down event and add the pressed key value to a stack.
-    if(!event)
-    {
-        event = window.event;
-    }
-    
-    var eventKey = event.key;
+    let eventKey = event.key;
     
     if(keysPressed.includes(eventKey) === false)
     {
@@ -845,17 +833,8 @@ function keydown(event)
         // Open the minimap for expanded view.
         if(eventKey.toUpperCase() === "M" && !minimapFired)
         {
+            minimapExpanded = !minimapExpanded;
             minimapFired = true;
-            
-            if(minimapExpanded === false)
-            {
-                minimapExpanded = true;
-            }
-            
-            else
-            {
-                minimapExpanded = false;
-            }
         }
         
         // Toggle the shadows for performance and quality tradeoff.
@@ -874,12 +853,7 @@ function keydown(event)
 function keyup(event)
 {
     // Register a key up event and remove the lifted key value from the stack.
-    if(!event)
-    {
-        event = window.event;
-    }
-    
-    var eventKey = event.key;
+    let eventKey = event.key;
     
     keysPressed.splice(keysPressed.indexOf(eventKey), 1);
     
@@ -948,7 +922,7 @@ function start()
     filmedWormIndex = 0;
 
     // Generate all the worms.
-    for(var n = 0; n < WORM_BOT_COUNT + 1; n++)
+    for(let n = 0; n < WORM_BOT_COUNT + 1; n++)
     {
         let worm = new Worm(camera);
         // Generate the worm player.
@@ -956,7 +930,7 @@ function start()
         {
             camera.moveTo(worm.nodes[0]);
             worm.follow();
-            worm.setControllable();
+            worm.setControllable(true);
             worm.setType(1);
             worm.setHue(120);
             worm.setRandomLength(5, 50);
@@ -974,7 +948,7 @@ function start()
     }
     
     // Generate the energies.
-    for(var n = 0; n < ENERGY_COUNT; n++)
+    for(let n = 0; n < ENERGY_COUNT; n++)
     {
         let energy = new Energy(camera);
         energies.push(energy);
@@ -1018,7 +992,7 @@ function render()
     }
     
     // High level worm movement logic.
-    for(var n = 0; n < worms.length; n++)
+    for(let n = 0; n < worms.length; n++)
     {
         const worm = worms[n];
         
@@ -1050,13 +1024,13 @@ function render()
     }
 
     // High level energy decay and worm eat logic.
-    for(var n = 0; n < energies.length; n++)
+    for(let n = 0; n < energies.length; n++)
     {
         let energy = energies[n];
         let closestWorm = undefined;
         let distanceManhattanToClosestWorm = undefined;
         
-        for(var m = 0; m < worms.length; m++)
+        for(let m = 0; m < worms.length; m++)
         {
             let worm = worms[m];
 
@@ -1107,7 +1081,7 @@ function render()
     ctx.lineWidth = 2;
     
     // Render the interior grid of the circle map.
-    for(var n = 1; n < 2 * WORLD_RADIUS / GRID_SIZE; n++)
+    for(let n = 1; n < 2 * WORLD_RADIUS / GRID_SIZE; n++)
     {
         ctx.beginPath();
         ctx.moveTo(n * GRID_SIZE - WORLD_RADIUS, 0 - WORLD_RADIUS);
@@ -1144,9 +1118,9 @@ function render()
     
     ctx.reset();
     
-    for(var n = 0; n < worms.length; n++)
+    for(let n = 0; n < worms.length; n++)
     {
-        var worm = worms[n];
+        let worm = worms[n];
 
         if(worm.dead)
         {
@@ -1155,7 +1129,7 @@ function render()
                 ctx.beginPath();
                 ctx.arc(worm.nodes[0].x, worm.nodes[0].y, 25, worm.nodes[0].r - Math.PI / 2, worm.nodes[0].r + Math.PI / 2);
                 
-                for(var m = 1; m < worm.nodes.length - 1; m++)
+                for(let m = 1; m < worm.nodes.length - 1; m++)
                 {
                     ctx.save();
                     ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
@@ -1166,7 +1140,7 @@ function render()
 
                 ctx.arc(worm.nodes[worm.nodes.length - 1].x, worm.nodes[worm.nodes.length - 1].y, 25, worm.nodes[worm.nodes.length - 1].r + Math.PI / 2, worm.nodes[worm.nodes.length - 1].r - Math.PI / 2);
                 
-                for(var m = worm.nodes.length - 2; m > 0; m--)
+                for(let m = worm.nodes.length - 2; m > 0; m--)
                 {
                     ctx.save();
                     ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
@@ -1225,7 +1199,7 @@ function render()
     
     ctx.reset();
     ctx.shadowBlur = getShadows(clampMin(20 * camera.zoom, 20));
-    for(var n = 0; n < energies.length; n++)
+    for(let n = 0; n < energies.length; n++)
     {
         const energy = energies[n];
 
@@ -1293,19 +1267,23 @@ function render()
     ctx.reset();
     ctx.shadowBlur = getShadows();
     
-    for(var n = 0; n < worms.length; n++)
+    for(let n = 0; n < worms.length; n++)
     {
         const worm = worms[n];
 
         if(!worm.dead)
         {
-            var color = hueString(worm.hue);
+            let color = hueString(worm.hue);
         
             // Render the worm only if seen by the camera.
             if(worm.inGame(camera))
             {
                 if(!inspect)
                 {
+                    let interpolation1 = 0;
+                    let interpolation2 = 0;
+                    let interpolation3 = 0;
+
                     ctx.lineWidth = 3;
                     ctx.strokeStyle = color;
                     ctx.fillStyle = color;
@@ -1317,7 +1295,7 @@ function render()
                         case 1:
                             ctx.beginPath();
                             ctx.arc(worm.nodes[0].x, worm.nodes[0].y, 25, worm.nodes[0].r - Math.PI / 2, worm.nodes[0].r + Math.PI / 2);
-                            for(var m = 1; m < worm.nodes.length - 1; m++)
+                            for(let m = 1; m < worm.nodes.length - 1; m++)
                             {
                                 ctx.save();
                                 ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
@@ -1326,7 +1304,7 @@ function render()
                                 ctx.restore();
                             }
                             ctx.arc(worm.nodes[worm.nodes.length - 1].x, worm.nodes[worm.nodes.length - 1].y, 25, worm.nodes[worm.nodes.length - 1].r + Math.PI / 2, worm.nodes[worm.nodes.length - 1].r - Math.PI / 2);
-                            for(var m = worm.nodes.length - 2; m > 0; m--)
+                            for(let m = worm.nodes.length - 2; m > 0; m--)
                             {
                                 ctx.save();
                                 ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
@@ -1347,9 +1325,9 @@ function render()
                             ctx.shadowBlur = getShadows();
                             ctx.shadowColor = color;
                             ctx.stroke();
-                            var interpolation1 = interpolateQuadratic(12, 6, worm.happiness);
-                            var interpolation2 = interpolateQuadratic(-11, -15, worm.happiness);
-                            var interpolation3 = interpolateQuadratic(4, 19, worm.happiness);
+                            interpolation1 = interpolateQuadratic(12, 6, worm.happiness);
+                            interpolation2 = interpolateQuadratic(-11, -15, worm.happiness);
+                            interpolation3 = interpolateQuadratic(4, 19, worm.happiness);
                             ctx.save();
                             ctx.translate(worm.nodes[0].x, worm.nodes[0].y);
                             ctx.rotate(worm.nodes[0].r);
@@ -1379,7 +1357,7 @@ function render()
                         case 2:
                             ctx.beginPath();
                             ctx.arc(worm.nodes[0].x, worm.nodes[0].y, 25, worm.nodes[0].r - Math.PI / 2, worm.nodes[0].r + Math.PI / 2);
-                            for(var m = 1; m < worm.nodes.length - 1; m++)
+                            for(let m = 1; m < worm.nodes.length - 1; m++)
                             {
                                 ctx.save();
                                 ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
@@ -1401,7 +1379,7 @@ function render()
                                 ctx.restore();
                             }
                             ctx.arc(worm.nodes[worm.nodes.length - 1].x, worm.nodes[worm.nodes.length - 1].y, 25, worm.nodes[worm.nodes.length - 1].r + Math.PI / 2, worm.nodes[worm.nodes.length - 1].r - Math.PI / 2);
-                            for(var m = worm.nodes.length - 2; m > 0; m--)
+                            for(let m = worm.nodes.length - 2; m > 0; m--)
                             {
                                 ctx.save();
                                 ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
@@ -1435,9 +1413,9 @@ function render()
                             ctx.shadowBlur = getShadows();
                             ctx.shadowColor = color;
                             ctx.stroke();
-                            var interpolation1 = interpolateQuadratic(12, 6, worm.happiness);
-                            var interpolation2 = interpolateQuadratic(-11, -15, worm.happiness);
-                            var interpolation3 = interpolateQuadratic(4, 19, worm.happiness);
+                            interpolation1 = interpolateQuadratic(12, 6, worm.happiness);
+                            interpolation2 = interpolateQuadratic(-11, -15, worm.happiness);
+                            interpolation3 = interpolateQuadratic(4, 19, worm.happiness);
                             ctx.save();
                             ctx.translate(worm.nodes[0].x, worm.nodes[0].y);
                             ctx.rotate(worm.nodes[0].r);
@@ -1467,7 +1445,7 @@ function render()
                         case 3:
                             ctx.beginPath();
                             ctx.arc(worm.nodes[0].x, worm.nodes[0].y, 25, worm.nodes[0].r - Math.PI / 2, worm.nodes[0].r + Math.PI / 2);
-                            for(var m = 1; m < worm.nodes.length - 1; m++)
+                            for(let m = 1; m < worm.nodes.length - 1; m++)
                             {
                                 ctx.save();
                                 ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
@@ -1476,7 +1454,7 @@ function render()
                                 ctx.restore();
                             }
                             ctx.arc(worm.nodes[worm.nodes.length - 1].x, worm.nodes[worm.nodes.length - 1].y, 25, worm.nodes[worm.nodes.length - 1].r + Math.PI / 2, worm.nodes[worm.nodes.length - 1].r - Math.PI / 2);
-                            for(var m = worm.nodes.length - 2; m > 0; m--)
+                            for(let m = worm.nodes.length - 2; m > 0; m--)
                             {
                                 ctx.save();
                                 ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
@@ -1498,7 +1476,7 @@ function render()
                             ctx.shadowColor = color;
                             ctx.stroke();
     
-                            var interpolation = interpolateQuadratic(Math.PI / 4, Math.PI / 6, worm.happiness);
+                            let interpolation = interpolateQuadratic(Math.PI / 4, Math.PI / 6, worm.happiness);
                             ctx.save();
                             ctx.translate(worm.nodes[0].x, worm.nodes[0].y);
                             ctx.rotate(worm.nodes[0].r);
@@ -1552,7 +1530,7 @@ function render()
                         case 4:
                             ctx.beginPath();
                             ctx.arc(worm.nodes[0].x, worm.nodes[0].y, 25, worm.nodes[0].r - Math.PI / 2, worm.nodes[0].r + Math.PI / 2);
-                            for(var m = 1; m < worm.nodes.length - 1; m++)
+                            for(let m = 1; m < worm.nodes.length - 1; m++)
                             {
                                 ctx.save();
                                 ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
@@ -1575,7 +1553,7 @@ function render()
                                 ctx.restore();
                             }
                             ctx.arc(worm.nodes[worm.nodes.length - 1].x, worm.nodes[worm.nodes.length - 1].y, 25, worm.nodes[worm.nodes.length - 1].r + Math.PI / 2, worm.nodes[worm.nodes.length - 1].r - Math.PI / 2);
-                            for(var m = worm.nodes.length - 2; m > 0; m--)
+                            for(let m = worm.nodes.length - 2; m > 0; m--)
                             {
                                 ctx.save();
                                 ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
@@ -1596,9 +1574,9 @@ function render()
                             ctx.shadowBlur = getShadows();
                             ctx.shadowColor = color;
                             ctx.stroke();
-                            var interpolation1 = interpolateQuadratic(12, 6, worm.happiness);
-                            var interpolation2 = interpolateQuadratic(-11, -15, worm.happiness);
-                            var interpolation3 = interpolateQuadratic(4, 19, worm.happiness);
+                            interpolation1 = interpolateQuadratic(12, 6, worm.happiness);
+                            interpolation2 = interpolateQuadratic(-11, -15, worm.happiness);
+                            interpolation3 = interpolateQuadratic(4, 19, worm.happiness);
                             ctx.save();
                             ctx.translate(worm.nodes[0].x, worm.nodes[0].y);
                             ctx.rotate(worm.nodes[0].r);
@@ -1748,7 +1726,7 @@ function render()
     // Rendering the energies on the minimap as colored dots with their respective colors filled in.
     ctx.shadowBlur = getShadows(clampMin(20 * camera.zoom, 20));
     
-    for(var n = 0; n < energies.length; n++)
+    for(let n = 0; n < energies.length; n++)
     {
         const energy = energies[n];
         
@@ -1801,13 +1779,13 @@ function render()
     ctx.lineCap = "round";
     ctx.globalAlpha = 1;
     
-    for(var n = 0; n < worms.length; n++)
+    for(let n = 0; n < worms.length; n++)
     {
         const worm = worms[n];
 
         if(!worm.dead)
         {
-            var color = hueString(worm.hue);
+            let color = hueString(worm.hue);
         
             if(worm.inMinimap(camera, minimapExpanded))
             {
@@ -1817,7 +1795,7 @@ function render()
                 ctx.shadowColor = color;
                 ctx.beginPath();
                 
-                for(var m = 0; m < worm.nodes.length; m++)
+                for(let m = 0; m < worm.nodes.length; m++)
                 {
                     ctx.lineTo(worm.nodes[m].x, worm.nodes[m].y);
                 }
@@ -1900,7 +1878,7 @@ function interpolateQuadratic(startingValue, endingValue, t)
 
 function calculateAngleDifference(a1, a2)
 {
-    var difference = a2 - a1;
+    let difference = a2 - a1;
     while(difference < -Math.PI)
         difference += 2 * Math.PI;
     while(difference > Math.PI)
@@ -1910,22 +1888,12 @@ function calculateAngleDifference(a1, a2)
 
 function pointInCircle(point, circle)
 {
-    if(distance(circle.center, point) <= circle.radius)
-    {
-        return true;
-    }
-    
-    return false;
+    return distance(circle.center, point) <= circle.radius;
 }
 
 function pointInRectangle(point, rectangle, padding = 0)
 {
-    if(point.x >= rectangle.center.x - rectangle.width / 2 - padding && point.x <= rectangle.center.x + rectangle.width / 2 + padding && point.y >= rectangle.center.y - rectangle.height / 2 - padding && point.y <= rectangle.center.y + rectangle.height / 2 + padding)
-    {
-        return true;
-    }
-    
-    return false;
+    return point.x >= rectangle.center.x - rectangle.width / 2 - padding && point.x <= rectangle.center.x + rectangle.width / 2 + padding && point.y >= rectangle.center.y - rectangle.height / 2 - padding && point.y <= rectangle.center.y + rectangle.height / 2 + padding;
 }
 
 function clampMin(num, min)
