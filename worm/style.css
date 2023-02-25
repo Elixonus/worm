@@ -1,0 +1,15 @@
+body {
+    background-image: url("./background.png");
+    background-size: 5vmin;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+}
+
+#canvas {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border: 2vmin solid #202020;
+}

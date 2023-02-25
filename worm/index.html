@@ -1,35 +1,16 @@
 <!DOCTYPE HTML>
 <html>
     <head>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="author" content="Elias Dobrin">
         <title>Worm Game</title>
         <link rel="icon" type="image/x-icon" href="./favicon.ico">
+        <link rel="stylesheet" href="./style.css">
     </head>
     
     <body>
         <canvas id="canvas" width="1920" height="1080"></canvas>
-        
-        <style>
-            
-            body
-            {
-                background-image: url("./background.png");
-                background-size: 5vmin;
-                overflow: hidden;
-                margin: 0;
-                padding: 0;
-            }
-            
-            #canvas
-            {
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                outline: 2vmin solid #202020;
-            }
-            
-        </style>
-        
-        <script src="./worm.js"></script>
+        <script src="./script.js"></script>
     </body>
 </html>
