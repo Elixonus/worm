@@ -365,9 +365,9 @@ class Worm extends Filmable
                 }
 
                 // Keep the subsequent nodes close to the leading nodes.
-                tempCurrentNode.r = Math.PI - Math.atan2(tempCurrentNode.y - tempPreviousNode.y, tempCurrentNode.x - tempPreviousNode.x);
+                tempCurrentNode.r = Math.atan2(tempPreviousNode.y - tempCurrentNode.y, tempPreviousNode.x - tempCurrentNode.x);
                 tempCurrentNode.x = tempPreviousNode.x - 5 * Math.cos(tempCurrentNode.r);
-                tempCurrentNode.y = tempPreviousNode.y + 5 * Math.sin(tempCurrentNode.r);
+                tempCurrentNode.y = tempPreviousNode.y - 5 * Math.sin(tempCurrentNode.r);
             }
         }
         
@@ -1140,7 +1140,7 @@ function render()
     ctx.arc(0, 0, WORLD_RADIUS, 0, 2 * Math.PI);
     ctx.stroke();
     
-    //--- DEAD WORMS RENDERING ---
+    //--- DEAD WORM RENDERING ---
     
     ctx.reset();
     
@@ -1157,14 +1157,22 @@ function render()
                 
                 for(var m = 1; m < worm.nodes.length - 1; m++)
                 {
-                    ctx.lineTo(worm.nodes[m].x + 25 * Math.cos(worm.nodes[m].r - Math.PI / 2), worm.nodes[m].y - 25 * Math.sin(worm.nodes[m].r - Math.PI / 2));
+                    ctx.save();
+                    ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
+                    ctx.rotate(worm.nodes[m].r);
+                    ctx.lineTo(0, 25);
+                    ctx.restore();
                 }
 
-                ctx.arc(worm.nodes[worm.nodes.length - 1].x, worm.nodes[worm.nodes.length - 1].y, 25, -worm.nodes[worm.nodes.length - 1].r + Math.PI / 2, -worm.nodes[worm.nodes.length - 1].r - Math.PI / 2);
+                ctx.arc(worm.nodes[worm.nodes.length - 1].x, worm.nodes[worm.nodes.length - 1].y, 25, worm.nodes[worm.nodes.length - 1].r + Math.PI / 2, worm.nodes[worm.nodes.length - 1].r - Math.PI / 2);
                 
                 for(var m = worm.nodes.length - 2; m > 0; m--)
                 {
-                    ctx.lineTo(worm.nodes[m].x + 25 * Math.cos(worm.nodes[m].r + Math.PI / 2), worm.nodes[m].y - 25 * Math.sin(worm.nodes[m].r + Math.PI / 2));
+                    ctx.save();
+                    ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
+                    ctx.rotate(worm.nodes[m].r);
+                    ctx.lineTo(0, -25);
+                    ctx.restore();
                 }
                 
                 ctx.closePath();
@@ -1313,16 +1321,16 @@ function render()
                             {
                                 ctx.save();
                                 ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
-                                ctx.rotate(-worm.nodes[m].r);
+                                ctx.rotate(worm.nodes[m].r);
                                 ctx.lineTo(0, 25);
                                 ctx.restore();
                             }
-                            ctx.arc(worm.nodes[worm.nodes.length - 1].x, worm.nodes[worm.nodes.length - 1].y, 25, -worm.nodes[worm.nodes.length - 1].r + Math.PI / 2, -worm.nodes[worm.nodes.length - 1].r - Math.PI / 2);
+                            ctx.arc(worm.nodes[worm.nodes.length - 1].x, worm.nodes[worm.nodes.length - 1].y, 25, worm.nodes[worm.nodes.length - 1].r + Math.PI / 2, worm.nodes[worm.nodes.length - 1].r - Math.PI / 2);
                             for(var m = worm.nodes.length - 2; m > 0; m--)
                             {
                                 ctx.save();
                                 ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
-                                ctx.rotate(-worm.nodes[m].r);
+                                ctx.rotate(worm.nodes[m].r);
                                 ctx.lineTo(0, -25);
                                 ctx.restore();
                             }
@@ -1375,7 +1383,7 @@ function render()
                             {
                                 ctx.save();
                                 ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
-                                ctx.rotate(-worm.nodes[m].r);
+                                ctx.rotate(worm.nodes[m].r);
                                 
                                 switch(true)
                                 {
@@ -1392,12 +1400,12 @@ function render()
                                 
                                 ctx.restore();
                             }
-                            ctx.arc(worm.nodes[worm.nodes.length - 1].x, worm.nodes[worm.nodes.length - 1].y, 25, -worm.nodes[worm.nodes.length - 1].r + Math.PI / 2, -worm.nodes[worm.nodes.length - 1].r - Math.PI / 2);
+                            ctx.arc(worm.nodes[worm.nodes.length - 1].x, worm.nodes[worm.nodes.length - 1].y, 25, worm.nodes[worm.nodes.length - 1].r + Math.PI / 2, worm.nodes[worm.nodes.length - 1].r - Math.PI / 2);
                             for(var m = worm.nodes.length - 2; m > 0; m--)
                             {
                                 ctx.save();
                                 ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
-                                ctx.rotate(-worm.nodes[m].r);
+                                ctx.rotate(worm.nodes[m].r);
                                 
                                 switch(true)
                                 {
@@ -1463,16 +1471,16 @@ function render()
                             {
                                 ctx.save();
                                 ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
-                                ctx.rotate(-worm.nodes[m].r);
+                                ctx.rotate(worm.nodes[m].r);
                                 ctx.lineTo(0, 25);
                                 ctx.restore();
                             }
-                            ctx.arc(worm.nodes[worm.nodes.length - 1].x, worm.nodes[worm.nodes.length - 1].y, 25, -worm.nodes[worm.nodes.length - 1].r + Math.PI / 2, -worm.nodes[worm.nodes.length - 1].r - Math.PI / 2);
+                            ctx.arc(worm.nodes[worm.nodes.length - 1].x, worm.nodes[worm.nodes.length - 1].y, 25, worm.nodes[worm.nodes.length - 1].r + Math.PI / 2, worm.nodes[worm.nodes.length - 1].r - Math.PI / 2);
                             for(var m = worm.nodes.length - 2; m > 0; m--)
                             {
                                 ctx.save();
                                 ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
-                                ctx.rotate(-worm.nodes[m].r);
+                                ctx.rotate(worm.nodes[m].r);
                                 ctx.lineTo(0, -25);
                                 ctx.restore();
                             }
@@ -1548,7 +1556,7 @@ function render()
                             {
                                 ctx.save();
                                 ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
-                                ctx.rotate(-worm.nodes[m].r);
+                                ctx.rotate(worm.nodes[m].r);
                                 
                                 switch(true)
                                 {
@@ -1566,12 +1574,12 @@ function render()
                                 
                                 ctx.restore();
                             }
-                            ctx.arc(worm.nodes[worm.nodes.length - 1].x, worm.nodes[worm.nodes.length - 1].y, 25, -(worm.nodes[worm.nodes.length - 1].r - Math.PI / 2), -(worm.nodes[worm.nodes.length - 1].r + Math.PI / 2));
+                            ctx.arc(worm.nodes[worm.nodes.length - 1].x, worm.nodes[worm.nodes.length - 1].y, 25, worm.nodes[worm.nodes.length - 1].r + Math.PI / 2, worm.nodes[worm.nodes.length - 1].r - Math.PI / 2);
                             for(var m = worm.nodes.length - 2; m > 0; m--)
                             {
                                 ctx.save();
                                 ctx.translate(worm.nodes[m].x, worm.nodes[m].y);
-                                ctx.rotate(-worm.nodes[m].r);
+                                ctx.rotate(worm.nodes[m].r);
                                 ctx.lineTo(0, -25);
                                 ctx.restore();
                             }
@@ -1633,7 +1641,7 @@ function render()
                         ctx.strokeStyle = "#0000ff";
                         ctx.shadowBlur = 0;
                         ctx.stroke();
-                        ctx.rotate(worm.nodes[0].r);
+                        ctx.rotate(worm.nodes[m].r);
                         ctx.beginPath();
                         ctx.moveTo(0, 0);
                         ctx.lineTo(50, 0);
