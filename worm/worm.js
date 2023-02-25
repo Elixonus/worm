@@ -269,6 +269,12 @@ class Worm extends Filmable
                     closestEnergy.botWorm = this;
                 }
 
+                else
+                {
+                    this.botDesiredDirection += 0.25 * Math.PI * Math.sign(2 * Math.random() - 1);
+                    this.botDesiredDirection %= 2 * Math.PI;
+                }
+
                 var angleDifference = calculateAngleDifference(this.nodes[0].r, this.botDesiredDirection);
 
                 if(angleDifference < 0)
@@ -1654,6 +1660,26 @@ function render()
                             ctx.setLineDash([]);
                             ctx.strokeRect(worm.botEnergy.x - 25, worm.botEnergy.y - 25, 50, 50);
                         }
+
+                        ctx.save();
+                        ctx.translate(worm.nodes[0].x, worm.nodes[0].y);
+                        ctx.rotate(worm.botDesiredDirection);
+                        ctx.beginPath();
+                        ctx.moveTo(0, 0);
+                        ctx.lineTo(-40, 0);
+                        ctx.lineWidth = 3;
+                        ctx.strokeStyle = "#00ff00";
+                        ctx.shadowBlur = 0;
+                        ctx.stroke();
+                        ctx.beginPath();
+                        ctx.moveTo(-40, 10);
+                        ctx.lineTo(-40, -10);
+                        ctx.lineTo(-50, 0);
+                        ctx.closePath();
+                        ctx.fillStyle = "#00ff00";
+                        ctx.shadowBlur = 0;
+                        ctx.fill();
+                        ctx.restore();
                     }
                 }
             }
@@ -1779,6 +1805,7 @@ function render()
             {
                 ctx.lineWidth = 50;
                 ctx.strokeStyle = color;
+                ctx.shadowBlur = getShadows(clampMin(20 * camera.zoom, 20));
                 ctx.shadowColor = color;
                 ctx.beginPath();
                 
