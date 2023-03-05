@@ -633,10 +633,6 @@ function resize() {
 
 function mousedown(event) {
     // Register a mouse down event.
-    if (!event) {
-        event = window.event;
-    }
-
     // Left click pans the camera to the previous worm.
     if (event.button === 0 && camera.filmedObject != null) {
         if (camera.filmedObject.constructor.name === "Worm") {
@@ -1594,11 +1590,7 @@ function render() {
         ctx.beginPath();
 
         // Checking whether the rounded rectangle function is supported on the client's browser.
-        if (ctx.roundRect) {
-            ctx.roundRect(gameWidth - minimapWidth - 10, gameHeight - minimapHeight - 10, minimapWidth, minimapHeight, 20);
-        } else {
-            ctx.rect(gameWidth - minimapWidth - 10, gameHeight - minimapHeight - 10, minimapWidth, minimapHeight);
-        }
+        ctx.rect(gameWidth - minimapWidth - 10, gameHeight - minimapHeight - 10, minimapWidth, minimapHeight);
 
         ctx.lineWidth = 5;
         ctx.strokeStyle = "#222222";
