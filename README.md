@@ -4,6 +4,8 @@
 
 A slither.io-like game made in javascript with the canvas API.
 
+![Screenshot 1](./screenshot1.png)
+
 ## Controls
 
 `A` - Turn the player snake left.
@@ -34,6 +36,12 @@ When worms are closer to each other, they become happier.
 
 When worms pass over the end of the map, they die and change appearance.
 
+Some of the worms are very detailed in shape.
+
+![Screenshot 2](./screenshot2.png)
+
+![Screenshot 3](./screenshot3.png)
+
 ## Algorithm
 
 | Node Number | Node Order | Node Significance |
@@ -49,6 +57,18 @@ Derivative (second) of rotation of `Node Number` `0` is either controlled by pla
 `Node Number` `0` moves with a certain speed in the direction of the worm.
 
 `Node Number` `n + 1` moves in the relative direction of `Node Number` `n` while keeping a constant distance and where `n` is any valid `Node Number` except `0`.
+
+## Debug Mode
+
+Shows placement of the nodes as well as their vector direction.
+
+Highlights which food energy AI are looking at any given time as well as their target direction.
+
+![Screenshot 4](./screenshot4.png)
+
+Labels minimap offscreen energies that are not required to be rendered for optimization.
+
+![Screenshot 5](./screenshot5.png)
 
 ## Challenges
 
