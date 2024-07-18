@@ -594,6 +594,26 @@ function hueString(hue) {
     return ("hsl(" + hue + ", 100%, 50%)");
 }
 
+function updateTurn(eventKey) {
+    if (eventKey === "ArrowLeft" || eventKey.toUpperCase() === "A" || eventKey === "ArrowRight" || eventKey.toUpperCase() === "D") {
+        for (let n = 0; n < worms.length; n++) {
+            const worm = worms[n];
+
+            if (!worm.dead && worm.controllable) {
+                worm.turn = 0;
+
+                if (keysPressed.includes("ArrowLeft") || keysPressed.includes("a") || keysPressed.includes("A")) {
+                    worm.turn -= 1;
+                }
+
+                if (keysPressed.includes("ArrowRight") || keysPressed.includes("d") || keysPressed.includes("D")) {
+                    worm.turn += 1;
+                }
+            }
+        }
+    }
+}
+
 function resize() {
     // Resize the fixed canvas dimensions with code to maximize view area while keeping aspect ratio 16:9.
     const windowWidth = window.innerWidth;
@@ -644,26 +664,7 @@ function keydown(event) {
     if (keysPressed.includes(eventKey) === false) {
         // Keep a record of all the keys that are pressed down.
         keysPressed.push(eventKey);
-
-        if (eventKey === "ArrowLeft" || eventKey.toUpperCase() === "A") {
-            for (let n = 0; n < worms.length; n++) {
-                const worm = worms[n];
-
-                if (!worm.dead && worm.controllable) {
-                    worm.turn = -1;
-                }
-            }
-        }
-
-        if (eventKey === "ArrowRight" || eventKey.toUpperCase() === "D") {
-            for (let n = 0; n < worms.length; n++) {
-                const worm = worms[n];
-
-                if (!worm.dead && worm.controllable) {
-                    worm.turn = 1;
-                }
-            }
-        }
+        updateTurn(eventKey);
 
         // Open the minimap for expanded view.
         if (eventKey.toUpperCase() === "M") {
@@ -686,33 +687,26 @@ function keyup(event) {
     let eventKey = event.key;
 
     keysPressed.splice(keysPressed.indexOf(eventKey), 1);
-
-    if (eventKey === "ArrowLeft" || eventKey.toUpperCase() === "A" || eventKey === "ArrowRight" || eventKey.toUpperCase() === "D") {
-        for (let n = 0; n < worms.length; n++) {
-            const worm = worms[n];
-
-            if (!worm.dead && worm.controllable) {
-                worm.turn = 0;
-            }
-        }
-    }
+    updateTurn(eventKey);
 }
 
 function touchstart(event) {
     let rect = canvas.getBoundingClientRect();
     let touch = point(gameWidth * (event.touches[0].clientX - rect.left) / (rect.right - rect.left), gameHeight * (event.touches[0].clientY - rect.top) / (rect.bottom - rect.top));
 
-    if (touch.x > gameWidth - minimapWidth - 10 && touch.y > gameHeight - minimapHeight - 10) {
-        minimapExpanded = !minimapExpanded;
-    } else {
-        for(let n = 0; n < worms.length; n++) {
-            const worm = worms[n];
-
-            if (!worm.dead && worm.controllable) {
-                if (touch.x > gameHalfWidth) {
-                    worm.turn = 1;
-                } else {
-                    worm.turn = -1;
+    if (touch.x >= 0 && touch.y >= 0 && touch.x <= gameWidth && touch.y <= gameHeight) {
+        if (touch.x >= gameWidth - minimapWidth - 10 && touch.y >= gameHeight - minimapHeight - 10) {
+            minimapExpanded = !minimapExpanded;
+        } else {
+            for(let n = 0; n < worms.length; n++) {
+                const worm = worms[n];
+    
+                if (!worm.dead && worm.controllable) {
+                    if (touch.x > gameHalfWidth) {
+                        worm.turn = 1;
+                    } else {
+                        worm.turn = -1;
+                    }
                 }
             }
         }
