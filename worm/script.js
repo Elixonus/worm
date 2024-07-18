@@ -667,10 +667,29 @@ function keydown(event) {
         // Keep a record of all the keys that are pressed down.
         keysPressed.push(eventKey);
 
+        if (eventKey === "ArrowLeft" || eventKey.toUpperCase() === "A") {
+            for (let n = 0; n < worms.length; n++) {
+                const worm = worms[n];
+
+                if (!worm.dead && worm.controllable) {
+                    worm.turn = -1;
+                }
+            }
+        }
+
+        if (eventKey === "ArrowRight" || eventKey.toUpperCase() === "D") {
+            for (let n = 0; n < worms.length; n++) {
+                const worm = worms[n];
+
+                if (!worm.dead && worm.controllable) {
+                    worm.turn = 1;
+                }
+            }
+        }
+
         // Open the minimap for expanded view.
-        if (eventKey.toUpperCase() === "M" && !minimapFired) {
+        if (eventKey.toUpperCase() === "M") {
             minimapExpanded = !minimapExpanded;
-            minimapFired = true;
         }
 
         // Toggle the shadows for performance and quality tradeoff.
@@ -690,8 +709,45 @@ function keyup(event) {
 
     keysPressed.splice(keysPressed.indexOf(eventKey), 1);
 
-    if (eventKey.toUpperCase() === "M") {
-        minimapFired = false;
+    if (eventKey === "ArrowLeft" || eventKey.toUpperCase() === "A" || eventKey === "ArrowRight" || eventKey.toUpperCase() === "D") {
+        for (let n = 0; n < worms.length; n++) {
+            const worm = worms[n];
+
+            if (!worm.dead && worm.controllable) {
+                worm.turn = 0;
+            }
+        }
+    }
+}
+
+function touchstart(event) {
+    let rect = canvas.getBoundingClientRect();
+    let touch = point(gameWidth * (event.touches[0].clientX - rect.left) / (rect.right - rect.left), gameHeight * (event.touches[0].clientY - rect.top) / (rect.bottom - rect.top));
+
+    if (touch.x > gameWidth - minimapWidth - 10 && touch.y > gameHeight - minimapHeight - 10) {
+        minimapExpanded = !minimapExpanded;
+    } else {
+        for(let n = 0; n < worms.length; n++) {
+            const worm = worms[n];
+
+            if (!worm.dead && worm.controllable) {
+                if (touch.x > gameHalfWidth) {
+                    worm.turn = 1;
+                } else {
+                    worm.turn = -1;
+                }
+            }
+        }
+    }
+}
+
+function touchend(event) {
+    for(let n = 0; n < worms.length; n++) {
+        const worm = worms[n];
+
+        if(!worm.dead && worm.controllable) {
+            worm.turn = 0;
+        }
     }
 }
 
@@ -699,13 +755,13 @@ function keyup(event) {
 //---------- EVENTS ----------
 //----------------------------
 
-window.onresize = resize;
-window.onmousedown = mousedown;
-window.onkeydown = keydown;
-window.onkeyup = keyup;
-window.oncontextmenu = function (event) {
-    event.preventDefault();
-};
+window.addEventListener("resize", resize);
+window.addEventListener("mousedown", mousedown);
+window.addEventListener("keydown", keydown);
+window.addEventListener("keyup", keyup);
+window.addEventListener("touchstart", touchstart);
+window.addEventListener("touchend", touchend);
+window.oncontextmenu = (event) => event.preventDefault();
 // Prevent right click showing menu.
 
 //-----------------------------------
@@ -726,7 +782,6 @@ const minimapHeight = 200;
 const minimapHalfWidth = 125;
 const minimapHalfHeight = 100;
 let minimapZoom;
-let minimapFired;
 let minimapExpanded;
 let shadows = true;
 let inspect = false;
@@ -750,7 +805,6 @@ function start() {
     worms.length = 0;
     energies.length = 0;
     minimapZoom = 0.1;
-    minimapFired = false;
     minimapExpanded = false;
     filmedWormIndex = 0;
 
@@ -819,18 +873,6 @@ function render() {
         const worm = worms[n];
 
         if (!worm.dead) {
-            if (worm.controllable) {
-                worm.turn = 0;
-
-                if (keysPressed.includes("ArrowLeft") || keysPressed.includes("a") || keysPressed.includes("A")) {
-                    worm.turn -= 1;
-                }
-
-                if (keysPressed.includes("ArrowRight") || keysPressed.includes("d") || keysPressed.includes("D")) {
-                    worm.turn += 1;
-                }
-            }
-
             worm.tick(worms);
 
             // Check if any worm falls off the circle map.
