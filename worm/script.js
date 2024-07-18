@@ -580,28 +580,6 @@ class Camera {
 //--- FUNCTION DEFINITIONS ---
 //----------------------------
 
-CanvasRenderingContext2D.prototype.reset = function () {
-    // Canvas context override function that resets non-transformational properties of the canvas.
-    // Certain browser(s) do not have the build in reset function, this is only a safety measure.
-    this.direction = "ltr";
-    this.fillStyle = "#000000";
-    this.filter = "none";
-    this.globalAlpha = 1;
-    this.globalCompositeOperation = "source-over";
-    this.imageSmoothingEnabled = true;
-    this.imageSmoothingQuality = "low";
-    this.lineCap = "butt";
-    this.lineDashOffset = 0;
-    this.lineJoin = "miter";
-    this.lineWidth = 1;
-    this.miterLimit = 10;
-    this.shadowBlur = 0;
-    this.shadowColor = "rgba(0, 0, 0, 0)";
-    this.shadowOffsetX = 0;
-    this.shadowOffsetY = 0;
-    this.strokeStyle = "#000000";
-}
-
 function getShadows() {
     // Returns the shadow blur multiplier used for rendering based on user settings.
     if (shadows) {
@@ -919,10 +897,10 @@ function render() {
 
     //------ WORLD RENDERING -----
 
-    ctx.reset();
     ctx.fillStyle = "#000000";
     ctx.fillRect(0, 0, gameWidth, gameHeight);
 
+    ctx.save();
     // Transform into the game space dependent on camera properties.
     ctx.translate(gameHalfWidth, gameHalfHeight);
     ctx.scale(1, -1);
@@ -930,6 +908,7 @@ function render() {
     ctx.translate(-camera.x, -camera.y);
     // GAME SPACE
 
+    ctx.save();
     ctx.strokeStyle = "#333333";
     ctx.lineWidth = 2;
 
@@ -966,9 +945,11 @@ function render() {
     ctx.arc(0, 0, WORLD_RADIUS, 0, 2 * Math.PI);
     ctx.stroke();
 
-    //--- DEAD WORM RENDERING ---
+    ctx.restore();
 
-    ctx.reset();
+    //--- DEAD WORM RENDERING ---
+    
+    ctx.save();
 
     for (let n = 0; n < worms.length; n++) {
         let worm = worms[n];
@@ -1042,9 +1023,11 @@ function render() {
         }
     }
 
+    ctx.restore();
+
     //----- ENERGY RENDERING -----
 
-    ctx.reset();
+    ctx.save();
     ctx.shadowBlur = getShadows(clampMin(20 * camera.zoom, 20));
     for (let n = 0; n < energies.length; n++) {
         const energy = energies[n];
@@ -1106,9 +1089,11 @@ function render() {
         }
     }
 
+    ctx.restore();
+
     //------ WORM RENDERING ------
 
-    ctx.reset();
+    ctx.save();
     ctx.shadowBlur = getShadows();
 
     for (let n = 0; n < worms.length; n++) {
@@ -1496,9 +1481,10 @@ function render() {
         }
     }
 
+    ctx.restore();
+
     //----- MINIMAP RENDERING ----
 
-    ctx.reset();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.save();
 
@@ -1638,6 +1624,8 @@ function render() {
         ctx.strokeStyle = "#222222";
         ctx.stroke();
     }
+
+    ctx.restore();
 
     // Repeating the draw loop and storing the request.
     request = requestAnimationFrame(render);
