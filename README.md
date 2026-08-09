@@ -1,4 +1,4 @@
-# worm 🐍
+# wormgame 🐍
 
 ![Wallpaper](wallpaper.png)
 
